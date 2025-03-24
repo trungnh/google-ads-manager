@@ -17,7 +17,7 @@ if (is_file(SYSTEMPATH . 'Config/Routes.php')) {
  * --------------------------------------------------------------------
  */
 $routes->setDefaultNamespace('App\Controllers');
-$routes->setDefaultController('Dashboard');
+$routes->setDefaultController('PublicPages');
 $routes->setDefaultMethod('index');
 $routes->setTranslateURIDashes(false);
 $routes->set404Override();
@@ -33,16 +33,21 @@ $routes->setAutoRoute(false);
  * --------------------------------------------------------------------
  */
 
+// Public routes
+$routes->get('/', 'PublicPages::index');
+$routes->get('homepage', 'PublicPages::index');
+$routes->get('privacy-policy', 'PublicPages::privacyPolicy');
+$routes->get('terms', 'PublicPages::terms');
+
 // Auth routes
-$routes->get('/', 'Dashboard::index');
 $routes->get('login', 'Auth::login');
 $routes->post('login', 'Auth::attemptLogin');
 $routes->get('ureg', 'Auth::register');
 $routes->post('ureg', 'Auth::attemptRegister');
 $routes->get('logout', 'Auth::logout');
 
-// Home route
-$routes->get('dashboard', 'Dashboard::index');
+// Dashboard route (with auth filter)
+$routes->get('dashboard', 'Dashboard::index', ['filter' => 'auth']);
 
 // Google Auth routes
 $routes->get('google/oauth', 'GoogleAuth::oauth');
