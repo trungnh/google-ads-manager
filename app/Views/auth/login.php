@@ -20,9 +20,6 @@
                         <button type="submit" class="btn btn-primary">Đăng nhập</button>
                     </div>
                 </form>
-                <div class="mt-3">
-                    <p>Chưa có tài khoản? <a href="<?= base_url('register') ?>">Đăng ký</a></p>
-                </div>
             </div>
         </div>
     </div>

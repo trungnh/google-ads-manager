@@ -37,8 +37,8 @@ $routes->setAutoRoute(false);
 $routes->get('/', 'Home::index');
 $routes->get('login', 'Auth::login');
 $routes->post('login', 'Auth::attemptLogin');
-$routes->get('register', 'Auth::register');
-$routes->post('register', 'Auth::attemptRegister');
+$routes->get('ureg', 'Auth::register');
+$routes->post('ureg', 'Auth::attemptRegister');
 $routes->get('logout', 'Auth::logout');
 
 // Home route
