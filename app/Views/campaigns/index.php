@@ -3,8 +3,21 @@
 <div class="container-fluid mt-4">
     <div class="row mb-3">
         <div class="col">
-            <h2>Chiến dịch - <?= esc($account['customer_name']) ?></h2>
-            <p>ID tài khoản: <?= esc($account['customer_id']) ?></p>
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2>Chiến dịch - <?= esc($account['customer_name']) ?></h2>
+                    <p>ID tài khoản: <?= esc($account['customer_id']) ?></p>
+                </div>
+                <div class="text-end">
+                    <select class="form-select" id="accountSelector" style="width: 300px;" onchange="window.location.href=this.value">
+                        <?php foreach ($accounts as $acc): ?>
+                            <option value="<?= base_url('campaigns/index/' . $acc['customer_id']) ?>" <?= $acc['customer_id'] == $account['customer_id'] ? 'selected' : '' ?>>
+                                <?= esc($acc['customer_name']) ?> - <?= esc($acc['customer_id']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
         </div>
     </div>
 

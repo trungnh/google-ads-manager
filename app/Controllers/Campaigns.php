@@ -43,6 +43,11 @@ class Campaigns extends BaseController
         $userId = session()->get('id');
 
         try {
+            // Lấy danh sách tất cả tài khoản của user
+            $accounts = $this->adsAccountModel
+                ->where('user_id', $userId)
+                ->findAll();
+
             // Kiểm tra xem user có quyền truy cập account này không
             $account = $this->adsAccountModel
                 ->where('user_id', $userId)
@@ -93,6 +98,7 @@ class Campaigns extends BaseController
             $data = [
                 'title' => 'Danh sách chiến dịch - ' . $account['customer_name'],
                 'account' => $account,
+                'accounts' => $accounts,
                 'campaigns' => $campaigns
             ];
 
