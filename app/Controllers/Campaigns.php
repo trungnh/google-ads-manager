@@ -53,10 +53,47 @@ class Campaigns extends BaseController
                 return redirect()->to('/adsaccounts')->with('error', 'Không có quyền truy cập tài khoản này');
             }
 
+            // Lấy dữ liệu chiến dịch từ database
+            $today = date('Y-m-d');
+            $campaigns = $this->campaignsDataModel->getCampaignsByDate($customerId, $today);
+
+            // Nếu không có dữ liệu trong database, lấy từ API
+            if (empty($campaigns)) {
+                // Lấy access token
+                $tokenData = $this->googleTokenModel->getValidToken($userId);
+                if (empty($tokenData) || empty($tokenData['access_token'])) {
+                    return redirect()->to('/adsaccounts')->with('error', 'Bạn cần kết nối lại với Google Ads');
+                }
+
+                // Lấy MCC ID từ settings
+                $userSettings = $this->userSettingsModel->where('user_id', $userId)->first();
+                $mccId = $userSettings['mcc_id'] ?? null;
+
+                // Lấy danh sách chiến dịch từ API
+                $campaigns = $this->googleAdsService->getCampaigns(
+                    $customerId, 
+                    $tokenData['access_token'], 
+                    $mccId, 
+                    false, // Không hiển thị chiến dịch đã tạm dừng
+                    $today,
+                    $today
+                );
+
+                // Lấy account settings để đọc URL Google Sheet và cấu hình cột
+                $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($account['id']);
+                $gsheetUrl = $settings['gsheet1'] ?? null;
+
+                // Xử lý dữ liệu từ Google Sheet
+                $campaigns = $this->processRealConversions($campaigns, $gsheetUrl, $today, $settings);
+                
+                // Lưu dữ liệu vào database
+                $this->campaignsDataModel->saveCampaignsData($customerId, $campaigns);
+            }
+
             $data = [
                 'title' => 'Danh sách chiến dịch - ' . $account['customer_name'],
                 'account' => $account,
-                'campaigns' => []
+                'campaigns' => $campaigns
             ];
 
             return view('campaigns/index', $data);
@@ -180,7 +217,7 @@ class Campaigns extends BaseController
             // Nếu ngày bắt đầu và kết thúc là cùng ngày, xử lý dữ liệu từ Google Sheet
             if ($startDate === $endDate) {
                 $campaigns = $this->processRealConversions($campaigns, $gsheetUrl, $startDate, $settings);
-                $this->campaignsDataModel->saveCampaignsData($customerId, $startDate, $campaigns);
+                $this->campaignsDataModel->saveCampaignsData($customerId, $campaigns);
                 $lastUpdateTime = date('Y-m-d H:i:s');
             } else {
                 $lastUpdateTime = null;

@@ -63,10 +63,16 @@ class Filters extends BaseConfig
     public array $filters = [
         'auth' => [
             'before' => [
-                'home',
-                'home/*',
-                'google/*',
-                // Add other protected routes here
+                'dashboard',
+                'dashboard/*',
+                'settings',
+                'settings/*',
+                'syncads',
+                'syncads/*',
+                'adsaccounts',
+                'adsaccounts/*',
+                'campaigns',
+                'campaigns/*',
             ],
         ],
     ];

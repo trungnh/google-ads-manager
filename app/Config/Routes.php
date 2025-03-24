@@ -39,38 +39,41 @@ $routes->get('homepage', 'PublicPages::index');
 $routes->get('privacy-policy', 'PublicPages::privacyPolicy');
 $routes->get('terms', 'PublicPages::terms');
 
-// Auth routes
+// Auth routes (without auth filter)
 $routes->get('login', 'Auth::login');
 $routes->post('login', 'Auth::attemptLogin');
 $routes->get('register', 'Auth::register');
 $routes->post('register', 'Auth::attemptRegister');
 $routes->get('logout', 'Auth::logout');
 
-// Dashboard route (with auth filter)
-$routes->get('dashboard', 'Dashboard::index', ['filter' => 'auth']);
+// Protected routes (with auth filter)
+$routes->group('', ['filter' => 'auth'], function($routes) {
+    // Dashboard route
+    $routes->get('dashboard', 'Dashboard::index');
+    
+    // Settings routes
+    $routes->get('settings', 'Settings::index');
+    $routes->post('settings/update', 'Settings::update');
+    
+    // Sync Ads routes
+    $routes->get('syncads', 'SyncAds::index');
+    $routes->post('syncads/syncaccounts', 'SyncAds::syncAccounts');
+    
+    // Ads Accounts routes
+    $routes->get('adsaccounts', 'AdsAccounts::index');
+    $routes->get('adsaccounts/settings/(:num)', 'AdsAccountSettings::index/$1');
+    $routes->post('adsaccounts/settings/update/(:num)', 'AdsAccountSettings::update/$1');
+    
+    // Campaign routes
+    $routes->get('campaigns/index/(:segment)', 'Campaigns::index/$1');
+    $routes->get('campaigns/(:segment)', 'Campaigns::index/$1');
+    $routes->get('campaigns/load/(:segment)', 'Campaigns::loadCampaigns/$1');
+    $routes->post('campaigns/toggleStatus/(:segment)/(:segment)', 'Campaigns::toggleStatus/$1/$2');
+});
 
-// Google Auth routes
+// Google Auth routes (without auth filter)
 $routes->get('google/oauth', 'GoogleAuth::oauth');
 $routes->get('google/callback', 'GoogleAuth::callback');
-
-// Settings routes
-$routes->get('settings', 'Settings::index');
-$routes->post('settings/update', 'Settings::update');
-
-// Sync Ads routes
-$routes->get('syncads', 'SyncAds::index');
-$routes->post('syncads/syncaccounts', 'SyncAds::syncAccounts');
-
-// Ads Accounts routes
-$routes->get('adsaccounts', 'AdsAccounts::index');
-$routes->get('adsaccounts/settings/(:num)', 'AdsAccountSettings::index/$1');
-$routes->post('adsaccounts/settings/update/(:num)', 'AdsAccountSettings::update/$1');
-$routes->get('campaigns/index/(:segment)', 'Campaigns::index/$1');
-
-// Campaign routes
-$routes->get('campaigns/(:segment)', 'Campaigns::index/$1');
-$routes->get('campaigns/load/(:segment)', 'Campaigns::loadCampaigns/$1');
-$routes->post('campaigns/toggleStatus/(:segment)/(:segment)', 'Campaigns::toggleStatus/$1/$2');
 
 /*
  * --------------------------------------------------------------------

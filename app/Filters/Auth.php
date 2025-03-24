@@ -16,7 +16,7 @@ class Auth implements FilterInterface
             session()->set('redirect_url', current_url());
             
             // Chuyển hướng đến trang đăng nhập
-            return redirect()->to('/login')->with('error', 'Vui lòng đăng nhập để tiếp tục.');
+            return redirect()->to('/login');
         }
     }
 

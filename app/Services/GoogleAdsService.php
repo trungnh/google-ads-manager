@@ -201,6 +201,8 @@ class GoogleAdsService
                 campaign.status,
                 campaign.advertising_channel_type,
                 campaign.bidding_strategy_type,
+                campaign.maximize_conversions.target_cpa_micros,
+                campaign.maximize_conversion_value.target_roas,
                 metrics.cost_micros,
                 metrics.conversions,
                 metrics.conversions_value,
@@ -209,8 +211,6 @@ class GoogleAdsService
                 metrics.average_cpc,
                 metrics.ctr,
                 metrics.clicks,
-                campaign.maximize_conversions.target_cpa_micros,
-                campaign.maximize_conversion_value.target_roas,
                 campaign_budget.amount_micros
             FROM campaign
             WHERE campaign.status != 'REMOVED'" . 
@@ -233,6 +233,18 @@ class GoogleAdsService
                         $metrics = $result['metrics'];
                         $budget = $result['campaignBudget'] ?? null;
                         
+                        // Xác định target CPA và ROAS
+                        $targetCpa = null;
+                        $targetRoas = null;
+                        
+                        // Lấy từ maximize_conversions và maximize_conversion_value
+                        if (isset($campaign['maximizeConversions']['targetCpaMicros'])) {
+                            $targetCpa = $this->microToStandard($campaign['maximizeConversions']['targetCpaMicros']);
+                        }
+                        if (isset($campaign['maximizeConversionValue']['targetRoas'])) {
+                            $targetRoas = $campaign['maximizeConversionValue']['targetRoas'];
+                        }
+                        
                         $campaigns[] = [
                             'campaign_id' => $campaign['id'],
                             'name' => $campaign['name'],
@@ -245,8 +257,8 @@ class GoogleAdsService
                                 ? $this->microToStandard($metrics['costMicros']) / $metrics['conversions'] 
                                 : 0,
                             'conversion_rate' => $metrics['conversionsFromInteractionsRate'] ?? 0,
-                            'target_cpa' => isset($campaign['maximizeConversions']['targetCpaMicros']) ? $this->microToStandard($campaign['maximizeConversions']['targetCpaMicros']) : null,
-                            'target_roas' => isset($campaign['maximizeConversionValue']['targetRoas']) ? $campaign['maximizeConversionValue']['targetRoas'] : null,
+                            'target_cpa' => $targetCpa,
+                            'target_roas' => $targetRoas,
                             'ctr' => $metrics['ctr'] ?? 0,
                             'clicks' => $metrics['clicks'] ?? 0,
                             'average_cpc' => isset($metrics['averageCpc']) ? $this->microToStandard($metrics['averageCpc']) : 0
