@@ -287,13 +287,17 @@ class GoogleAdsService
         $newStatus = $currentStatus === 'ENABLED' ? 'PAUSED' : 'ENABLED';
         
         // Thực hiện update status
-        $updateUrl = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedCustomerId . '/campaigns/' . $campaignId . ':mutate';
+        $updateUrl = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedCustomerId . '/campaigns:mutate';
         
         $updateData = [
-            'updateMask' => 'status',
-            'campaign' => [
-                'resourceName' => 'customers/' . $formattedCustomerId . '/campaigns/' . $campaignId,
-                'status' => $newStatus
+            'operations' => [
+                [
+                    'updateMask' => 'status',
+                    'update' => [
+                        'resourceName' => 'customers/' . $formattedCustomerId . '/campaigns/' . $campaignId,
+                        'status' => $newStatus
+                    ]
+                ]
             ]
         ];
         
