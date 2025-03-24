@@ -5,7 +5,10 @@ namespace App\Controllers;
 use App\Models\AdsAccountModel;
 use App\Models\GoogleTokenModel;
 use App\Models\UserSettingsModel;
+use App\Models\CampaignsDataModel;
 use App\Services\GoogleAdsService;
+use App\Models\AdsAccountSettingsModel;
+use App\Services\GoogleSheetService;
 use Exception;
 use DateTime;
 
@@ -15,6 +18,9 @@ class Campaigns extends BaseController
     protected $googleAdsService;
     protected $googleTokenModel;
     protected $userSettingsModel;
+    protected $campaignsDataModel;
+    protected $adsAccountSettingsModel;
+    protected $googleSheetService;
 
     public function __construct()
     {
@@ -22,6 +28,9 @@ class Campaigns extends BaseController
         $this->googleAdsService = new GoogleAdsService();
         $this->googleTokenModel = new GoogleTokenModel();
         $this->userSettingsModel = new UserSettingsModel();
+        $this->campaignsDataModel = new CampaignsDataModel();
+        $this->adsAccountSettingsModel = new AdsAccountSettingsModel();
+        $this->googleSheetService = new GoogleSheetService();
     }
 
     public function index($customerId)
@@ -57,6 +66,47 @@ class Campaigns extends BaseController
         }
     }
 
+    protected function processRealConversions($campaigns, $gsheetUrl, $date, $settings)
+    {
+        if (empty($gsheetUrl)) {
+            return $campaigns;
+        }
+
+        // Lấy dữ liệu chuyển đổi từ Google Sheet
+        $sheetData = $this->googleSheetService->getConversionsFromCsv($gsheetUrl, $date, $settings);
+
+        // Tính toán các chỉ số thực tế cho mỗi chiến dịch
+        foreach ($campaigns as &$campaign) {
+            // Đảm bảo campaign_id tồn tại
+            if (!isset($campaign['campaign_id'])) {
+                log_message('error', 'Campaign data missing campaign_id: ' . json_encode($campaign));
+                continue;
+            }
+            
+            $campaignId = $campaign['campaign_id'];
+            
+            // Nếu có dữ liệu chuyển đổi cho chiến dịch này
+            if (isset($sheetData[$campaignId])) {
+                $campaign['real_conversions'] = $sheetData[$campaignId]['conversions'];
+                $campaign['real_conversion_value'] = $sheetData[$campaignId]['conversion_value'];
+                $campaign['real_conversion_rate'] = $campaign['clicks'] > 0 
+                    ? ($sheetData[$campaignId]['conversions'] / $campaign['clicks']) * 100 
+                    : 0;
+                $campaign['real_cpa'] = $sheetData[$campaignId]['conversions'] > 0 
+                    ? $campaign['cost'] / $sheetData[$campaignId]['conversions']
+                    : 0;
+            } else {
+                // Nếu không có dữ liệu chuyển đổi, set về 0
+                $campaign['real_conversions'] = 0;
+                $campaign['real_conversion_value'] = 0;
+                $campaign['real_conversion_rate'] = 0;
+                $campaign['real_cpa'] = 0;
+            }
+        }
+
+        return $campaigns;
+    }
+
     public function loadCampaigns($customerId)
     {
         if (!session()->get('isLoggedIn')) {
@@ -68,6 +118,7 @@ class Campaigns extends BaseController
             $showPaused = $this->request->getGet('showPaused') === 'true';
             $startDate = $this->request->getGet('startDate');
             $endDate = $this->request->getGet('endDate');
+            $forceUpdate = $this->request->getGet('forceUpdate') === 'true';
             
             // Convert date format from dd/mm/yyyy to yyyy-mm-dd
             $startDateObj = DateTime::createFromFormat('d/m/Y', $startDate);
@@ -82,6 +133,29 @@ class Campaigns extends BaseController
             
             $startDate = $startDateObj->format('Y-m-d');
             $endDate = $endDateObj->format('Y-m-d');
+
+            // Lấy account settings để đọc URL Google Sheet và cấu hình cột
+            $account = $this->adsAccountModel->where('customer_id', $customerId)->first();
+            $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($account['id']);
+            $gsheetUrl = $settings['gsheet1'] ?? null;
+
+            // Nếu ngày bắt đầu và kết thúc là cùng ngày
+            if ($startDate === $endDate) {
+                // Kiểm tra xem có data trong database không và không phải force update
+                if (!$forceUpdate) {
+                    $campaigns = $this->campaignsDataModel->getCampaignsByDate($customerId, $startDate);
+                    $lastUpdateTime = $this->campaignsDataModel->getLastUpdateTime($customerId, $startDate);
+                    
+                    if (!empty($campaigns)) {
+                        return $this->response->setJSON([
+                            'success' => true,
+                            'campaigns' => $campaigns,
+                            'lastUpdateTime' => $lastUpdateTime,
+                            'isFromCache' => true
+                        ]);
+                    }
+                }
+            }
             
             // Lấy access token
             $tokenData = $this->googleTokenModel->getValidToken($userId);
@@ -90,10 +164,10 @@ class Campaigns extends BaseController
             }
 
             // Lấy MCC ID từ settings
-            $settings = $this->userSettingsModel->where('user_id', $userId)->first();
-            $mccId = $settings['mcc_id'] ?? null;
+            $userSettings = $this->userSettingsModel->where('user_id', $userId)->first();
+            $mccId = $userSettings['mcc_id'] ?? null;
 
-            // Lấy danh sách chiến dịch
+            // Lấy danh sách chiến dịch từ API
             $campaigns = $this->googleAdsService->getCampaigns(
                 $customerId, 
                 $tokenData['access_token'], 
@@ -103,9 +177,20 @@ class Campaigns extends BaseController
                 $endDate
             );
 
+            // Nếu ngày bắt đầu và kết thúc là cùng ngày, xử lý dữ liệu từ Google Sheet
+            if ($startDate === $endDate) {
+                $campaigns = $this->processRealConversions($campaigns, $gsheetUrl, $startDate, $settings);
+                $this->campaignsDataModel->saveCampaignsData($customerId, $startDate, $campaigns);
+                $lastUpdateTime = date('Y-m-d H:i:s');
+            } else {
+                $lastUpdateTime = null;
+            }
+
             return $this->response->setJSON([
                 'success' => true,
-                'campaigns' => $campaigns
+                'campaigns' => $campaigns,
+                'lastUpdateTime' => $lastUpdateTime,
+                'isFromCache' => false
             ]);
         } catch (Exception $e) {
             return $this->response->setJSON([
@@ -117,7 +202,6 @@ class Campaigns extends BaseController
 
     public function toggleStatus($customerId, $campaignId)
     {
-        // Kiểm tra đăng nhập
         if (!session()->get('isLoggedIn')) {
             return $this->response->setJSON(['success' => false, 'message' => 'Unauthorized']);
         }

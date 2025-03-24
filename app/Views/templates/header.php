@@ -22,7 +22,7 @@
                 <ul class="navbar-nav me-auto">
                     <?php if (session()->get('isLoggedIn')): ?>
                         <li class="nav-item">
-                            <a class="nav-link" href="<?= base_url('home') ?>">Trang chủ</a>
+                            <a class="nav-link" href="<?= base_url('home') ?>">Dashboard</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="<?= base_url('google/oauth') ?>">Kết nối Google Ads</a>

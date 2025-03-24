@@ -22,8 +22,12 @@ class GoogleAuth extends Controller
         $redirectUri = getenv('GOOGLE_REDIRECT_URI');
         $scopes = getenv('GOOGLE_AUTH_SCOPES');
         
+        // Tạo state token để bảo vệ khỏi CSRF
+        $state = bin2hex(random_bytes(16));
+        session()->set('oauth_state', $state);
+        
         // Tạo OAuth URL
-        $googleOAuthUrl = $this->buildGoogleOAuthUrl($clientId, $redirectUri, $scopes);
+        $googleOAuthUrl = $this->buildGoogleOAuthUrl($clientId, $redirectUri, $scopes, $state);
         
         $data = [
             'googleOAuthUrl' => $googleOAuthUrl
@@ -40,6 +44,12 @@ class GoogleAuth extends Controller
         // Kiểm tra đăng nhập
         if (!session()->get('isLoggedIn')) {
             return redirect()->to('/login')->with('error', 'Vui lòng đăng nhập để tiếp tục');
+        }
+        
+        // Kiểm tra state để bảo vệ khỏi CSRF
+        $state = $this->request->getGet('state');
+        if ($state !== session()->get('oauth_state')) {
+            return redirect()->to('/google/oauth')->with('error', 'Invalid state parameter');
         }
         
         // Lấy authorization code từ URL
@@ -67,22 +77,26 @@ class GoogleAuth extends Controller
         $userId = session()->get('id');
         $googleTokenModel->saveToken($userId, $tokenData);
         
+        // Xóa state token
+        session()->remove('oauth_state');
+        
         return redirect()->to('/home')->with('success', 'Kết nối với Google Ads thành công!');
     }
     
     /**
      * Xây dựng URL OAuth để kết nối với Google
      */
-    private function buildGoogleOAuthUrl($clientId, $redirectUri, $scope)
+    private function buildGoogleOAuthUrl($clientId, $redirectUri, $scope, $state)
     {
         $params = [
             'client_id' => $clientId,
             'redirect_uri' => $redirectUri,
             'scope' => $scope,
-            'access_type' => 'offline', // Để lấy refresh_token
+            'access_type' => 'offline',
             'response_type' => 'code',
-            'prompt' => 'consent', // Luôn hiển thị màn hình đồng ý để lấy refresh_token mới
+            'prompt' => 'consent',
             'include_granted_scopes' => 'true',
+            'state' => $state
         ];
         
         return 'https://accounts.google.com/o/oauth2/auth?' . http_build_query($params);

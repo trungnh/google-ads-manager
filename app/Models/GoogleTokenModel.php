@@ -62,10 +62,19 @@ class GoogleTokenModel extends Model
         if (strtotime($token['expires_at']) <= time()) {
             // Token đã hết hạn, cần refresh
             if (!empty($token['refresh_token'])) {
-                // Implement refresh token logic here
-                // $newToken = $this->refreshToken($token['refresh_token']);
-                // return $newToken;
-                return null; // Tạm thời trả về null, sẽ implement sau
+                $googleAuth = new \App\Controllers\GoogleAuth();
+                $newTokenData = $googleAuth->refreshToken($token['refresh_token']);
+                
+                if ($newTokenData && !isset($newTokenData['error'])) {
+                    // Giữ lại refresh_token cũ vì Google không trả về refresh_token mới
+                    $newTokenData['refresh_token'] = $token['refresh_token'];
+                    
+                    // Lưu token mới vào database
+                    $this->saveToken($userId, $newTokenData);
+                    
+                    // Lấy lại token mới từ database
+                    return $this->where('user_id', $userId)->first();
+                }
             }
             return null;
         }

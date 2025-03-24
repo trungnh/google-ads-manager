@@ -234,7 +234,7 @@ class GoogleAdsService
                         $budget = $result['campaignBudget'] ?? null;
                         
                         $campaigns[] = [
-                            'id' => $campaign['id'],
+                            'campaign_id' => $campaign['id'],
                             'name' => $campaign['name'],
                             'status' => $campaign['status'],
                             'budget' => $budget ? $this->microToStandard($budget['amountMicros']) : 0,
@@ -303,5 +303,100 @@ class GoogleAdsService
     protected function microToStandard($microAmount)
     {
         return $microAmount / 1000000;
+    }
+
+    public function getTodayCampaignMetrics($customerId, $accessToken, $mccId = null)
+    {
+        $formattedCustomerId = $this->formatCustomerId($customerId);
+        $today = date('Y-m-d');
+        
+        $url = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedCustomerId . '/googleAds:searchStream';
+        
+        $query = "
+            SELECT
+                campaign.id,
+                campaign.name,
+                campaign.status,
+                metrics.cost_micros,
+                metrics.conversions,
+                metrics.cost_per_conversion,
+                campaign_budget.amount_micros
+            FROM campaign
+            WHERE campaign.status = 'ENABLED'
+            AND segments.date = '$today'";
+        
+        $data = [
+            'query' => $query
+        ];
+        
+        $response = $this->makeCurlRequest($url, 'POST', $accessToken, json_encode($data), $mccId);
+        $campaigns = [];
+        
+        if (is_array($response)) {
+            foreach ($response as $batch) {
+                if (isset($batch['results'])) {
+                    foreach ($batch['results'] as $result) {
+                        $campaign = $result['campaign'];
+                        $metrics = $result['metrics'];
+                        $budget = $result['campaignBudget'] ?? null;
+                        
+                        $campaigns[] = [
+                            'campaign_id' => $campaign['id'],
+                            'name' => $campaign['name'],
+                            'status' => $campaign['status'],
+                            'budget' => $budget ? $this->microToStandard($budget['amountMicros']) : 0,
+                            'cost' => isset($metrics['costMicros']) ? $this->microToStandard($metrics['costMicros']) : 0,
+                            'conversions' => $metrics['conversions'] ?? 0,
+                            'cost_per_conversion' => isset($metrics['costMicros'], $metrics['conversions']) && $metrics['conversions'] > 0 
+                                ? $this->microToStandard($metrics['costMicros']) / $metrics['conversions'] 
+                                : 0
+                        ];
+                    }
+                }
+            }
+        }
+        
+        return $campaigns;
+    }
+
+    public function updateCampaignBudget($customerId, $campaignId, $newBudget, $accessToken, $mccId = null)
+    {
+        $formattedCustomerId = $this->formatCustomerId($customerId);
+        
+        // Đầu tiên lấy thông tin budget hiện tại
+        $url = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedCustomerId . '/googleAds:searchStream';
+        
+        $query = "
+            SELECT
+                campaign.id,
+                campaign_budget.id,
+                campaign_budget.amount_micros
+            FROM campaign
+            WHERE campaign.id = " . $campaignId;
+        
+        $data = [
+            'query' => $query
+        ];
+        
+        $response = $this->makeCurlRequest($url, 'POST', $accessToken, json_encode($data), $mccId);
+        
+        if (!isset($response[0]['results'][0]['campaignBudget'])) {
+            throw new Exception('Không tìm thấy budget của chiến dịch');
+        }
+        
+        $budgetId = $response[0]['results'][0]['campaignBudget']['id'];
+        
+        // Thực hiện update budget
+        $updateUrl = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedCustomerId . '/campaignBudgets/' . $budgetId . ':mutate';
+        
+        $updateData = [
+            'updateMask' => 'amountMicros',
+            'campaignBudget' => [
+                'resourceName' => 'customers/' . $formattedCustomerId . '/campaignBudgets/' . $budgetId,
+                'amountMicros' => $newBudget * 1000000
+            ]
+        ];
+        
+        return $this->makeCurlRequest($updateUrl, 'POST', $accessToken, json_encode($updateData), $mccId);
     }
 }

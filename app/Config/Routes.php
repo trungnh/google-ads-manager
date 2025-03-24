@@ -58,6 +58,8 @@ $routes->post('syncads/syncaccounts', 'SyncAds::syncAccounts');
 
 // Ads Accounts routes
 $routes->get('adsaccounts', 'AdsAccounts::index');
+$routes->get('adsaccounts/settings/(:num)', 'AdsAccountSettings::index/$1');
+$routes->post('adsaccounts/settings/update/(:num)', 'AdsAccountSettings::update/$1');
 $routes->get('campaigns/index/(:segment)', 'Campaigns::index/$1');
 
 // Campaign routes

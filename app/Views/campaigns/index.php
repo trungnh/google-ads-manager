@@ -32,6 +32,20 @@
             </div>
         </div>
     </div>
+    <div class="row mb-3">
+        <div class="col-md-8">
+            <div id="lastUpdate" class="text-muted mt-2" style="display: none;">
+                Lần cập nhật gần nhất: <span id="lastUpdateTime"></span>
+            </div>
+            <div class="d-inline-block">
+                <div class="input-group">
+                    <button id="updateData" class="btn btn-warning" style="display: none;">
+                        <i class="fas fa-sync-alt"></i> Cập nhật dữ liệu
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div id="campaignsTable" class="table-responsive" style="display: none;">
         <table class="table table-striped table-hover">
@@ -44,7 +58,7 @@
                         <i class="sort-icon"></i>
                     </th>
                     <th class="sortable" data-sort="cost">
-                        Cost
+                        Spent
                         <i class="sort-icon"></i>
                     </th>
                     <th class="sortable" data-sort="roas">
@@ -52,7 +66,7 @@
                         <i class="sort-icon"></i>
                     </th>
                     <th class="sortable" data-sort="conversions">
-                        Chuyển đổi
+                        Conv
                         <i class="sort-icon"></i>
                     </th>
                     <th class="sortable" data-sort="costPerConversion">
@@ -65,8 +79,24 @@
                     <th>CTR</th>
                     <th>Clicks</th>
                     <th>CPC</th>
-                    <th>Trạng thái</th>
-                    <th>Thao tác</th>
+                    <th class="sortable" data-sort="realConversions">
+                        Real Conv
+                        <i class="sort-icon"></i>
+                    </th>
+                    <th class="sortable" data-sort="realConversionValue">
+                        Real value
+                        <i class="sort-icon"></i>
+                    </th>
+                    <th class="sortable" data-sort="realRoas">
+                        Real ROAS
+                        <i class="sort-icon"></i>
+                    </th>
+                    <th class="sortable" data-sort="realCpa">
+                        CPA TT
+                        <i class="sort-icon"></i>
+                    </th>
+                    <th>Status</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody id="campaignsBody">
@@ -113,6 +143,8 @@
 }
 </style>
 
+<!-- Add Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 <!-- Add Bootstrap Datepicker CSS -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
 <!-- Add Bootstrap Datepicker JS -->
@@ -140,18 +172,23 @@ $(document).ready(function() {
     $('#startDate').datepicker('setDate', today);
     $('#endDate').datepicker('setDate', today);
 
-    $('#loadCampaigns').click(function() {
+    function loadCampaignsData(forceUpdate = false) {
         const showPaused = $('#showPaused').is(':checked');
         const startDate = $('#startDate').val();
         const endDate = $('#endDate').val();
-        const button = $(this);
+        const button = forceUpdate ? $('#updateData') : $('#loadCampaigns');
         
         if (!startDate || !endDate) {
             alert('Vui lòng chọn khoảng thời gian');
             return;
         }
 
-        button.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...');
+        button.prop('disabled', true);
+        if (forceUpdate) {
+            button.html('<i class="fas fa-sync-alt fa-spin"></i> Đang cập nhật...');
+        } else {
+            button.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...');
+        }
         
         $.ajax({
             url: '<?= base_url('campaigns/load/' . $account['customer_id']) ?>',
@@ -159,13 +196,26 @@ $(document).ready(function() {
             data: { 
                 showPaused: showPaused,
                 startDate: startDate,
-                endDate: endDate
+                endDate: endDate,
+                forceUpdate: forceUpdate
             },
             success: function(response) {
                 if (response.success) {
                     campaignsData = response.campaigns;
                     renderCampaigns();
                     $('#campaignsTable').show();
+
+                    // Show/hide update button and last update time
+                    if (startDate === endDate) {
+                        $('#updateData').show();
+                        if (response.lastUpdateTime) {
+                            $('#lastUpdateTime').text(formatDateTime(response.lastUpdateTime));
+                            $('#lastUpdate').show();
+                        }
+                    } else {
+                        $('#updateData').hide();
+                        $('#lastUpdate').hide();
+                    }
                 } else {
                     alert('Lỗi: ' + response.message);
                 }
@@ -174,9 +224,34 @@ $(document).ready(function() {
                 alert('Có lỗi xảy ra khi tải dữ liệu');
             },
             complete: function() {
-                button.prop('disabled', false).text('Load chiến dịch');
+                if (forceUpdate) {
+                    button.html('<i class="fas fa-sync-alt"></i> Cập nhật dữ liệu').prop('disabled', false);
+                } else {
+                    button.text('Load chiến dịch').prop('disabled', false);
+                }
             }
         });
+    }
+
+    $('#loadCampaigns').click(function() {
+        loadCampaignsData(false);
+    });
+
+    $('#updateData').click(function() {
+        loadCampaignsData(true);
+    });
+
+    // Hide update button when date range changes
+    $('#startDate, #endDate').change(function() {
+        const startDate = $('#startDate').val();
+        const endDate = $('#endDate').val();
+        
+        if (startDate === endDate) {
+            $('#updateData').show();
+        } else {
+            $('#updateData').hide();
+            $('#lastUpdate').hide();
+        }
     });
 
     $('.sortable').click(function() {
@@ -226,6 +301,22 @@ $(document).ready(function() {
                         aValue = a.cost_per_conversion;
                         bValue = b.cost_per_conversion;
                         break;
+                    case 'realConversions':
+                        aValue = a.real_conversions;
+                        bValue = b.real_conversions;
+                        break;
+                    case 'realConversionValue':
+                        aValue = a.real_conversion_value;
+                        bValue = b.real_conversion_value;
+                        break;
+                    case 'realRoas':
+                        aValue = a.cost > 0 ? a.real_conversion_value / a.cost : 0;
+                        bValue = b.cost > 0 ? b.real_conversion_value / b.cost : 0;
+                        break;
+                    case 'realCpa':
+                        aValue = a.real_cpa;
+                        bValue = b.real_cpa;
+                        break;
                     default:
                         return 0;
                 }
@@ -243,7 +334,7 @@ $(document).ready(function() {
             html += `
                 <tr>
                     <td>${campaign.name}</td>
-                    <td>${campaign.id}</td>
+                    <td>${campaign.campaign_id}</td>
                     <td>${formatNumber(campaign.budget)}</td>
                     <td>${formatNumber(campaign.cost)}</td>
                     <td>${campaign.cost > 0 ? formatNumber(campaign.conversion_value / campaign.cost) : '0.00'}</td>
@@ -255,6 +346,10 @@ $(document).ready(function() {
                     <td>${formatNumber(campaign.ctr * 100)}%</td>
                     <td>${formatNumber(campaign.clicks)}</td>
                     <td>${formatNumber(campaign.average_cpc)}</td>
+                    <td>${formatNumber(campaign.real_conversions || 0)}</td>
+                    <td>${formatNumber(campaign.real_conversion_value || 0)}</td>
+                    <td>${campaign.cost > 0 ? formatNumber(campaign.real_conversion_value / campaign.cost) : '0.00'}</td>
+                    <td>${campaign.cost > 0 && campaign.real_conversions > 0 ? formatNumber(campaign.cost / campaign.real_conversions) : '0.00'}</td>
                     <td>
                         <span class="badge ${campaign.status === 'ENABLED' ? 'bg-success' : 'bg-secondary'}">
                             ${campaign.status === 'ENABLED' ? 'Đang chạy' : 'Tạm dừng'}
@@ -262,7 +357,7 @@ $(document).ready(function() {
                     </td>
                     <td>
                         <button class="btn btn-sm ${campaign.status === 'ENABLED' ? 'btn-warning' : 'btn-success'} toggle-campaign" 
-                                data-campaign-id="${campaign.id}"
+                                data-campaign-id="${campaign.campaign_id}"
                                 data-current-status="${campaign.status}">
                             ${campaign.status === 'ENABLED' ? 'Tạm dừng' : 'Kích hoạt'}
                         </button>
@@ -283,7 +378,7 @@ $(document).ready(function() {
             method: 'POST',
             success: function(response) {
                 if (response.success) {
-                    $('#loadCampaigns').click();
+                    loadCampaignsData($('#startDate').val() === $('#endDate').val());
                 } else {
                     alert('Lỗi: ' + response.message);
                 }
@@ -299,6 +394,18 @@ $(document).ready(function() {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2 
         }).format(number);
+    }
+
+    function formatDateTime(dateTimeStr) {
+        const date = new Date(dateTimeStr);
+        return date.toLocaleString('vi-VN', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
     }
 
     // Trigger initial load
