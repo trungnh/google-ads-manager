@@ -55,7 +55,6 @@
                 <h3>2.1 Personal Information</h3>
                 <p>We collect personal information that you voluntarily provide to us when you:</p>
                 <ul>
-                    <li>Register for an account</li>
                     <li>Connect your Google Ads account</li>
                     <li>Use our services</li>
                 </ul>

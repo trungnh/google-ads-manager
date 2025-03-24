@@ -102,7 +102,7 @@
             <div class="mt-4">
                 <h2>8. Contact Information</h2>
                 <p>If you have any questions about these Terms, please contact us at:</p>
-                <p>Email: legal@googleadsmanager.com</p>
+                <p>Email: nguyenhuutrung908@gmail.com.com</p>
             </div>
         </div>
     </section>
