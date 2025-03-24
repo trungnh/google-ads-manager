@@ -17,7 +17,7 @@ if (is_file(SYSTEMPATH . 'Config/Routes.php')) {
  * --------------------------------------------------------------------
  */
 $routes->setDefaultNamespace('App\Controllers');
-$routes->setDefaultController('Home');
+$routes->setDefaultController('Dashboard');
 $routes->setDefaultMethod('index');
 $routes->setTranslateURIDashes(false);
 $routes->set404Override();
@@ -34,7 +34,7 @@ $routes->setAutoRoute(false);
  */
 
 // Auth routes
-$routes->get('/', 'Home::index');
+$routes->get('/', 'Dashboard::index');
 $routes->get('login', 'Auth::login');
 $routes->post('login', 'Auth::attemptLogin');
 $routes->get('ureg', 'Auth::register');
@@ -42,7 +42,7 @@ $routes->post('ureg', 'Auth::attemptRegister');
 $routes->get('logout', 'Auth::logout');
 
 // Home route
-$routes->get('home', 'Home::index');
+$routes->get('dashboard', 'Dashboard::index');
 
 // Google Auth routes
 $routes->get('google/oauth', 'GoogleAuth::oauth');

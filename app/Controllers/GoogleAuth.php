@@ -80,7 +80,7 @@ class GoogleAuth extends Controller
         // Xóa state token
         session()->remove('oauth_state');
         
-        return redirect()->to('/home')->with('success', 'Kết nối với Google Ads thành công!');
+        return redirect()->to('/dashboard')->with('success', 'Kết nối với Google Ads thành công!');
     }
     
     /**

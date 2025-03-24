@@ -14,7 +14,7 @@ class Auth extends Controller
     {
         // Nếu đã đăng nhập rồi thì chuyển hướng đến trang chủ
         if (session()->get('isLoggedIn')) {
-            return redirect()->to('/home');
+            return redirect()->to('/dashboard');
         }
         
         return view('auth/login');
@@ -58,7 +58,7 @@ class Auth extends Controller
         $this->setUserSession($user);
         
         // Chuyển hướng đến trang chủ
-        return redirect()->to('/home');
+        return redirect()->to('/dashboard');
     }
     
     /**
@@ -77,7 +77,7 @@ class Auth extends Controller
     {
         // Nếu đã đăng nhập rồi thì chuyển hướng đến trang chủ
         if (session()->get('isLoggedIn')) {
-            return redirect()->to('/home');
+            return redirect()->to('/dashboard');
         }
         
         return view('auth/register');
@@ -125,7 +125,7 @@ class Auth extends Controller
         $this->setUserSession($user);
         
         // Chuyển hướng đến trang chủ
-        return redirect()->to('/home')->with('success', 'Đăng ký thành công!');
+        return redirect()->to('/dashboard')->with('success', 'Đăng ký thành công!');
     }
     
     /**
