@@ -43,9 +43,6 @@
                         <li class="nav-item">
                             <a class="nav-link" href="<?= base_url('login') ?>">Đăng nhập</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="<?= base_url('register') ?>">Đăng ký</a>
-                        </li>
                     <?php endif; ?>
                 </ul>
             </div>
