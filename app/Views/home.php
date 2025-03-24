@@ -47,6 +47,9 @@
                         <li class="nav-item">
                             <a class="nav-link" href="/login">Đăng nhập</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/register">Đăng ký</a>
+                        </li>
                     <?php endif; ?>
                     <li class="nav-item">
                         <a class="nav-link" href="/privacy-policy">Privacy Policy</a>

@@ -45,7 +45,7 @@ class Settings extends BaseController
         
         // Validate input
         $rules = [
-            'mcc_id' => 'permit_empty|regex_match[/^\d+-\d+-\d+$/]',
+            'mcc_id' => 'permit_empty|numeric',
         ];
         
         if (!$this->validate($rules)) {

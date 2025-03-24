@@ -42,8 +42,8 @@ $routes->get('terms', 'PublicPages::terms');
 // Auth routes
 $routes->get('login', 'Auth::login');
 $routes->post('login', 'Auth::attemptLogin');
-$routes->get('ureg', 'Auth::register');
-$routes->post('ureg', 'Auth::attemptRegister');
+$routes->get('register', 'Auth::register');
+$routes->post('register', 'Auth::attemptRegister');
 $routes->get('logout', 'Auth::logout');
 
 // Dashboard route (with auth filter)

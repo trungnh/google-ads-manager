@@ -16,7 +16,7 @@ class UserModel extends Model
     protected $validationRules = [
         'email' => 'required|valid_email|is_unique[users.email]',
         'username' => 'required|min_length[3]|max_length[30]|is_unique[users.username]',
-        'password' => 'required|min_length[8]',
+        'password_hash' => 'required',
     ];
 
     protected $validationMessages = [
@@ -31,9 +31,8 @@ class UserModel extends Model
             'max_length' => 'Tên đăng nhập không được vượt quá 30 ký tự',
             'is_unique' => 'Tên đăng nhập đã tồn tại',
         ],
-        'password' => [
+        'password_hash' => [
             'required' => 'Mật khẩu là bắt buộc',
-            'min_length' => 'Mật khẩu phải có ít nhất 8 ký tự',
         ],
     ];
 
@@ -49,9 +48,13 @@ class UserModel extends Model
 
     public function createUser($data)
     {
+        // Hash mật khẩu
         $data['password_hash'] = password_hash($data['password'], PASSWORD_BCRYPT);
+        
+        // Xóa password gốc
         unset($data['password']);
         
+        // Insert vào database
         return $this->insert($data);
     }
 

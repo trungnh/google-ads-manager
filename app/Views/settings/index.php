@@ -27,11 +27,11 @@
 
                     <form action="<?= base_url('settings/update') ?>" method="post">
                         <div class="form-group mb-3">
-                            <label for="mcc_id">Google Ads MCC ID</label>
-                            <input type="text" class="form-control" id="mcc_id" name="mcc_id" 
-                                   placeholder="Example: 123-456-7890" 
+                            <label for="mcc_id">Google Ads MCC ID (Optional)</label>
+                            <input type="number" class="form-control" id="mcc_id" name="mcc_id" 
+                                   placeholder="Example: 1234567890" 
                                    value="<?= isset($settings['mcc_id']) ? $settings['mcc_id'] : '' ?>">
-                            <small class="form-text text-muted">Điền MCC ID vào đây. Bỏ hết ký tự - đi.</small>
+                            <small class="form-text text-muted">Nhập MCC ID dưới dạng số (không có dấu -) hoặc để trống</small>
                         </div>
                         
                         <button type="submit" class="btn btn-primary">Save Settings</button>
