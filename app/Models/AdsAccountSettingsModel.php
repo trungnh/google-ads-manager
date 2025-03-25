@@ -15,12 +15,14 @@ class AdsAccountSettingsModel extends Model
         'account_id',
         'auto_optimize',
         'cpa_threshold',
+        'roas_threshold',
         'increase_budget',
         'gsheet1',
         'gsheet_date_col',
         'gsheet_phone_col',
         'gsheet_value_col',
-        'gsheet_campaign_col'
+        'gsheet_campaign_col',
+        'last_optimize_run'
     ];
     protected $useTimestamps = true;
     protected $createdField = 'created_at';
@@ -30,6 +32,7 @@ class AdsAccountSettingsModel extends Model
         'account_id' => 'required|integer',
         'auto_optimize' => 'required|in_list[0,1]',
         'cpa_threshold' => 'permit_empty|decimal',
+        'roas_threshold' => 'permit_empty|decimal',
         'increase_budget' => 'permit_empty|decimal',
         'gsheet1' => 'permit_empty|valid_url',
         'gsheet_date_col' => 'permit_empty|alpha|max_length[1]',
@@ -50,6 +53,7 @@ class AdsAccountSettingsModel extends Model
             'account_id' => $accountId,
             'auto_optimize' => isset($data['auto_optimize']) ? 1 : 0,
             'cpa_threshold' => $data['cpa_threshold'] ?? 0,
+            'roas_threshold' => $data['roas_threshold'] ?? 0,
             'increase_budget' => $data['increase_budget'] ?? 0,
             'gsheet1' => $data['gsheet1'] ?? null,
             'gsheet_date_col' => strtoupper($data['gsheet_date_col'] ?? ''),
@@ -70,7 +74,7 @@ class AdsAccountSettingsModel extends Model
 
     public function getAccountsForOptimization()
     {
-        return $this->select('ads_account_settings.*, ads_accounts.customer_id, ads_accounts.customer_name')
+        return $this->select('ads_account_settings.*, ads_accounts.customer_id, ads_accounts.customer_name, ads_accounts.user_id')
                     ->join('ads_accounts', 'ads_accounts.id = ads_account_settings.account_id')
                     ->where('auto_optimize', 1)
                     ->findAll();

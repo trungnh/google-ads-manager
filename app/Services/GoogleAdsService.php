@@ -220,85 +220,70 @@ class GoogleAdsService
         $data = [
             'query' => $query
         ];
-        
-        // Thêm MCC ID vào request header nếu có
-        $response = $this->makeCurlRequest($url, 'POST', $accessToken, json_encode($data), $mccId);
-        $campaigns = [];
-        
-        if (is_array($response)) {
-            foreach ($response as $batch) {
-                if (isset($batch['results'])) {
-                    foreach ($batch['results'] as $result) {
-                        $campaign = $result['campaign'];
-                        $metrics = $result['metrics'];
-                        $budget = $result['campaignBudget'] ?? null;
-                        
-                        // Xác định target CPA và ROAS
-                        $targetCpa = null;
-                        $targetRoas = null;
-                        
-                        // Lấy từ maximize_conversions và maximize_conversion_value
-                        if (isset($campaign['maximizeConversions']['targetCpaMicros'])) {
-                            $targetCpa = $this->microToStandard($campaign['maximizeConversions']['targetCpaMicros']);
+
+        try {
+            $response = $this->makeCurlRequest($url, 'POST', $accessToken, json_encode($data), $mccId);
+            $campaigns = [];
+
+            if (is_array($response)) {
+                foreach ($response as $batch) {
+                    if (isset($batch['results'])) {
+                        foreach ($batch['results'] as $result) {
+                            if (!isset($result['campaign'])) {
+                                continue;
+                            }
+
+                            $campaign = $result['campaign'];
+                            $metrics = $result['metrics'] ?? [];
+                            $budget = $result['campaignBudget'] ?? null;
+                            
+                            // Xác định target CPA và ROAS
+                            $targetCpa = null;
+                            $targetRoas = null;
+                            
+                            // Lấy từ maximize_conversions và maximize_conversion_value
+                            if (isset($campaign['maximizeConversions']['targetCpaMicros'])) {
+                                $targetCpa = $this->microToStandard($campaign['maximizeConversions']['targetCpaMicros']);
+                            }
+                            if (isset($campaign['maximizeConversionValue']['targetRoas'])) {
+                                $targetRoas = $campaign['maximizeConversionValue']['targetRoas'];
+                            }
+                            
+                            $campaigns[] = [
+                                'campaign_id' => $campaign['id'],
+                                'name' => $campaign['name'],
+                                'status' => $campaign['status'],
+                                'budget' => $budget ? $this->microToStandard($budget['amountMicros']) : 0,
+                                'cost' => isset($metrics['costMicros']) ? $this->microToStandard($metrics['costMicros']) : 0,
+                                'conversions' => $metrics['conversions'] ?? 0,
+                                'conversion_value' => $metrics['conversionsValue'] ?? 0,
+                                'cost_per_conversion' => isset($metrics['costMicros'], $metrics['conversions']) && $metrics['conversions'] > 0 
+                                    ? $this->microToStandard($metrics['costMicros']) / $metrics['conversions'] 
+                                    : 0,
+                                'conversion_rate' => $metrics['conversionsFromInteractionsRate'] ?? 0,
+                                'target_cpa' => $targetCpa,
+                                'target_roas' => $targetRoas,
+                                'ctr' => $metrics['ctr'] ?? 0,
+                                'clicks' => $metrics['clicks'] ?? 0,
+                                'average_cpc' => isset($metrics['averageCpc']) ? $this->microToStandard($metrics['averageCpc']) : 0
+                            ];
                         }
-                        if (isset($campaign['maximizeConversionValue']['targetRoas'])) {
-                            $targetRoas = $campaign['maximizeConversionValue']['targetRoas'];
-                        }
-                        
-                        $campaigns[] = [
-                            'campaign_id' => $campaign['id'],
-                            'name' => $campaign['name'],
-                            'status' => $campaign['status'],
-                            'budget' => $budget ? $this->microToStandard($budget['amountMicros']) : 0,
-                            'cost' => isset($metrics['costMicros']) ? $this->microToStandard($metrics['costMicros']) : 0,
-                            'conversions' => $metrics['conversions'] ?? 0,
-                            'conversion_value' => $metrics['conversionsValue'] ?? 0,
-                            'cost_per_conversion' => isset($metrics['costMicros'], $metrics['conversions']) && $metrics['conversions'] > 0 
-                                ? $this->microToStandard($metrics['costMicros']) / $metrics['conversions'] 
-                                : 0,
-                            'conversion_rate' => $metrics['conversionsFromInteractionsRate'] ?? 0,
-                            'target_cpa' => $targetCpa,
-                            'target_roas' => $targetRoas,
-                            'ctr' => $metrics['ctr'] ?? 0,
-                            'clicks' => $metrics['clicks'] ?? 0,
-                            'average_cpc' => isset($metrics['averageCpc']) ? $this->microToStandard($metrics['averageCpc']) : 0
-                        ];
                     }
                 }
             }
+
+            return $campaigns;
+        } catch (Exception $e) {
+            log_message('error', 'Error in GoogleAdsService::getCampaigns: ' . $e->getMessage());
+            throw $e;
         }
-        
-        return $campaigns;
     }
 
-    public function toggleCampaignStatus($customerId, $campaignId, $accessToken, $mccId = null)
+    public function toggleCampaignStatus($accessToken, $customerId, $campaignId, $status, $mccId = null)
     {
         $formattedCustomerId = $this->formatCustomerId($customerId);
         
-        // Đầu tiên lấy trạng thái hiện tại của chiến dịch
-        $url = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedCustomerId . '/googleAds:searchStream';
-        
-        $query = "
-            SELECT
-                campaign.id,
-                campaign.status
-            FROM campaign
-            WHERE campaign.id = " . $campaignId;
-        
-        $data = [
-            'query' => $query
-        ];
-        
-        $response = $this->makeCurlRequest($url, 'POST', $accessToken, json_encode($data), $mccId);
-        
-        if (!isset($response[0]['results'][0]['campaign'])) {
-            throw new Exception('Không tìm thấy chiến dịch');
-        }
-        
-        $currentStatus = $response[0]['results'][0]['campaign']['status'];
-        $newStatus = $currentStatus === 'ENABLED' ? 'PAUSED' : 'ENABLED';
-        
-        // Thực hiện update status
+        // Sửa lại endpoint đúng theo Google Ads API v19
         $updateUrl = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedCustomerId . '/campaigns:mutate';
         
         $updateData = [
@@ -307,13 +292,22 @@ class GoogleAdsService
                     'updateMask' => 'status',
                     'update' => [
                         'resourceName' => 'customers/' . $formattedCustomerId . '/campaigns/' . $campaignId,
-                        'status' => $newStatus
+                        'status' => $status
                     ]
                 ]
             ]
         ];
         
-        return $this->makeCurlRequest($updateUrl, 'POST', $accessToken, json_encode($updateData), $mccId);
+        try {
+            $response = $this->makeCurlRequest($updateUrl, 'POST', $accessToken, json_encode($updateData), $mccId);
+            if (!isset($response['results']) || empty($response['results'])) {
+                throw new \Exception('Không nhận được kết quả từ API');
+            }
+            return true;
+        } catch (\Exception $e) {
+            log_message('error', 'Lỗi khi cập nhật trạng thái chiến dịch: ' . $e->getMessage());
+            throw $e;
+        }
     }
 
     protected function microToStandard($microAmount)
@@ -345,37 +339,50 @@ class GoogleAdsService
             'query' => $query
         ];
         
-        $response = $this->makeCurlRequest($url, 'POST', $accessToken, json_encode($data), $mccId);
-        $campaigns = [];
-        
-        if (is_array($response)) {
-            foreach ($response as $batch) {
-                if (isset($batch['results'])) {
-                    foreach ($batch['results'] as $result) {
-                        $campaign = $result['campaign'];
-                        $metrics = $result['metrics'];
-                        $budget = $result['campaignBudget'] ?? null;
-                        
-                        $campaigns[] = [
-                            'campaign_id' => $campaign['id'],
-                            'name' => $campaign['name'],
-                            'status' => $campaign['status'],
-                            'budget' => $budget ? $this->microToStandard($budget['amountMicros']) : 0,
-                            'cost' => isset($metrics['costMicros']) ? $this->microToStandard($metrics['costMicros']) : 0,
-                            'conversions' => $metrics['conversions'] ?? 0,
-                            'cost_per_conversion' => isset($metrics['costMicros'], $metrics['conversions']) && $metrics['conversions'] > 0 
-                                ? $this->microToStandard($metrics['costMicros']) / $metrics['conversions'] 
-                                : 0
-                        ];
+        try {
+            $response = $this->makeCurlRequest($url, 'POST', $accessToken, json_encode($data), $mccId);
+            $campaigns = [];
+            
+            if (is_array($response)) {
+                foreach ($response as $batch) {
+                    if (isset($batch['results'])) {
+                        foreach ($batch['results'] as $result) {
+                            // Kiểm tra tồn tại của campaign và metrics
+                            if (!isset($result['campaign'])) {
+                                continue;
+                            }
+                            
+                            $campaign = $result['campaign'];
+                            $metrics = $result['metrics'] ?? [];
+                            $budget = $result['campaignBudget'] ?? null;
+                            
+                            // Chỉ thêm vào mảng kết quả nếu có đủ thông tin cần thiết
+                            if (isset($campaign['id'])) {
+                                $campaigns[] = [
+                                    'campaign_id' => $campaign['id'],
+                                    'name' => $campaign['name'] ?? 'Unknown',
+                                    'status' => $campaign['status'] ?? 'UNKNOWN',
+                                    'budget' => $budget ? $this->microToStandard($budget['amountMicros']) : 0,
+                                    'cost' => isset($metrics['costMicros']) ? $this->microToStandard($metrics['costMicros']) : 0,
+                                    'conversions' => $metrics['conversions'] ?? 0,
+                                    'cost_per_conversion' => isset($metrics['costMicros'], $metrics['conversions']) && $metrics['conversions'] > 0 
+                                        ? $this->microToStandard($metrics['costMicros']) / $metrics['conversions'] 
+                                        : 0
+                                ];
+                            }
+                        }
                     }
                 }
             }
+            
+            return $campaigns;
+        } catch (Exception $e) {
+            log_message('error', 'Error in GoogleAdsService::getTodayCampaignMetrics: ' . $e->getMessage());
+            throw $e;
         }
-        
-        return $campaigns;
     }
 
-    public function updateCampaignBudget($customerId, $campaignId, $newBudget, $accessToken, $mccId = null)
+    public function updateCampaignBudget($accessToken, $customerId, $campaignId, $newBudget, $mccId = null)
     {
         $formattedCustomerId = $this->formatCustomerId($customerId);
         
@@ -394,25 +401,84 @@ class GoogleAdsService
             'query' => $query
         ];
         
-        $response = $this->makeCurlRequest($url, 'POST', $accessToken, json_encode($data), $mccId);
-        
-        if (!isset($response[0]['results'][0]['campaignBudget'])) {
-            throw new Exception('Không tìm thấy budget của chiến dịch');
+        try {
+            $response = $this->makeCurlRequest($url, 'POST', $accessToken, json_encode($data), $mccId);
+            
+            if (!isset($response[0]['results'][0]['campaignBudget'])) {
+                throw new \Exception('Không tìm thấy budget của chiến dịch');
+            }
+            
+            $budgetId = $response[0]['results'][0]['campaignBudget']['id'];
+            
+            // Thực hiện update budget với endpoint đúng
+            $updateUrl = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedCustomerId . '/campaignBudgets:mutate';
+            
+            $updateData = [
+                'operations' => [
+                    [
+                        'update' => [
+                            'resourceName' => 'customers/' . $formattedCustomerId . '/campaignBudgets/' . $budgetId,
+                            'amountMicros' => $newBudget * 1000000
+                        ],
+                        'updateMask' => 'amountMicros'
+                    ]
+                ]
+            ];
+            
+            $response = $this->makeCurlRequest($updateUrl, 'POST', $accessToken, json_encode($updateData), $mccId);
+            
+            if (!isset($response['results']) || empty($response['results'])) {
+                throw new \Exception('Không nhận được kết quả từ API khi cập nhật ngân sách');
+            }
+            
+            return true;
+        } catch (\Exception $e) {
+            log_message('error', 'Lỗi khi cập nhật ngân sách chiến dịch: ' . $e->getMessage());
+            throw $e;
         }
-        
-        $budgetId = $response[0]['results'][0]['campaignBudget']['id'];
-        
-        // Thực hiện update budget
-        $updateUrl = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedCustomerId . '/campaignBudgets/' . $budgetId . ':mutate';
-        
-        $updateData = [
-            'updateMask' => 'amountMicros',
-            'campaignBudget' => [
-                'resourceName' => 'customers/' . $formattedCustomerId . '/campaignBudgets/' . $budgetId,
-                'amountMicros' => $newBudget * 1000000
-            ]
-        ];
-        
-        return $this->makeCurlRequest($updateUrl, 'POST', $accessToken, json_encode($updateData), $mccId);
+    }
+
+    public function refreshToken($refreshToken)
+    {
+        try {
+            $url = 'https://oauth2.googleapis.com/token';
+            $data = [
+                'client_id' => $_ENV['GOOGLE_CLIENT_ID'],
+                'client_secret' => $_ENV['GOOGLE_CLIENT_SECRET'],
+                'refresh_token' => $refreshToken,
+                'grant_type' => 'refresh_token'
+            ];
+
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($httpCode !== 200) {
+                $error = json_decode($response, true);
+                log_message('error', 'Error refreshing token: ' . json_encode($error));
+                throw new Exception('Error refreshing token: ' . ($error['error_description'] ?? 'Unknown error'));
+            }
+
+            $tokenData = json_decode($response, true);
+            if (!isset($tokenData['access_token'])) {
+                throw new Exception('Invalid response from Google OAuth server');
+            }
+
+            return [
+                'access_token' => $tokenData['access_token'],
+                'expires_in' => $tokenData['expires_in'],
+                'token_type' => $tokenData['token_type']
+            ];
+        } catch (Exception $e) {
+            log_message('error', 'Error in GoogleAdsService::refreshToken: ' . $e->getMessage());
+            throw $e;
+        }
     }
 }

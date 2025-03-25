@@ -43,6 +43,13 @@
                         </div>
 
                         <div class="mb-3">
+                            <label for="roas_threshold" class="form-label">Ngưỡng ROAS</label>
+                            <input type="number" class="form-control" id="roas_threshold" name="roas_threshold" step="0.01" 
+                                value="<?= isset($settings['roas_threshold']) ? $settings['roas_threshold'] : '' ?>">
+                            <small class="form-text text-muted">Nhập ngưỡng ROAS để tự động tắt chiến dịch khi ROAS thực tế thấp hơn ngưỡng này</small>
+                        </div>
+
+                        <div class="mb-3">
                             <label for="increase_budget" class="form-label">Tăng ngân sách (VNĐ)</label>
                             <input type="number" class="form-control" id="increase_budget" name="increase_budget" 
                                 value="<?= isset($settings['increase_budget']) ? $settings['increase_budget'] : '' ?>">
@@ -118,6 +125,7 @@ $(document).ready(function() {
         const formData = {
             auto_optimize: $('#auto_optimize').is(':checked'),
             cpa_threshold: $('#cpa_threshold').val(),
+            roas_threshold: $('#roas_threshold').val(),
             increase_budget: $('#increase_budget').val(),
             gsheet1: $('#gsheet1').val(),
             gsheet_date_col: $('#gsheet_date_col').val().toUpperCase(),

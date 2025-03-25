@@ -30,6 +30,11 @@ class CreateAdsAccountSettings extends Migration
                 'constraint' => '20,2',
                 'default' => 0,
             ],
+            'roas_threshold' => [
+                'type' => 'DECIMAL',
+                'constraint' => '20,2',
+                'default' => 0,
+            ],
             'increase_budget' => [
                 'type' => 'DECIMAL',
                 'constraint' => '20,2',
@@ -59,6 +64,10 @@ class CreateAdsAccountSettings extends Migration
                 'type' => 'CHAR',
                 'constraint' => 1,
                 'default' => '',
+            ],
+            'last_optimize_run' => [
+                'type' => 'DATETIME',
+                'null' => true,
             ],
             'created_at' => [
                 'type' => 'DATETIME',

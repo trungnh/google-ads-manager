@@ -84,6 +84,7 @@ class AdsAccountSettings extends BaseController
             $settings = [
                 'auto_optimize' => $this->request->getPost('auto_optimize') ? 1 : 0,
                 'cpa_threshold' => $this->request->getPost('cpa_threshold'),
+                'roas_threshold' => $this->request->getPost('roas_threshold'),
                 'increase_budget' => $this->request->getPost('increase_budget'),
                 'gsheet1' => $this->request->getPost('gsheet1'),
                 'gsheet_date_col' => $this->request->getPost('gsheet_date_col'),

@@ -335,9 +335,11 @@ $(document).ready(function() {
                     <td>${campaign.cost > 0 ? formatNumberWithoutCurrency(campaign.real_conversion_value / campaign.cost) : '-'}</td>
                     <td>${campaign.real_conversion_rate ? formatPercent(campaign.real_conversion_rate) : '-'}</td>
                     <td>
-                        <button class="btn btn-sm btn-primary toggle-status ${campaign.status === 'ENABLED' ? 'bg-success' : 'bg-secondary'}" 
+                        <button class="btn ${campaign.status === 'ENABLED' ? 'btn-danger' : 'btn-success'} btn-sm toggle-status"
+                                data-customer-id="<?= $account['customer_id'] ?>"
                                 data-campaign-id="${campaign.campaign_id}"
                                 data-status="${campaign.status}">
+                            <i class="fas fa-power-off"></i>
                             ${campaign.status === 'ENABLED' ? 'Tắt' : 'Bật'}
                         </button>
                     </td>
@@ -346,27 +348,57 @@ $(document).ready(function() {
         });
         
         $('#campaignsBody').html(html);
+
+        // Đăng ký lại event handler cho các button sau khi render
+        initializeToggleButtons();
     }
 
-    $(document).on('click', '.toggle-status', function() {
-        const button = $(this);
-        const campaignId = button.data('campaign-id');
-        
-        $.ajax({
-            url: '<?= base_url('campaigns/toggleStatus/' . $account['customer_id']) ?>/' + campaignId,
-            method: 'POST',
-            success: function(response) {
-                if (response.success) {
-                    loadCampaignsData($('#startDate').val() === $('#endDate').val());
-                } else {
-                    alert('Lỗi: ' + response.message);
+    // Di chuyển event handler ra function riêng
+    function initializeToggleButtons() {
+        $('.toggle-status').off('click').on('click', function(e) {
+            e.preventDefault();
+            
+            const btn = $(this);
+            const customerId = btn.data('customer-id');
+            const campaignId = btn.data('campaign-id');
+            const currentStatus = btn.data('status');
+            const newStatus = currentStatus === 'ENABLED' ? 'PAUSED' : 'ENABLED';
+            
+            // Disable button while processing
+            btn.prop('disabled', true);
+            
+            $.ajax({
+                url: '<?= base_url('campaigns/toggleStatus') ?>/' + customerId + '/' + campaignId,
+                method: 'POST',
+                data: { status: newStatus },
+                success: function(response) {
+                    if (response.success) {
+                        // Update button appearance
+                        btn.data('status', response.newStatus);
+                        if (response.newStatus === 'ENABLED') {
+                            btn.removeClass('btn-success').addClass('btn-danger');
+                            btn.html('<i class="fas fa-power-off"></i> Tắt');
+                        } else {
+                            btn.removeClass('btn-danger').addClass('btn-success');
+                            btn.html('<i class="fas fa-power-off"></i> Bật');
+                        }
+                        toastr.success(response.message);
+                        
+                        // Reload campaigns data after successful toggle
+                        loadCampaignsData(true);
+                    } else {
+                        toastr.error(response.message);
+                    }
+                },
+                error: function(xhr) {
+                    toastr.error('Có lỗi xảy ra khi cập nhật trạng thái chiến dịch');
+                },
+                complete: function() {
+                    btn.prop('disabled', false);
                 }
-            },
-            error: function() {
-                alert('Có lỗi xảy ra khi thực hiện thao tác');
-            }
+            });
         });
-    });
+    }
 
     function formatNumber(number) {
         return new Intl.NumberFormat('vi-VN', { 

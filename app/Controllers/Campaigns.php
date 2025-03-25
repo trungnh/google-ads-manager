@@ -35,119 +35,145 @@ class Campaigns extends BaseController
 
     public function index($customerId)
     {
-        // Kiểm tra đăng nhập
+        // 1. Kiểm tra đăng nhập
         if (!session()->get('isLoggedIn')) {
+            session()->setFlashdata('error', 'Vui lòng đăng nhập để tiếp tục');
             return redirect()->to('/login');
         }
 
         $userId = session()->get('id');
 
         try {
-            // Lấy danh sách tất cả tài khoản của user
-            $accounts = $this->adsAccountModel
-                ->where('user_id', $userId)
-                ->findAll();
-
-            // Kiểm tra xem user có quyền truy cập account này không
+            // 2. Kiểm tra tài khoản hiện tại
             $account = $this->adsAccountModel
                 ->where('user_id', $userId)
                 ->where('customer_id', $customerId)
                 ->first();
 
+            // 3. Nếu không tìm thấy tài khoản hiện tại, tìm tài khoản đầu tiên của user
             if (!$account) {
-                return redirect()->to('/adsaccounts')->with('error', 'Không có quyền truy cập tài khoản này');
+                $firstAccount = $this->adsAccountModel
+                    ->where('user_id', $userId)
+                    ->first();
+
+                if ($firstAccount) {
+                    return redirect()->to('/campaigns/index/' . $firstAccount['customer_id']);
+                }
+
+                // Nếu không có tài khoản nào
+                session()->setFlashdata('error', 'Bạn chưa có tài khoản Google Ads nào');
+                return redirect()->to('/adsaccounts');
             }
 
-            // Lấy dữ liệu chiến dịch từ database
+            // 4. Lấy danh sách tất cả tài khoản của user để hiển thị trong dropdown
+            $accounts = $this->adsAccountModel
+                ->where('user_id', $userId)
+                ->findAll();
+
+            // 5. Lấy dữ liệu chiến dịch từ database
             $today = date('Y-m-d');
             $campaigns = $this->campaignsDataModel->getCampaignsByDate($customerId, $today);
 
-            // Nếu không có dữ liệu trong database, lấy từ API
+            // 6. Nếu không có dữ liệu trong database, lấy từ API
             if (empty($campaigns)) {
-                // Lấy access token
                 $tokenData = $this->googleTokenModel->getValidToken($userId);
                 if (empty($tokenData) || empty($tokenData['access_token'])) {
-                    return redirect()->to('/adsaccounts')->with('error', 'Bạn cần kết nối lại với Google Ads');
+                    session()->setFlashdata('error', 'Bạn cần kết nối lại với Google Ads');
+                    return redirect()->to('/adsaccounts');
                 }
 
-                // Lấy MCC ID từ settings
                 $userSettings = $this->userSettingsModel->where('user_id', $userId)->first();
                 $mccId = $userSettings['mcc_id'] ?? null;
 
-                // Lấy danh sách chiến dịch từ API
                 $campaigns = $this->googleAdsService->getCampaigns(
                     $customerId, 
                     $tokenData['access_token'], 
                     $mccId, 
-                    false, // Không hiển thị chiến dịch đã tạm dừng
+                    false,
                     $today,
                     $today
                 );
 
-                // Lấy account settings để đọc URL Google Sheet và cấu hình cột
                 $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($account['id']);
                 $gsheetUrl = $settings['gsheet1'] ?? null;
-
-                // Xử lý dữ liệu từ Google Sheet
-                $campaigns = $this->processRealConversions($campaigns, $gsheetUrl, $today, $settings);
-                
-                // Lưu dữ liệu vào database
+                if (!empty($campaigns) && !empty($gsheetUrl)) {
+                    $campaigns = $this->processRealConversions($campaigns, $gsheetUrl, $today, $settings);
+                }
                 $this->campaignsDataModel->saveCampaignsData($customerId, $campaigns);
             }
 
-            $data = [
+            // 7. Render view với dữ liệu
+            return view('campaigns/index', [
                 'title' => 'Danh sách chiến dịch - ' . $account['customer_name'],
                 'account' => $account,
                 'accounts' => $accounts,
                 'campaigns' => $campaigns
-            ];
-
-            return view('campaigns/index', $data);
+            ]);
 
         } catch (Exception $e) {
-            return redirect()->back()->with('error', 'Lỗi khi lấy danh sách chiến dịch: ' . $e->getMessage());
+            log_message('error', 'Error in Campaigns::index: ' . $e->getMessage());
+            session()->setFlashdata('error', 'Lỗi khi lấy danh sách chiến dịch: ' . $e->getMessage());
+            return redirect()->to('/adsaccounts');
         }
     }
 
     protected function processRealConversions($campaigns, $gsheetUrl, $date, $settings)
     {
+        // Kiểm tra input
+        if (empty($campaigns) || !is_array($campaigns)) {
+            log_message('error', 'Invalid campaigns data: ' . json_encode($campaigns));
+            return [];
+        }
+
         if (empty($gsheetUrl)) {
             return $campaigns;
         }
 
-        // Lấy dữ liệu chuyển đổi từ Google Sheet
-        $sheetData = $this->googleSheetService->getConversionsFromCsv($gsheetUrl, $date, $settings);
+        try {
+            // Lấy dữ liệu chuyển đổi từ Google Sheet
+            $sheetData = $this->googleSheetService->getConversionsFromCsv($gsheetUrl, $date, $settings);
+            
+            // Tạo mảng mới để lưu kết quả
+            $processedCampaigns = [];
 
-        // Tính toán các chỉ số thực tế cho mỗi chiến dịch
-        foreach ($campaigns as &$campaign) {
-            // Đảm bảo campaign_id tồn tại
-            if (!isset($campaign['campaign_id'])) {
-                log_message('error', 'Campaign data missing campaign_id: ' . json_encode($campaign));
-                continue;
+            // Tính toán các chỉ số thực tế cho mỗi chiến dịch
+            foreach ($campaigns as $campaign) {
+                // Đảm bảo campaign là array và có campaign_id
+                if (!is_array($campaign) || !isset($campaign['campaign_id'])) {
+                    log_message('error', 'Invalid campaign data: ' . json_encode($campaign));
+                    continue;
+                }
+                
+                // Tạo bản sao của campaign để tránh tham chiếu
+                $processedCampaign = $campaign;
+                $campaignId = $campaign['campaign_id'];
+                
+                // Nếu có dữ liệu chuyển đổi cho chiến dịch này
+                if (isset($sheetData[$campaignId])) {
+                    $processedCampaign['real_conversions'] = $sheetData[$campaignId]['conversions'];
+                    $processedCampaign['real_conversion_value'] = $sheetData[$campaignId]['conversion_value'];
+                    $processedCampaign['real_conversion_rate'] = isset($campaign['clicks']) && $campaign['clicks'] > 0 
+                        ? ($sheetData[$campaignId]['conversions'] / $campaign['clicks']) * 100 
+                        : 0;
+                    $processedCampaign['real_cpa'] = $sheetData[$campaignId]['conversions'] > 0 
+                        ? ($campaign['cost'] ?? 0) / $sheetData[$campaignId]['conversions']
+                        : 0;
+                } else {
+                    // Nếu không có dữ liệu chuyển đổi, set về 0
+                    $processedCampaign['real_conversions'] = 0;
+                    $processedCampaign['real_conversion_value'] = 0;
+                    $processedCampaign['real_conversion_rate'] = 0;
+                    $processedCampaign['real_cpa'] = 0;
+                }
+                
+                $processedCampaigns[] = $processedCampaign;
             }
-            
-            $campaignId = $campaign['campaign_id'];
-            
-            // Nếu có dữ liệu chuyển đổi cho chiến dịch này
-            if (isset($sheetData[$campaignId])) {
-                $campaign['real_conversions'] = $sheetData[$campaignId]['conversions'];
-                $campaign['real_conversion_value'] = $sheetData[$campaignId]['conversion_value'];
-                $campaign['real_conversion_rate'] = $campaign['clicks'] > 0 
-                    ? ($sheetData[$campaignId]['conversions'] / $campaign['clicks']) * 100 
-                    : 0;
-                $campaign['real_cpa'] = $sheetData[$campaignId]['conversions'] > 0 
-                    ? $campaign['cost'] / $sheetData[$campaignId]['conversions']
-                    : 0;
-            } else {
-                // Nếu không có dữ liệu chuyển đổi, set về 0
-                $campaign['real_conversions'] = 0;
-                $campaign['real_conversion_value'] = 0;
-                $campaign['real_conversion_rate'] = 0;
-                $campaign['real_cpa'] = 0;
-            }
+
+            return $processedCampaigns;
+        } catch (Exception $e) {
+            log_message('error', 'Error in processRealConversions: ' . $e->getMessage());
+            return $campaigns; // Trả về dữ liệu gốc nếu có lỗi
         }
-
-        return $campaigns;
     }
 
     public function loadCampaigns($customerId)
@@ -251,6 +277,12 @@ class Campaigns extends BaseController
 
         try {
             $userId = session()->get('id');
+            $status = $this->request->getPost('status');
+            
+            // Validate status
+            if (!in_array($status, ['ENABLED', 'PAUSED'])) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Trạng thái không hợp lệ']);
+            }
             
             // Lấy access token
             $tokenData = $this->googleTokenModel->getValidToken($userId);
@@ -262,9 +294,27 @@ class Campaigns extends BaseController
             $settings = $this->userSettingsModel->where('user_id', $userId)->first();
             $mccId = $settings['mcc_id'] ?? null;
 
-            $result = $this->googleAdsService->toggleCampaignStatus($customerId, $campaignId, $tokenData['access_token'], $mccId);
-            return $this->response->setJSON(['success' => true, 'message' => 'Cập nhật trạng thái thành công']);
+            // Gọi API để toggle status
+            $result = $this->googleAdsService->toggleCampaignStatus(
+                $tokenData['access_token'],
+                $customerId,
+                $campaignId,
+                $status,
+                $mccId
+            );
+
+            if ($result === true) {
+                $message = $status === 'ENABLED' ? 'Đã bật chiến dịch thành công' : 'Đã tắt chiến dịch thành công';
+                return $this->response->setJSON([
+                    'success' => true, 
+                    'message' => $message,
+                    'newStatus' => $status
+                ]);
+            } else {
+                return $this->response->setJSON(['success' => false, 'message' => 'Không thể cập nhật trạng thái chiến dịch']);
+            }
         } catch (Exception $e) {
+            log_message('error', 'Lỗi khi cập nhật trạng thái chiến dịch: ' . $e->getMessage());
             return $this->response->setJSON(['success' => false, 'message' => $e->getMessage()]);
         }
     }
