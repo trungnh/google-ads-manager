@@ -84,41 +84,71 @@ class GoogleAdsService
     {
         $url = $this->baseUrl . $this->apiVersion . '/customers:listAccessibleCustomers';
         
-        $response = $this->makeCurlRequest($url, 'GET', $accessToken);
-        
-        $accounts = [];
-        
-        if (isset($response['resourceNames']) && !empty($response['resourceNames'])) {
-            foreach ($response['resourceNames'] as $resourceName) {
-                $customerId = str_replace('customers/', '', $resourceName);
-                
-                // Lấy thông tin chi tiết về customer
-                $customerDetails = $this->getCustomerDetails($accessToken, $customerId);
-                
-                if ($customerDetails) {
-                    $accounts[] = $customerDetails;
-                }
-            }
-        }
-        
-        return $accounts;
-    }
-    
-    protected function getCustomerDetails($accessToken, $customerId)
-    {
-        $url = $this->baseUrl . $this->apiVersion . '/customers/' . $customerId;
-        
         try {
             $response = $this->makeCurlRequest($url, 'GET', $accessToken);
             
-            if (isset($response['resourceName'])) {
-                return [
-                    'customer_id' => $customerId,
-                    'customer_name' => $response['descriptiveName'] ?? 'Unknown',
-                    'currency_code' => $response['currencyCode'] ?? null,
-                    'time_zone' => $response['timeZone'] ?? null,
-                    'status' => 'ACTIVE'
-                ];
+            $accounts = [];
+            
+            if (isset($response['resourceNames']) && !empty($response['resourceNames'])) {
+                foreach ($response['resourceNames'] as $resourceName) {
+                    $customerId = str_replace('customers/', '', $resourceName);
+                    
+                    // Lấy thông tin chi tiết về customer bằng cách sử dụng searchStream
+                    $customerDetails = $this->getCustomerDetailsFromSearch($accessToken, $customerId);
+                    if ($customerDetails) {
+                        $accounts[] = $customerDetails;
+                    }
+                }
+            }
+            
+            return $accounts;
+        } catch (Exception $e) {
+            log_message('error', 'Lỗi khi lấy danh sách tài khoản: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+    
+    protected function getCustomerDetailsFromSearch($accessToken, $customerId)
+    {
+        $formattedCustomerId = $this->formatCustomerId($customerId);
+        $url = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedCustomerId . '/googleAds:searchStream';
+        
+        $query = "
+            SELECT
+                customer.id,
+                customer.descriptive_name,
+                customer.currency_code,
+                customer.time_zone,
+                customer.status
+            FROM
+                customer
+            WHERE
+                customer.id = " . $formattedCustomerId;
+        
+        $data = [
+            'query' => $query
+        ];
+        
+        try {
+            $response = $this->makeCurlRequest($url, 'POST', $accessToken, json_encode($data));
+            
+            if (is_array($response)) {
+                foreach ($response as $batch) {
+                    if (isset($batch['results'])) {
+                        foreach ($batch['results'] as $result) {
+                            if (isset($result['customer'])) {
+                                $customer = $result['customer'];
+                                return [
+                                    'customer_id' => $customer['id'],
+                                    'customer_name' => $customer['descriptiveName'] ?? 'Unknown',
+                                    'currency_code' => $customer['currencyCode'] ?? null,
+                                    'time_zone' => $customer['timeZone'] ?? null,
+                                    'status' => $customer['status'] ?? 'ACTIVE'
+                                ];
+                            }
+                        }
+                    }
+                }
             }
         } catch (Exception $e) {
             log_message('error', 'Lỗi khi lấy thông tin chi tiết customer ' . $customerId . ': ' . $e->getMessage());
