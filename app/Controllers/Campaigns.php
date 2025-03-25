@@ -212,6 +212,16 @@ class Campaigns extends BaseController
             $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($account['id']);
             $gsheetUrl = $settings['gsheet1'] ?? null;
 
+            // Lấy access token
+            $tokenData = $this->googleTokenModel->getValidToken($userId);
+            if (empty($tokenData) || empty($tokenData['access_token'])) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Bạn cần kết nối lại với Google Ads']);
+            }
+
+            // Lấy MCC ID từ settings
+            $userSettings = $this->userSettingsModel->where('user_id', $userId)->first();
+            $mccId = $userSettings['mcc_id'] ?? null;
+
             // Nếu ngày bắt đầu và kết thúc là cùng ngày
             if ($startDate === $endDate) {
                 // Kiểm tra xem có data trong database không và không phải force update
@@ -230,16 +240,6 @@ class Campaigns extends BaseController
                 }
             }
             
-            // Lấy access token
-            $tokenData = $this->googleTokenModel->getValidToken($userId);
-            if (empty($tokenData) || empty($tokenData['access_token'])) {
-                return $this->response->setJSON(['success' => false, 'message' => 'Bạn cần kết nối lại với Google Ads']);
-            }
-
-            // Lấy MCC ID từ settings
-            $userSettings = $this->userSettingsModel->where('user_id', $userId)->first();
-            $mccId = $userSettings['mcc_id'] ?? null;
-
             // Lấy danh sách chiến dịch từ API
             $campaigns = $this->googleAdsService->getCampaigns(
                 $customerId, 
@@ -250,9 +250,13 @@ class Campaigns extends BaseController
                 $endDate
             );
 
-            // Nếu ngày bắt đầu và kết thúc là cùng ngày, xử lý dữ liệu từ Google Sheet
-            if ($startDate === $endDate) {
+            // Xử lý dữ liệu chuyển đổi thực tế từ Google Sheet
+            if (!empty($campaigns) && !empty($gsheetUrl)) {
                 $campaigns = $this->processRealConversions($campaigns, $gsheetUrl, $startDate, $settings);
+            }
+
+            // Chỉ lưu vào database nếu ngày bắt đầu và kết thúc là cùng ngày
+            if ($startDate === $endDate) {
                 $this->campaignsDataModel->saveCampaignsData($customerId, $campaigns);
                 $lastUpdateTime = date('Y-m-d H:i:s');
             } else {
