@@ -260,61 +260,34 @@ $(document).ready(function() {
     function renderCampaigns() {
         let sortedCampaigns = [...campaignsData];
         
-        if (currentSort.column) {
-            sortedCampaigns.sort((a, b) => {
-                let aValue, bValue;
-                
-                switch(currentSort.column) {
-                    case 'budget':
-                        aValue = a.budget;
-                        bValue = b.budget;
-                        break;
-                    case 'cost':
-                        aValue = a.cost;
-                        bValue = b.cost;
-                        break;
-                    case 'roas':
-                        aValue = a.cost > 0 ? a.conversion_value / a.cost : 0;
-                        bValue = b.cost > 0 ? b.conversion_value / b.cost : 0;
-                        break;
-                    case 'conversions':
-                        aValue = a.conversions;
-                        bValue = b.conversions;
-                        break;
-                    case 'costPerConversion':
-                        aValue = a.cost_per_conversion;
-                        bValue = b.cost_per_conversion;
-                        break;
-                    case 'realConversions':
-                        aValue = a.real_conversions;
-                        bValue = b.real_conversions;
-                        break;
-                    case 'realConversionValue':
-                        aValue = a.real_conversion_value;
-                        bValue = b.real_conversion_value;
-                        break;
-                    case 'realRoas':
-                        aValue = a.cost > 0 ? a.real_conversion_value / a.cost : 0;
-                        bValue = b.cost > 0 ? b.real_conversion_value / b.cost : 0;
-                        break;
-                    case 'realCpa':
-                        aValue = a.real_cpa;
-                        bValue = b.real_cpa;
-                        break;
-                    default:
-                        return 0;
-                }
-                
-                if (currentSort.direction === 'asc') {
-                    return aValue - bValue;
-                } else {
-                    return bValue - aValue;
-                }
-            });
-        }
+        // Tính toán total
+        const totals = {
+            budget: 0,
+            cost: 0,
+            clicks: 0,
+            real_conversions: 0,
+            real_conversion_value: 0
+        };
+
+        sortedCampaigns.forEach(campaign => {
+            totals.budget += parseFloat(campaign.budget) || 0;
+            totals.cost += parseFloat(campaign.cost) || 0;
+            totals.clicks += parseInt(campaign.clicks) || 0;
+            totals.real_conversions += parseFloat(campaign.real_conversions) || 0;
+            totals.real_conversion_value += parseFloat(campaign.real_conversion_value) || 0;
+        });
+
+        // Tính các chỉ số tổng hợp
+        const totalCTR = totals.clicks > 0 ? (totals.clicks / totals.clicks) * 100 : 0;
+        const totalAverageCPC = totals.clicks > 0 ? totals.cost / totals.clicks : 0;
+        const totalRealCPA = totals.real_conversions > 0 ? totals.cost / totals.real_conversions : 0;
+        const totalRealConversionRate = totals.clicks > 0 ? (totals.real_conversions / totals.clicks) * 100 : 0;
+        const totalROAS = totals.cost > 0 ? totals.real_conversion_value / totals.cost : 0;
 
         let html = '';
-        sortedCampaigns.forEach(function(campaign) {
+        
+        // Render các chiến dịch
+        sortedCampaigns.forEach(campaign => {
             html += `
                 <tr>
                     <td>${campaign.campaign_id}</td>
@@ -346,10 +319,27 @@ $(document).ready(function() {
                 </tr>
             `;
         });
+
+        // Thêm dòng total
+        html += `
+            <tr class="table-primary fw-bold">
+                <td colspan="2">Tổng cộng</td>
+                <td>-</td>
+                <td>${formatNumber(totals.budget)}</td>
+                <td>${formatNumber(totals.cost)}</td>
+                <td>${formatPercent(totalCTR)}</td>
+                <td>${formatNumberWithoutCurrency(totals.clicks)}</td>
+                <td>${formatNumber(totalAverageCPC)}</td>
+                <td>${formatNumberWithoutCurrency(totals.real_conversions)}</td>
+                <td>${formatNumber(totals.real_conversion_value)}</td>
+                <td>${formatNumber(totalRealCPA)}</td>
+                <td>${formatNumberWithoutCurrency(totalROAS)}</td>
+                <td>${formatPercent(totalRealConversionRate)}</td>
+                <td>-</td>
+            </tr>
+        `;
         
         $('#campaignsBody').html(html);
-
-        // Đăng ký lại event handler cho các button sau khi render
         initializeToggleButtons();
     }
 

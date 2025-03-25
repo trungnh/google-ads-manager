@@ -72,7 +72,8 @@ class Campaigns extends BaseController
 
             // 5. Lấy dữ liệu chiến dịch từ database
             $today = date('Y-m-d');
-            $campaigns = $this->campaignsDataModel->getCampaignsByDate($customerId, $today);
+            $showPaused = $this->request->getGet('showPaused') === 'true';
+            $campaigns = $this->campaignsDataModel->getCampaignsByDate($customerId, $today, $showPaused);
 
             // 6. Nếu không có dữ liệu trong database, lấy từ API
             if (empty($campaigns)) {
@@ -89,7 +90,7 @@ class Campaigns extends BaseController
                     $customerId, 
                     $tokenData['access_token'], 
                     $mccId, 
-                    false,
+                    $showPaused,
                     $today,
                     $today
                 );
@@ -179,7 +180,10 @@ class Campaigns extends BaseController
     public function loadCampaigns($customerId)
     {
         if (!session()->get('isLoggedIn')) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Unauthorized']);
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Vui lòng đăng nhập để tiếp tục'
+            ]);
         }
 
         try {
@@ -212,7 +216,7 @@ class Campaigns extends BaseController
             if ($startDate === $endDate) {
                 // Kiểm tra xem có data trong database không và không phải force update
                 if (!$forceUpdate) {
-                    $campaigns = $this->campaignsDataModel->getCampaignsByDate($customerId, $startDate);
+                    $campaigns = $this->campaignsDataModel->getCampaignsByDate($customerId, $startDate, $showPaused);
                     $lastUpdateTime = $this->campaignsDataModel->getLastUpdateTime($customerId, $startDate);
                     
                     if (!empty($campaigns)) {
@@ -262,9 +266,10 @@ class Campaigns extends BaseController
                 'isFromCache' => false
             ]);
         } catch (Exception $e) {
+            log_message('error', 'Error in Campaigns::loadCampaigns: ' . $e->getMessage());
             return $this->response->setJSON([
                 'success' => false,
-                'message' => 'Lỗi khi lấy danh sách chiến dịch: ' . $e->getMessage()
+                'message' => 'Có lỗi xảy ra khi lấy danh sách chiến dịch: ' . $e->getMessage()
             ]);
         }
     }

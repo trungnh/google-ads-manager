@@ -38,12 +38,18 @@ class CampaignsDataModel extends Model
     protected $createdField = 'created_at';
     protected $updatedField = 'updated_at';
 
-    public function getCampaignsByDate($customerId, $date)
+    public function getCampaignsByDate($customerId, $date, $showPaused = false)
     {
-        return $this->where([
+        $where = [
             'customer_id' => $customerId,
             'date' => $date
-        ])->findAll();
+        ];
+
+        if (!$showPaused) {
+            $where['status'] = 'ENABLED';
+        }
+
+        return $this->where($where)->findAll();
     }
 
     public function getLastUpdateTime($customerId, $date)
