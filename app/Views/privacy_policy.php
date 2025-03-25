@@ -29,10 +29,10 @@
                         <a class="nav-link" href="/">Home</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="/privacy-policy">Privacy Policy</a>
+                        <a class="nav-link active" href="/privacy-policy">Chính sách bảo mật</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/terms">Terms of Service</a>
+                        <a class="nav-link" href="/terms">Điều khoản dịch vụ</a>
                     </li>
                 </ul>
             </div>
@@ -42,89 +42,50 @@
     <!-- Content -->
     <section class="content-section">
         <div class="container">
-            <h1 class="mb-4">Privacy Policy</h1>
-            <p class="lead">Last updated: <?= date('F d, Y') ?></p>
+        <h1>Chính sách Quyền riêng tư</h1>
 
-            <div class="mt-4">
-                <h2>1. Introduction</h2>
-                <p>Google Ads Manager ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our service.</p>
-            </div>
+        <h2>1. Giới thiệu</h2>
+        <p>Ứng dụng của chúng tôi (sau đây gọi là "Dịch vụ") được thiết kế để hỗ trợ quản lý và tối ưu hóa các chiến dịch quảng cáo Google Ads. Chúng tôi cam kết bảo vệ quyền riêng tư và an toàn dữ liệu của người dùng.</p>
 
-            <div class="mt-4">
-                <h2>2. Information We Collect</h2>
-                <h3>2.1 Personal Information</h3>
-                <p>We collect personal information that you voluntarily provide to us when you:</p>
-                <ul>
-                    <li>Connect your Google Ads account</li>
-                    <li>Use our services</li>
-                </ul>
-                <p>This information may include:</p>
-                <ul>
-                    <li>Name and contact information</li>
-                    <li>Google account information</li>
-                    <li>Google Ads account information</li>
-                    <li>Campaign performance data</li>
-                </ul>
+        <h2>2. Thông tin chúng tôi thu thập</h2>
+        <p>Chúng tôi chỉ thu thập các thông tin cần thiết để cung cấp dịch vụ quản lý Google Ads, bao gồm:</p>
+        <ul>
+            <li>Thông tin tài khoản Google</li>
+            <li>Dữ liệu hiệu suất chiến dịch quảng cáo</li>
+            <li>Thông tin đăng nhập của người dùng</li>
+        </ul>
 
-                <h3>2.2 Google API Data</h3>
-                <p>When you connect your Google Ads account, we access:</p>
-                <ul>
-                    <li>Campaign performance metrics</li>
-                    <li>Account settings and configurations</li>
-                    <li>Budget and spending information</li>
-                </ul>
-            </div>
+        <h2>3. Cách sử dụng thông tin</h2>
+        <p>Thông tin được sử dụng duy nhất cho các mục đích:</p>
+        <ul>
+            <li>Quản lý tài khoản Google Ads</li>
+            <li>Phân tích hiệu suất chiến dịch</li>
+            <li>Tối ưu hóa quảng cáo theo yêu cầu người dùng</li>
+        </ul>
 
-            <div class="mt-4">
-                <h2>3. How We Use Your Information</h2>
-                <p>We use the collected information to:</p>
-                <ul>
-                    <li>Provide and maintain our services</li>
-                    <li>Optimize your Google Ads campaigns</li>
-                    <li>Generate reports and analytics</li>
-                    <li>Improve our services</li>
-                    <li>Communicate with you about our services</li>
-                </ul>
-            </div>
+        <h2>4. Bảo mật thông tin</h2>
+        <p>Chúng tôi áp dụng các biện pháp bảo mật tiêu chuẩn:</p>
+        <ul>
+            <li>Mã hóa dữ liệu</li>
+            <li>Hạn chế truy cập</li>
+            <li>Bảo vệ thông tin người dùng</li>
+        </ul>
 
-            <div class="mt-4">
-                <h2>4. Data Security</h2>
-                <p>We implement appropriate security measures to protect your personal information, including:</p>
-                <ul>
-                    <li>Encryption of data in transit and at rest</li>
-                    <li>Regular security assessments</li>
-                    <li>Access controls and authentication</li>
-                    <li>Secure data storage</li>
-                </ul>
-            </div>
+        <h2>5. Quyền của người dùng</h2>
+        <p>Người dùng có quyền:</p>
+        <ul>
+            <li>Yêu cầu xóa dữ liệu</li>
+            <li>Ngừng sử dụng dịch vụ bất kỳ lúc nào</li>
+            <li>Thu hồi quyền truy cập Google Ads</li>
+        </ul>
 
-            <div class="mt-4">
-                <h2>5. Data Sharing</h2>
-                <p>We do not sell or rent your personal information to third parties. We may share your information with:</p>
-                <ul>
-                    <li>Google (as required for API integration)</li>
-                    <li>Service providers who assist in our operations</li>
-                    <li>Law enforcement when required by law</li>
-                </ul>
-            </div>
+        <h2>6. Thay đổi chính sách</h2>
+        <p>Chúng tôi có thể cập nhật chính sách này. Những thay đổi sẽ được thông báo trực tiếp tới người dùng.</p>
 
-            <div class="mt-4">
-                <h2>6. Your Rights</h2>
-                <p>You have the right to:</p>
-                <ul>
-                    <li>Access your personal information</li>
-                    <li>Correct inaccurate information</li>
-                    <li>Request deletion of your information</li>
-                    <li>Opt-out of marketing communications</li>
-                    <li>Export your data</li>
-                </ul>
-            </div>
+        <h2>7. Liên hệ</h2>
+        <p>Nếu có câu hỏi về chính sách, vui lòng liên hệ: <a href="mailto:nguyenhuutrung908@gmail.com">nguyenhuutrung908@gmail.com</a></p>
 
-            <div class="mt-4">
-                <h2>7. Contact Us</h2>
-                <p>If you have any questions about this Privacy Policy, please contact us at:</p>
-                <p>Email: privacy@googleadsmanager.com</p>
-            </div>
+        <p class="update-info">Cập nhật gần nhất: Tháng 3/2024</p>
         </div>
     </section>
 
@@ -137,7 +98,11 @@
                     <p>Giải pháp quản lý chiến dịch quảng cáo thông minh</p>
                 </div>
                 <div class="col-md-6 text-md-end">
-                    <p>&copy; <?= date('Y') ?> Google Ads Manager. All rights reserved.</p>
+                    <p class="mb-2">
+                        <a href="/privacy-policy" class="text-decoration-none text-dark me-3">Chính sách bảo mật</a>
+                        <a href="/terms" class="text-decoration-none text-dark">Điều khoản dịch vụ</a>
+                    </p>
+                    <p class="mb-0">&copy; <?= date('Y') ?> Google Ads Manager. All rights reserved.</p>
                 </div>
             </div>
         </div>

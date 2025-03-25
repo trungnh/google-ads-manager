@@ -52,10 +52,10 @@
                         </li>
                     <?php endif; ?>
                     <li class="nav-item">
-                        <a class="nav-link" href="/privacy-policy">Privacy Policy</a>
+                        <a class="nav-link" href="/privacy-policy">Chính sách bảo mật</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/terms">Terms of Service</a>
+                        <a class="nav-link" href="/terms">Điều khoản dịch vụ</a>
                     </li>
                 </ul>
             </div>
@@ -124,8 +124,8 @@
                 </div>
                 <div class="col-md-6 text-md-end">
                     <p class="mb-2">
-                        <a href="/privacy-policy" class="text-decoration-none text-dark me-3">Privacy Policy</a>
-                        <a href="/terms" class="text-decoration-none text-dark">Terms of Service</a>
+                        <a href="/privacy-policy" class="text-decoration-none text-dark me-3">Chính sách bảo mật</a>
+                        <a href="/terms" class="text-decoration-none text-dark">Điều khoản dịch vụ</a>
                     </p>
                     <p class="mb-0">&copy; <?= date('Y') ?> Google Ads Manager. All rights reserved.</p>
                 </div>

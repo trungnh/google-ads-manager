@@ -13,11 +13,15 @@ class PublicPages extends BaseController
 
     public function privacyPolicy()
     {
-        return view('privacy_policy');
+        return view('privacy_policy', [
+            'title' => 'Chính sách bảo mật'
+        ]);
     }
 
     public function terms()
     {
-        return view('terms');
+        return view('terms', [
+            'title' => 'Điều khoản dịch vụ'
+        ]);
     }
 } 
