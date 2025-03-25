@@ -61,22 +61,22 @@
     </div>
 
     <div id="campaignsTable" class="table-responsive" style="display: none;">
-        <table class="table table-striped table-hover">
+        <table class="table table-bordered table-hover">
             <thead class="thead-dark">
                 <tr>
-                    <th>ID</th>
-                    <th>Tên chiến dịch</th>
-                    <th>Trạng thái</th>
-                    <th>Ngân sách</th>
-                    <th>Chi tiêu</th>
-                    <th>CTR</th>
-                    <th>Clicks</th>
-                    <th>CPC</th>
-                    <th>Conv</th>
-                    <th>Conv value</th>
-                    <th>CPA</th>
-                    <th>ROAS</th>
-                    <th>Conv rate</th>
+                    <th class="" data-sort="campaign_id">ID</th>
+                    <th class="sortable" data-sort="name">Tên chiến dịch</th>
+                    <th class="sortable" data-sort="budget">Ngân sách</th>
+                    <th class="" data-sort="status">Trạng thái</th>
+                    <th class="sortable" data-sort="cost">Chi tiêu</th>
+                    <th class="sortable" data-sort="roas">ROAS</th>
+                    <th class="sortable" data-sort="cost_per_conversion">CPA</th>
+                    <th class="sortable" data-sort="conversions">Conv</th>
+                    <th class="sortable" data-sort="ctr">CTR</th>
+                    <th class="sortable" data-sort="clicks">Clicks</th>
+                    <th class="sortable" data-sort="average_cpc">CPC</th>
+                    <th class="sortable" data-sort="conversion_value">Conv value</th>
+                    <th class="sortable" data-sort="conversion_rate">Conv rate</th>
                     <th>Thao tác</th>
                 </tr>
             </thead>
@@ -96,29 +96,25 @@
     padding-right: 20px !important;
 }
 
-.sort-icon {
+.sortable:after {
+    content: '↕';
     position: absolute;
     right: 5px;
-    display: inline-block;
-    width: 0;
-    height: 0;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
+    opacity: 0.3;
 }
 
-.sort-asc .sort-icon {
-    border-bottom: 5px solid #333;
-    top: 45%;
+.sortable.sort-asc:after {
+    content: '↑';
+    opacity: 1;
 }
 
-.sort-desc .sort-icon {
-    border-top: 5px solid #333;
-    top: 45%;
+.sortable.sort-desc:after {
+    content: '↓';
+    opacity: 1;
 }
 
-.sortable:not(.sort-asc):not(.sort-desc) .sort-icon {
-    border-bottom: 5px solid #ccc;
-    top: 45%;
+.sortable:hover:after {
+    opacity: 1;
 }
 
 /* Datepicker styles */
@@ -284,6 +280,76 @@ $(document).ready(function() {
         const totalRealConversionRate = totals.clicks > 0 ? (totals.real_conversions / totals.clicks) * 100 : 0;
         const totalROAS = totals.cost > 0 ? totals.real_conversion_value / totals.cost : 0;
 
+        // Sắp xếp dữ liệu nếu có
+        if (currentSort.column) {
+            sortedCampaigns.sort((a, b) => {
+                let aValue, bValue;
+                
+                switch(currentSort.column) {
+                    case 'campaign_id':
+                        aValue = a.campaign_id;
+                        bValue = b.campaign_id;
+                        break;
+                    case 'name':
+                        aValue = a.name;
+                        bValue = b.name;
+                        break;
+                    case 'status':
+                        aValue = a.status;
+                        bValue = b.status;
+                        break;
+                    case 'budget':
+                        aValue = parseFloat(a.budget) || 0;
+                        bValue = parseFloat(b.budget) || 0;
+                        break;
+                    case 'cost':
+                        aValue = parseFloat(a.cost) || 0;
+                        bValue = parseFloat(b.cost) || 0;
+                        break;
+                    case 'ctr':
+                        aValue = parseFloat(a.ctr) || 0;
+                        bValue = parseFloat(b.ctr) || 0;
+                        break;
+                    case 'clicks':
+                        aValue = parseInt(a.clicks) || 0;
+                        bValue = parseInt(b.clicks) || 0;
+                        break;
+                    case 'average_cpc':
+                        aValue = parseFloat(a.average_cpc) || 0;
+                        bValue = parseFloat(b.average_cpc) || 0;
+                        break;
+                    case 'conversions':
+                        aValue = parseFloat(a.real_conversions) || 0;
+                        bValue = parseFloat(b.real_conversions) || 0;
+                        break;
+                    case 'conversion_value':
+                        aValue = parseFloat(a.real_conversion_value) || 0;
+                        bValue = parseFloat(b.real_conversion_value) || 0;
+                        break;
+                    case 'cost_per_conversion':
+                        aValue = parseFloat(a.real_cpa) || 0;
+                        bValue = parseFloat(b.real_cpa) || 0;
+                        break;
+                    case 'roas':
+                        aValue = a.cost > 0 ? parseFloat(a.real_conversion_value / a.cost) || 0 : 0;
+                        bValue = b.cost > 0 ? parseFloat(b.real_conversion_value / b.cost) || 0 : 0;
+                        break;
+                    case 'conversion_rate':
+                        aValue = parseFloat(a.real_conversion_rate) || 0;
+                        bValue = parseFloat(b.real_conversion_rate) || 0;
+                        break;
+                    default:
+                        return 0;
+                }
+                
+                if (currentSort.direction === 'asc') {
+                    return aValue > bValue ? 1 : -1;
+                } else {
+                    return aValue < bValue ? 1 : -1;
+                }
+            });
+        }
+
         let html = '';
         
         // Render các chiến dịch
@@ -292,20 +358,24 @@ $(document).ready(function() {
                 <tr>
                     <td>${campaign.campaign_id}</td>
                     <td>${campaign.name}</td>
+                    <td>${formatNumber(campaign.budget)}</td>
                     <td>
                         <span class="badge ${campaign.status === 'ENABLED' ? 'bg-success' : 'bg-warning'}">
                             ${campaign.status === 'ENABLED' ? 'Đang chạy' : 'Tạm dừng'}
                         </span>
                     </td>
-                    <td>${formatNumber(campaign.budget)}</td>
-                    <td>${formatNumber(campaign.cost)}</td>
+                    <td class="text-primary">${formatNumber(campaign.cost)}</td>
+                    <td>
+                        <span class="fw-bold ${(campaign.real_conversion_value / campaign.cost) > 2 ? 'text-success' : 'text-danger'}">
+                            ${campaign.cost > 0 ? formatNumberWithoutCurrency(campaign.real_conversion_value / campaign.cost) : '-'}
+                        </span>
+                    </td>
+                    <td class="text-primary">${campaign.real_cpa ? formatNumber(campaign.real_cpa) : '-'}</td>
+                    <td class="text-primary">${campaign.real_conversions ? formatNumberWithoutCurrency(campaign.real_conversions) : '-'}</td>
                     <td>${formatPercent(campaign.ctr)}</td>
                     <td>${formatNumberWithoutCurrency(campaign.clicks)}</td>
                     <td>${formatNumber(campaign.average_cpc)}</td>
-                    <td>${campaign.real_conversions ? formatNumberWithoutCurrency(campaign.real_conversions) : '-'}</td>
                     <td>${campaign.real_conversion_value ? formatNumber(campaign.real_conversion_value) : '-'}</td>
-                    <td>${campaign.real_cpa ? formatNumber(campaign.real_cpa) : '-'}</td>
-                    <td>${campaign.cost > 0 ? formatNumberWithoutCurrency(campaign.real_conversion_value / campaign.cost) : '-'}</td>
                     <td>${campaign.real_conversion_rate ? formatPercent(campaign.real_conversion_rate) : '-'}</td>
                     <td>
                         <button class="btn ${campaign.status === 'ENABLED' ? 'btn-danger' : 'btn-success'} btn-sm toggle-status"
@@ -324,16 +394,20 @@ $(document).ready(function() {
         html += `
             <tr class="table-primary fw-bold">
                 <td colspan="2">Tổng cộng</td>
-                <td>-</td>
                 <td>${formatNumber(totals.budget)}</td>
-                <td>${formatNumber(totals.cost)}</td>
+                <td>-</td>
+                <td class="text-primary">${formatNumber(totals.cost)}</td>
+                <td>
+                    <span class="${totalROAS > 2 ? 'text-success' : 'text-danger'}">
+                        ${formatNumberWithoutCurrency(totalROAS)}
+                    </span>
+                </td>
+                <td class="text-primary">${formatNumber(totalRealCPA)}</td>
+                <td class="text-primary">${formatNumberWithoutCurrency(totals.real_conversions)}</td>
                 <td>${formatPercent(totalCTR)}</td>
                 <td>${formatNumberWithoutCurrency(totals.clicks)}</td>
                 <td>${formatNumber(totalAverageCPC)}</td>
-                <td>${formatNumberWithoutCurrency(totals.real_conversions)}</td>
                 <td>${formatNumber(totals.real_conversion_value)}</td>
-                <td>${formatNumber(totalRealCPA)}</td>
-                <td>${formatNumberWithoutCurrency(totalROAS)}</td>
                 <td>${formatPercent(totalRealConversionRate)}</td>
                 <td>-</td>
             </tr>

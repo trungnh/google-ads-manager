@@ -4,6 +4,7 @@ assets/css/style.css
 body {
     background-color: #f8f9fa;
     padding-bottom: 20px;
+    font-family: 'Roboto', sans-serif;
 }
 
 .card {
@@ -23,4 +24,12 @@ body {
 
 .btn-google:hover {
     background-color: #c23321;
+}
+.table {
+    font-size: 14px!important;
+}
+@media (min-width: 1400px) {
+    .container, .container-lg, .container-md, .container-sm, .container-xl, .container-xxl {
+        max-width: 1600px;
+    }
 }
