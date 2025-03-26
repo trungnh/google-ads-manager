@@ -175,11 +175,16 @@ class Campaigns extends BaseController
                         : 0;
                 } else {
                     // Nếu không có dữ liệu chuyển đổi, set về 0
-                    $processedCampaign['real_conversions'] = 0;
-                    $processedCampaign['real_conversion_value'] = 0;
-                    $processedCampaign['real_conversion_rate'] = 0;
-                    $processedCampaign['real_cpa'] = 0;
+                    // $processedCampaign['real_conversions'] = 0;
+                    // $processedCampaign['real_conversion_value'] = 0;
+                    // $processedCampaign['real_conversion_rate'] = 0;
+                    // $processedCampaign['real_cpa'] = 0;
                 }
+
+                $processedCampaign['real_conversions'] = $processedCampaign['real_conversions'] ?? 0;
+                $processedCampaign['real_conversion_value'] = $processedCampaign['real_conversion_value'] ?? 0;
+                $processedCampaign['real_conversion_rate'] = $processedCampaign['real_conversion_rate'] ?? 0;
+                $processedCampaign['real_cpa'] = $processedCampaign['real_cpa'] ?? 0;
                 
                 $processedCampaigns[] = $processedCampaign;
             }
