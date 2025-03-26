@@ -34,6 +34,14 @@
                             <small class="form-text text-muted">Nhập MCC ID dưới dạng số (không có dấu -) hoặc để trống</small>
                         </div>
                         
+                        <div class="form-group mb-3">
+                            <label for="telegram_chat_id">Telegram Chat ID (Optional)</label>
+                            <input type="text" class="form-control" id="telegram_chat_id" name="telegram_chat_id" 
+                                   placeholder="Example: -1001234567890" 
+                                   value="<?= isset($settings['telegram_chat_id']) ? $settings['telegram_chat_id'] : '' ?>">
+                            <small class="form-text text-muted">Nhập Telegram Chat ID để nhận thông báo. Để lấy Chat ID, thêm bot @your_bot vào group chat và gửi tin nhắn /chat_id</small>
+                        </div>
+                        
                         <button type="submit" class="btn btn-primary">Save Settings</button>
                     </form>
                 </div>
