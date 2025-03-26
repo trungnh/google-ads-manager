@@ -74,6 +74,7 @@ class Campaigns extends BaseController
             $today = date('Y-m-d');
             $showPaused = $this->request->getGet('showPaused') === 'true';
             $campaigns = $this->campaignsDataModel->getCampaignsByDate($customerId, $today, $showPaused);
+            $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($account['id']);
 
             // 6. Nếu không có dữ liệu trong database, lấy từ API
             if (empty($campaigns)) {
@@ -94,8 +95,6 @@ class Campaigns extends BaseController
                     $today,
                     $today
                 );
-
-                $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($account['id']);
                 $gsheetUrl = $settings['gsheet1'] ?? null;
                 if (!empty($campaigns) && !empty($gsheetUrl)) {
                     $campaigns = $this->processRealConversions($campaigns, $gsheetUrl, $today, $settings);
@@ -108,7 +107,8 @@ class Campaigns extends BaseController
                 'title' => 'Danh sách chiến dịch - ' . $account['customer_name'],
                 'account' => $account,
                 'accounts' => $accounts,
-                'campaigns' => $campaigns
+                'campaigns' => $campaigns,
+                'accountSettings' => $settings
             ]);
 
         } catch (Exception $e) {
@@ -256,7 +256,7 @@ class Campaigns extends BaseController
 
             // Chỉ lưu vào database nếu ngày bắt đầu và kết thúc là cùng ngày
             if ($startDate === $endDate) {
-                $this->campaignsDataModel->saveCampaignsData($customerId, $campaigns, $startDate);
+                $this->campaignsDataModel->saveCampaignsData($customerId, $campaigns);
                 $lastUpdateTime = date('Y-m-d H:i:s');
             } else {
                 $lastUpdateTime = null;

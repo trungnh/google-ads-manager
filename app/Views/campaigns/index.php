@@ -134,6 +134,7 @@
 <script>
 $(document).ready(function() {
     let campaignsData = [];
+    let accountSettings = <?= json_encode($accountSettings) ?>;
     let currentSort = {
         column: null,
         direction: 'asc'
@@ -255,7 +256,6 @@ $(document).ready(function() {
 
     function renderCampaigns() {
         let sortedCampaigns = [...campaignsData];
-        
         // Tính toán total
         const totals = {
             budget: 0,
@@ -364,13 +364,17 @@ $(document).ready(function() {
                             ${campaign.status === 'ENABLED' ? 'Đang chạy' : 'Tạm dừng'}
                         </span>
                     </td>
-                    <td class="text-primary">${formatNumber(campaign.cost)}</td>
+                    <td class="text-primary">
+                        ${formatNumber(campaign.cost)}
+                    </td>
                     <td>
                         <span class="fw-bold ${(campaign.real_conversion_value / campaign.cost) > 2 ? 'text-success' : 'text-danger'}">
-                            ${campaign.cost > 0 ? formatNumberWithoutCurrency(campaign.real_conversion_value / campaign.cost) : '-'}
+                            ${campaign.cost > 0 ? formatNumberWithoutCurrency2(campaign.real_conversion_value / campaign.cost) : '-'}
                         </span>
                     </td>
-                    <td class="text-primary">${campaign.real_cpa ? formatNumber(campaign.real_cpa) : '-'}</td>
+                    <td class="text-${(campaign.real_cpa > accountSettings.cpa_threshold) || campaign.real_cpa == 0 ? 'danger' : 'primary'}">
+                        ${campaign.real_cpa ? formatNumber(campaign.real_cpa) : '-'}
+                    </td>
                     <td class="text-primary">${campaign.real_conversions ? formatNumberWithoutCurrency(campaign.real_conversions) : '-'}</td>
                     <td>${formatPercent(campaign.ctr)}</td>
                     <td>${formatNumberWithoutCurrency(campaign.clicks)}</td>
@@ -399,7 +403,7 @@ $(document).ready(function() {
                 <td class="text-primary">${formatNumber(totals.cost)}</td>
                 <td>
                     <span class="${totalROAS > 2 ? 'text-success' : 'text-danger'}">
-                        ${formatNumberWithoutCurrency(totalROAS)}
+                        ${formatNumberWithoutCurrency2(totalROAS)}
                     </span>
                 </td>
                 <td class="text-primary">${formatNumber(totalRealCPA)}</td>
@@ -477,6 +481,13 @@ $(document).ready(function() {
         return new Intl.NumberFormat('vi-VN', { 
             minimumFractionDigits: 0,
             maximumFractionDigits: 0
+        }).format(number);
+    }
+
+    function formatNumberWithoutCurrency2(number) {
+        return new Intl.NumberFormat('vi-VN', { 
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
         }).format(number);
     }
 
