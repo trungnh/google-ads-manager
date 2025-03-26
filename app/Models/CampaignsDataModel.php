@@ -65,13 +65,11 @@ class CampaignsDataModel extends Model
         return $result ? $result['last_updated_at'] : null;
     }
 
-    public function saveCampaignsData($customerId, $campaignsData)
+    public function saveCampaignsData($customerId, $campaignsData, $date = null)
     {
         $db = \Config\Database::connect();
         $builder = $db->table('campaigns_data');
-        
-        $date = date('Y-m-d');
-        
+        $date = $date ?? date('Y-m-d');
         foreach ($campaignsData as $campaign) {
             $data = [
                 'customer_id' => $customerId,

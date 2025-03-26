@@ -249,7 +249,6 @@ class Campaigns extends BaseController
                 $startDate,
                 $endDate
             );
-
             // Xử lý dữ liệu chuyển đổi thực tế từ Google Sheet
             if (!empty($campaigns) && !empty($gsheetUrl)) {
                 $campaigns = $this->processRealConversions($campaigns, $gsheetUrl, $startDate, $settings);
@@ -257,7 +256,7 @@ class Campaigns extends BaseController
 
             // Chỉ lưu vào database nếu ngày bắt đầu và kết thúc là cùng ngày
             if ($startDate === $endDate) {
-                $this->campaignsDataModel->saveCampaignsData($customerId, $campaigns);
+                $this->campaignsDataModel->saveCampaignsData($customerId, $campaigns, $startDate);
                 $lastUpdateTime = date('Y-m-d H:i:s');
             } else {
                 $lastUpdateTime = null;
