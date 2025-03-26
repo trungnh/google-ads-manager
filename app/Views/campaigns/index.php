@@ -136,8 +136,8 @@ $(document).ready(function() {
     let campaignsData = [];
     let accountSettings = <?= json_encode($accountSettings) ?>;
     let currentSort = {
-        column: null,
-        direction: 'asc'
+        column: 'cost',
+        direction: 'desc'
     };
 
     // Initialize datepickers
