@@ -95,10 +95,16 @@ class Campaigns extends BaseController
                     $today,
                     $today
                 );
+
                 $gsheetUrl = $settings['gsheet1'] ?? null;
                 if (!empty($campaigns) && !empty($gsheetUrl)) {
                     $campaigns = $this->processRealConversions($campaigns, $gsheetUrl, $today, $settings);
                 }
+                $gsheetUrl2 = $settings['gsheet2'] ?? null;
+                if (!empty($campaigns) && !empty($gsheetUrl2)) {
+                    $campaigns = $this->processRealConversions($campaigns, $gsheetUrl2, $today, $settings);
+                }
+
                 $this->campaignsDataModel->saveCampaignsData($customerId, $campaigns);
             }
 
@@ -151,13 +157,19 @@ class Campaigns extends BaseController
                 
                 // Nếu có dữ liệu chuyển đổi cho chiến dịch này
                 if (isset($sheetData[$campaignId])) {
-                    $processedCampaign['real_conversions'] = $sheetData[$campaignId]['conversions'];
-                    $processedCampaign['real_conversion_value'] = $sheetData[$campaignId]['conversion_value'];
+                    $tmpRealConversions = $processedCampaign['real_conversions'] ?? 0;
+                    $tmpRealConversionValue = $processedCampaign['real_conversion_value'] ?? 0;
+
+                    $tmpRealConversions += $sheetData[$campaignId]['conversions'];
+                    $tmpRealConversionValue += $sheetData[$campaignId]['conversion_value'];
+
+                    $processedCampaign['real_conversions'] = $tmpRealConversions;
+                    $processedCampaign['real_conversion_value'] = $tmpRealConversionValue;
                     $processedCampaign['real_conversion_rate'] = isset($campaign['clicks']) && $campaign['clicks'] > 0 
-                        ? ($sheetData[$campaignId]['conversions'] / $campaign['clicks']) * 100 
+                        ? ($tmpRealConversions / $campaign['clicks']) * 100 
                         : 0;
-                    $processedCampaign['real_cpa'] = $sheetData[$campaignId]['conversions'] > 0 
-                        ? ($campaign['cost'] ?? 0) / $sheetData[$campaignId]['conversions']
+                    $processedCampaign['real_cpa'] = $tmpRealConversions > 0 
+                        ? ($campaign['cost'] ?? 0) / $tmpRealConversions
                         : 0;
                 } else {
                     // Nếu không có dữ liệu chuyển đổi, set về 0
@@ -211,7 +223,7 @@ class Campaigns extends BaseController
             $account = $this->adsAccountModel->where('customer_id', $customerId)->first();
             $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($account['id']);
             $gsheetUrl = $settings['gsheet1'] ?? null;
-
+            $gsheetUrl2 = $settings['gsheet2'] ?? null;
             // Lấy access token
             $tokenData = $this->googleTokenModel->getValidToken($userId);
             if (empty($tokenData) || empty($tokenData['access_token'])) {
@@ -253,7 +265,9 @@ class Campaigns extends BaseController
             if (!empty($campaigns) && !empty($gsheetUrl)) {
                 $campaigns = $this->processRealConversions($campaigns, $gsheetUrl, $startDate, $settings);
             }
-
+            if (!empty($campaigns) && !empty($gsheetUrl2)) {
+                $campaigns = $this->processRealConversions($campaigns, $gsheetUrl2, $startDate, $settings);
+            }
             // Chỉ lưu vào database nếu ngày bắt đầu và kết thúc là cùng ngày
             if ($startDate === $endDate) {
                 $this->campaignsDataModel->saveCampaignsData($customerId, $campaigns);

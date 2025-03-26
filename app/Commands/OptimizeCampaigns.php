@@ -196,22 +196,22 @@ class OptimizeCampaigns extends BaseCommand
             }
             
             // Lấy dữ liệu chuyển đổi thực tế từ Google Sheet
+            // Sử dụng giá trị mặc định cho cấu hình cột
+            $columnConfig = [
+                'date_col' => 'A',
+                'phone_col' => 'B',
+                'value_col' => 'C',
+                'campaign_col' => 'D'
+            ];
+
+            // Nếu có cấu hình trong settings thì sử dụng
+            if (isset($account['gsheet_date_col'])) $columnConfig['gsheet_date_col'] = $account['gsheet_date_col'];
+            if (isset($account['gsheet_phone_col'])) $columnConfig['gsheet_phone_col'] = $account['gsheet_phone_col'];
+            if (isset($account['gsheet_value_col'])) $columnConfig['gsheet_value_col'] = $account['gsheet_value_col'];
+            if (isset($account['gsheet_campaign_col'])) $columnConfig['gsheet_campaign_col'] = $account['gsheet_campaign_col'];
+
             $sheetData = [];
             if (!empty($account['gsheet1'])) {
-                // Sử dụng giá trị mặc định cho cấu hình cột
-                $columnConfig = [
-                    'date_col' => 'A',
-                    'phone_col' => 'B',
-                    'value_col' => 'C',
-                    'campaign_col' => 'D'
-                ];
-
-                // Nếu có cấu hình trong settings thì sử dụng
-                if (isset($account['gsheet_date_col'])) $columnConfig['gsheet_date_col'] = $account['gsheet_date_col'];
-                if (isset($account['gsheet_phone_col'])) $columnConfig['gsheet_phone_col'] = $account['gsheet_phone_col'];
-                if (isset($account['gsheet_value_col'])) $columnConfig['gsheet_value_col'] = $account['gsheet_value_col'];
-                if (isset($account['gsheet_campaign_col'])) $columnConfig['gsheet_campaign_col'] = $account['gsheet_campaign_col'];
-
                 try {
                     $sheetData = $this->googleSheetService->getConversionsFromCsv(
                         $account['gsheet1'], 
@@ -220,10 +220,26 @@ class OptimizeCampaigns extends BaseCommand
                     );
                 } catch (\Exception $e) {
                     CLI::write("Lỗi đọc dữ liệu Google Sheet: " . $e->getMessage(), 'yellow');
-                    if($telegramChatId){
-                        $this->telegramService->sendMessage("❌ Lỗi đọc dữ liệu Google Sheet: " . $e->getMessage(), $telegramChatId);
-                    }
-                    // Tiếp tục xử lý với sheetData rỗng
+                }
+            }
+            // Lấy dữ liệu chuyển đổi thực tế từ Google Sheet 2
+            $sheetData2 = [];
+            if (!empty($account['gsheet2'])) {
+                try {
+                    $sheetData2 = $this->googleSheetService->getConversionsFromCsv(
+                        $account['gsheet1'], 
+                        date('Y-m-d'),
+                        $columnConfig
+                    );
+                } catch (\Exception $e) {
+                    CLI::write("Lỗi đọc dữ liệu Google Sheet: " . $e->getMessage(), 'yellow');
+                }
+            }
+
+            foreach($sheetData as $key => $value){
+                if (isset($sheetData2[$key])) {
+                    $sheetData[$key]['conversions'] += $sheetData2[$key]['conversions'];
+                    $sheetData[$key]['conversion_value'] += $sheetData2[$key]['conversion_value'];
                 }
             }
 

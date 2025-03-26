@@ -50,7 +50,8 @@ class AdsAccountSettings extends BaseController
                     'gsheet_date_col' => 'A',
                     'gsheet_phone_col' => 'C',
                     'gsheet_value_col' => 'F',
-                    'gsheet_campaign_col' => 'L'
+                    'gsheet_campaign_col' => 'L',
+                    'gsheet2' => '',
                 ];
                 log_message('info', 'Creating default settings for account: ' . $adsAccountId);
                 $this->adsAccountSettingsModel->insert($settings);
@@ -90,7 +91,8 @@ class AdsAccountSettings extends BaseController
                 'gsheet_date_col' => $this->request->getPost('gsheet_date_col'),
                 'gsheet_phone_col' => $this->request->getPost('gsheet_phone_col'),
                 'gsheet_value_col' => $this->request->getPost('gsheet_value_col'),
-                'gsheet_campaign_col' => $this->request->getPost('gsheet_campaign_col')
+                'gsheet_campaign_col' => $this->request->getPost('gsheet_campaign_col'),
+                'gsheet2' => $this->request->getPost('gsheet2')
             ];
 
             log_message('info', 'Processed settings: ' . json_encode($settings));

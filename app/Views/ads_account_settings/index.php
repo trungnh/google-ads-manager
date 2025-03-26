@@ -66,6 +66,15 @@
                                 value="<?= isset($settings['gsheet1']) ? $settings['gsheet1'] : '' ?>"
                                 placeholder="https://docs.google.com/spreadsheets/d/.../export?format=csv">
                         </div>
+                        <div class="mb-3">
+                            <label for="gsheet2" class="form-label">URL Google Sheet 2 (CSV)</label>
+                            <small class="form-text text-muted">
+                                <i> - Đảm bảo thứ tự các cột giống nhau giữa 2 sheet</i>
+                            </small>
+                            <input type="text" class="form-control" id="gsheet2" name="gsheet2" 
+                                value="<?= isset($settings['gsheet2']) ? $settings['gsheet2'] : '' ?>"
+                                placeholder="https://docs.google.com/spreadsheets/d/.../export?format=csv">
+                        </div>
 
                         <div class="row">
                             <div class="col-md-6">
@@ -131,7 +140,8 @@ $(document).ready(function() {
             gsheet_date_col: $('#gsheet_date_col').val().toUpperCase(),
             gsheet_phone_col: $('#gsheet_phone_col').val().toUpperCase(),
             gsheet_value_col: $('#gsheet_value_col').val().toUpperCase(),
-            gsheet_campaign_col: $('#gsheet_campaign_col').val().toUpperCase()
+            gsheet_campaign_col: $('#gsheet_campaign_col').val().toUpperCase(),
+            gsheet2: $('#gsheet2').val()
         };
         
         $.ajax({

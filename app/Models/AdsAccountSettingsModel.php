@@ -22,6 +22,7 @@ class AdsAccountSettingsModel extends Model
         'gsheet_phone_col',
         'gsheet_value_col',
         'gsheet_campaign_col',
+        'gsheet2',
         'last_optimize_run'
     ];
     protected $useTimestamps = true;
@@ -38,7 +39,8 @@ class AdsAccountSettingsModel extends Model
         'gsheet_date_col' => 'permit_empty|alpha|max_length[1]',
         'gsheet_phone_col' => 'permit_empty|alpha|max_length[1]',
         'gsheet_value_col' => 'permit_empty|alpha|max_length[1]',
-        'gsheet_campaign_col' => 'permit_empty|alpha|max_length[1]'
+        'gsheet_campaign_col' => 'permit_empty|alpha|max_length[1]',
+        'gsheet2' => 'permit_empty|valid_url'
     ];
 
     public function getSettingsByAccountId($accountId)
@@ -59,7 +61,8 @@ class AdsAccountSettingsModel extends Model
             'gsheet_date_col' => strtoupper($data['gsheet_date_col'] ?? ''),
             'gsheet_phone_col' => strtoupper($data['gsheet_phone_col'] ?? ''),
             'gsheet_value_col' => strtoupper($data['gsheet_value_col'] ?? ''),
-            'gsheet_campaign_col' => strtoupper($data['gsheet_campaign_col'] ?? '')
+            'gsheet_campaign_col' => strtoupper($data['gsheet_campaign_col'] ?? ''),
+            'gsheet2' => $data['gsheet2'] ?? null
         ];
 
         // Kiểm tra xem đã có settings chưa
