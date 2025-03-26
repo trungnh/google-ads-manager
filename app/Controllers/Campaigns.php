@@ -48,6 +48,7 @@ class Campaigns extends BaseController
             $account = $this->adsAccountModel
                 ->where('user_id', $userId)
                 ->where('customer_id', $customerId)
+                ->orderBy('order', 'ASC')
                 ->first();
 
             // 3. Nếu không tìm thấy tài khoản hiện tại, tìm tài khoản đầu tiên của user
@@ -68,6 +69,7 @@ class Campaigns extends BaseController
             // 4. Lấy danh sách tất cả tài khoản của user để hiển thị trong dropdown
             $accounts = $this->adsAccountModel
                 ->where('user_id', $userId)
+                ->orderBy('order', 'ASC')
                 ->findAll();
 
             // 5. Lấy dữ liệu chiến dịch từ database

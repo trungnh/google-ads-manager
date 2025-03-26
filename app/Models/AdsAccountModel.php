@@ -18,7 +18,8 @@ class AdsAccountModel extends Model
         'status', 
         'last_synced',
         'created_at',
-        'updated_at'
+        'updated_at',
+        'order'
     ];
     
     protected $useTimestamps = false;

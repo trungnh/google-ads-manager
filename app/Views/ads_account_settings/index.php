@@ -117,6 +117,14 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="mb-3">
+                            <label for="order" class="form-label">Thứ tự sắp xếp</label>
+                            <input type="number" class="form-control" id="order" name="order" 
+                                value="<?= isset($settings['order']) ? $settings['order'] : '' ?>">
+                            <small class="form-text text-muted">
+                                Số thứ tự sắp xếp tài khoản
+                            </small>
+                        </div>
 
                         <button type="submit" class="btn btn-primary">Lưu cài đặt</button>
                     </form>
@@ -141,7 +149,8 @@ $(document).ready(function() {
             gsheet_phone_col: $('#gsheet_phone_col').val().toUpperCase(),
             gsheet_value_col: $('#gsheet_value_col').val().toUpperCase(),
             gsheet_campaign_col: $('#gsheet_campaign_col').val().toUpperCase(),
-            gsheet2: $('#gsheet2').val()
+            gsheet2: $('#gsheet2').val(),
+            order: $('#order').val()
         };
         
         $.ajax({

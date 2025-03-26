@@ -38,6 +38,7 @@ class AdsAccountSettings extends BaseController
 
             // Lấy settings hiện tại
             $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($adsAccountId);
+            $account = $this->adsAccountModel->find($adsAccountId);
             
             if (!$settings) {
                 // Tạo settings mặc định nếu chưa có
@@ -52,6 +53,7 @@ class AdsAccountSettings extends BaseController
                     'gsheet_value_col' => 'F',
                     'gsheet_campaign_col' => 'L',
                     'gsheet2' => '',
+                    'order' => $account['order']
                 ];
                 log_message('info', 'Creating default settings for account: ' . $adsAccountId);
                 $this->adsAccountSettingsModel->insert($settings);
@@ -81,6 +83,8 @@ class AdsAccountSettings extends BaseController
         try {
             log_message('info', 'Updating settings for account: ' . $adsAccountId);
             log_message('info', 'POST data: ' . json_encode($this->request->getPost()));
+            $order = $this->request->getPost('order') ?? 0;
+            $account = $this->adsAccountModel->find($adsAccountId);
 
             $settings = [
                 'auto_optimize' => $this->request->getPost('auto_optimize') ? 1 : 0,
@@ -98,6 +102,7 @@ class AdsAccountSettings extends BaseController
             log_message('info', 'Processed settings: ' . json_encode($settings));
 
             $result = $this->adsAccountSettingsModel->saveSettings($adsAccountId, $settings);
+            $this->adsAccountModel->update($adsAccountId, ['order' => $order]);
             
             if ($result) {
                 log_message('info', 'Settings saved successfully for account: ' . $adsAccountId);

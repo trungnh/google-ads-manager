@@ -26,7 +26,7 @@ class AdsAccounts extends BaseController
         // Lấy danh sách tài khoản ads
         $accounts = $this->adsAccountModel
             ->where('user_id', $userId)
-            ->orderBy('last_synced', 'DESC')
+            ->orderBy('order', 'ASC')
             ->findAll();
         
         $data = [
