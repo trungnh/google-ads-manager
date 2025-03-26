@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Ads Manager - Quản lý chiến dịch quảng cáo thông minh</title>
+    <title>NNHD Ads Manager - Quản lý chiến dịch quảng cáo thông minh</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="icon" href="<?= base_url('assets/images/logo.ico') ?>" type="image/x-icon">
     <style>
         .hero-section {
             background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
@@ -30,7 +31,9 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
         <div class="container">
-            <a class="navbar-brand" href="/">Google Ads Manager</a>
+            <a class="navbar-brand" href="/">
+                <img src="<?= base_url('assets/images/logo.png') ?>" alt="Logo" width="30" height="30">
+            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
