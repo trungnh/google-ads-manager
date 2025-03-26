@@ -354,6 +354,7 @@ $(document).ready(function() {
         
         // Render các chiến dịch
         sortedCampaigns.forEach(campaign => {
+            let tmpRoas = (campaign.cost > 0) ? campaign.real_conversion_value / campaign.cost : 0;
             html += `
                 <tr>
                     <td>${campaign.campaign_id}</td>
@@ -368,19 +369,19 @@ $(document).ready(function() {
                         ${formatNumber(campaign.cost)}
                     </td>
                     <td>
-                        <span class="fw-bold ${(campaign.real_conversion_value / campaign.cost) > 2 ? 'text-success' : 'text-danger'}">
-                            ${campaign.cost > 0 ? formatNumberWithoutCurrency2(campaign.real_conversion_value / campaign.cost) : '-'}
+                        <span class="fw-bold ${(tmpRoas > accountSettings.roas_threshold) ? 'text-success' : 'text-danger'}">
+                            ${tmpRoas > 0 ? formatNumberWithoutCurrency2(tmpRoas) : '-'}
                         </span>
                     </td>
                     <td class="text-${(campaign.real_cpa > accountSettings.cpa_threshold) || campaign.real_cpa == 0 ? 'danger' : 'primary'}">
-                        ${campaign.real_cpa ? formatNumber(campaign.real_cpa) : '-'}
+                        ${(campaign.real_cpa > 0) ? formatNumber(campaign.real_cpa) : '-'}
                     </td>
-                    <td class="text-primary">${campaign.real_conversions ? formatNumberWithoutCurrency(campaign.real_conversions) : '-'}</td>
+                    <td class="text-primary">${(campaign.real_conversions > 0) ? formatNumberWithoutCurrency(campaign.real_conversions) + ' đơn' : '-'}</td>
                     <td>${formatPercent(campaign.ctr)}</td>
                     <td>${formatNumberWithoutCurrency(campaign.clicks)}</td>
                     <td>${formatNumber(campaign.average_cpc)}</td>
-                    <td>${campaign.real_conversion_value ? formatNumber(campaign.real_conversion_value) : '-'}</td>
-                    <td>${campaign.real_conversion_rate ? formatPercent(campaign.real_conversion_rate) : '-'}</td>
+                    <td>${(campaign.real_conversion_value > 0) ? formatNumber(campaign.real_conversion_value) : '-'}</td>
+                    <td>${(campaign.real_conversion_rate > 0) ? formatPercent(campaign.real_conversion_rate) : '-'}</td>
                     <td>
                         <button class="btn ${campaign.status === 'ENABLED' ? 'btn-danger' : 'btn-success'} btn-sm toggle-status"
                                 data-customer-id="<?= $account['customer_id'] ?>"
@@ -407,7 +408,7 @@ $(document).ready(function() {
                     </span>
                 </td>
                 <td class="text-primary">${formatNumber(totalRealCPA)}</td>
-                <td class="text-primary">${formatNumberWithoutCurrency(totals.real_conversions)}</td>
+                <td class="text-primary">${(totals.real_conversions > 0) ? formatNumberWithoutCurrency(totals.real_conversions) + ' đơn' : '-'}</td>
                 <td>${formatPercent(totalCTR)}</td>
                 <td>${formatNumberWithoutCurrency(totals.clicks)}</td>
                 <td>${formatNumber(totalAverageCPC)}</td>
