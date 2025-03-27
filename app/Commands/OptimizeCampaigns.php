@@ -214,7 +214,8 @@ class OptimizeCampaigns extends BaseCommand
             if (!empty($account['gsheet1'])) {
                 try {
                     $sheetData = $this->googleSheetService->getConversionsFromCsv(
-                        $account['gsheet1'], 
+                        $account['gsheet1'],
+                        date('Y-m-d'),
                         date('Y-m-d'),
                         $columnConfig
                     );
@@ -227,7 +228,8 @@ class OptimizeCampaigns extends BaseCommand
             if (!empty($account['gsheet2'])) {
                 try {
                     $sheetData2 = $this->googleSheetService->getConversionsFromCsv(
-                        $account['gsheet1'], 
+                        $account['gsheet2'],
+                        date('Y-m-d'),
                         date('Y-m-d'),
                         $columnConfig
                     );

@@ -100,11 +100,11 @@ class Campaigns extends BaseController
 
                 $gsheetUrl = $settings['gsheet1'] ?? null;
                 if (!empty($campaigns) && !empty($gsheetUrl)) {
-                    $campaigns = $this->processRealConversions($campaigns, $gsheetUrl, $today, $settings);
+                    $campaigns = $this->processRealConversions($campaigns, $gsheetUrl, $today, $today, $settings);
                 }
                 $gsheetUrl2 = $settings['gsheet2'] ?? null;
                 if (!empty($campaigns) && !empty($gsheetUrl2)) {
-                    $campaigns = $this->processRealConversions($campaigns, $gsheetUrl2, $today, $settings);
+                    $campaigns = $this->processRealConversions($campaigns, $gsheetUrl2, $today, $today, $settings);
                 }
 
                 $this->campaignsDataModel->saveCampaignsData($customerId, $campaigns);
@@ -126,7 +126,7 @@ class Campaigns extends BaseController
         }
     }
 
-    protected function processRealConversions($campaigns, $gsheetUrl, $date, $settings)
+    protected function processRealConversions($campaigns, $gsheetUrl, $startDate, $endDate, $settings)
     {
         // Kiểm tra input
         if (empty($campaigns) || !is_array($campaigns)) {
@@ -140,7 +140,7 @@ class Campaigns extends BaseController
 
         try {
             // Lấy dữ liệu chuyển đổi từ Google Sheet
-            $sheetData = $this->googleSheetService->getConversionsFromCsv($gsheetUrl, $date, $settings);
+            $sheetData = $this->googleSheetService->getConversionsFromCsv($gsheetUrl, $startDate, $endDate, $settings);
             
             // Tạo mảng mới để lưu kết quả
             $processedCampaigns = [];
@@ -173,14 +173,8 @@ class Campaigns extends BaseController
                     $processedCampaign['real_cpa'] = $tmpRealConversions > 0 
                         ? ($campaign['cost'] ?? 0) / $tmpRealConversions
                         : 0;
-                } else {
-                    // Nếu không có dữ liệu chuyển đổi, set về 0
-                    // $processedCampaign['real_conversions'] = 0;
-                    // $processedCampaign['real_conversion_value'] = 0;
-                    // $processedCampaign['real_conversion_rate'] = 0;
-                    // $processedCampaign['real_cpa'] = 0;
-                }
-
+                } 
+                
                 $processedCampaign['real_conversions'] = $processedCampaign['real_conversions'] ?? 0;
                 $processedCampaign['real_conversion_value'] = $processedCampaign['real_conversion_value'] ?? 0;
                 $processedCampaign['real_conversion_rate'] = $processedCampaign['real_conversion_rate'] ?? 0;
@@ -270,14 +264,14 @@ class Campaigns extends BaseController
             );
             // Xử lý dữ liệu chuyển đổi thực tế từ Google Sheet
             if (!empty($campaigns) && !empty($gsheetUrl)) {
-                $campaigns = $this->processRealConversions($campaigns, $gsheetUrl, $startDate, $settings);
+                $campaigns = $this->processRealConversions($campaigns, $gsheetUrl, $startDate, $endDate, $settings);
             }
             if (!empty($campaigns) && !empty($gsheetUrl2)) {
-                $campaigns = $this->processRealConversions($campaigns, $gsheetUrl2, $startDate, $settings);
+                $campaigns = $this->processRealConversions($campaigns, $gsheetUrl2, $startDate, $endDate, $settings);
             }
             // Chỉ lưu vào database nếu ngày bắt đầu và kết thúc là cùng ngày
             if ($startDate === $endDate) {
-                $this->campaignsDataModel->saveCampaignsData($customerId, $campaigns);
+                $this->campaignsDataModel->saveCampaignsData($customerId, $campaigns, $startDate);
                 $lastUpdateTime = date('Y-m-d H:i:s');
             } else {
                 $lastUpdateTime = null;

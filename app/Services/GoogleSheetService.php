@@ -4,7 +4,7 @@ namespace App\Services;
 
 class GoogleSheetService
 {
-    public function getConversionsFromCsv($csvUrl, $date, $settings)
+    public function getConversionsFromCsv($csvUrl, $startDate, $endDate, $settings)
     {
         try {
             // Đọc nội dung CSV từ URL
@@ -33,8 +33,8 @@ class GoogleSheetService
                 $conversionTime = strtotime($row[$dateColIndex]);
                 $conversionDate = date('Y-m-d', $conversionTime);
 
-                // Chỉ xử lý dữ liệu của ngày được chọn
-                if ($conversionDate === $date) {
+                // Chỉ xử lý dữ liệu trong khoảng thời gian được chọn
+                if ($conversionDate >= $startDate && $conversionDate <= $endDate) {
                     $phone = trim($row[$phoneColIndex]); // Số điện thoại
                     $value = floatval(str_replace(['₫', ',', ' '], '', $row[$valueColIndex])); // Giá trị
                     $campaignId = trim($row[$campaignColIndex]); // Campaign ID
