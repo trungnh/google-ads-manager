@@ -120,7 +120,7 @@
                         <div class="mb-3">
                             <label for="order" class="form-label">Thứ tự sắp xếp</label>
                             <input type="number" class="form-control" id="order" name="order" 
-                                value="<?= isset($settings['order']) ? $settings['order'] : '' ?>">
+                                value="<?= isset($account['order']) ? $account['order'] : '' ?>">
                             <small class="form-text text-muted">
                                 Số thứ tự sắp xếp tài khoản
                             </small>

@@ -52,8 +52,7 @@ class AdsAccountSettings extends BaseController
                     'gsheet_phone_col' => 'C',
                     'gsheet_value_col' => 'F',
                     'gsheet_campaign_col' => 'L',
-                    'gsheet2' => '',
-                    'order' => $account['order']
+                    'gsheet2' => ''
                 ];
                 log_message('info', 'Creating default settings for account: ' . $adsAccountId);
                 $this->adsAccountSettingsModel->insert($settings);
