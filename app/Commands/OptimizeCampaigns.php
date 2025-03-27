@@ -59,7 +59,14 @@ class OptimizeCampaigns extends BaseCommand
                 'paused_campaigns' => 0,
                 'increased_budget_campaigns' => 0
             ];
+
+            $processedAccounts = [];
             foreach ($accounts as $account) {
+                // Nếu tài khoản đã được xử lý thì bỏ qua
+                if(in_array($account['id'], $processedAccounts)){
+                    continue;
+                }
+
                 // Kiểm tra các trường bắt buộc
                 if (!isset($account['customer_id']) || !isset($account['user_id']) || !isset($account['id'])) {
                     $message = 'Dữ liệu tài khoản không hợp lệ: thiếu thông tin bắt buộc' . $account['id'];
@@ -85,6 +92,7 @@ class OptimizeCampaigns extends BaseCommand
                         throw new \Exception('Không thể lấy token hợp lệ');
                     }
                     $optimizeCampaignsResult = $this->optimizeCampaigns($account, $tokenData['access_token'], $mccId, $telegramChatId);
+                    $processedAccounts[] = $account['id'];
                 } catch (\Exception $e) {
                     $message = "Lỗi khi tối ưu tài khoản {$accountName}: " . $e->getMessage();
                     CLI::write($message, 'red');

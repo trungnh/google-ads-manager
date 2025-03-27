@@ -139,8 +139,11 @@ $(document).ready(function() {
     $('#settingsForm').on('submit', function(e) {
         e.preventDefault();
         
+        // Debug log for checkbox state
+        console.log('Checkbox checked:', $('#auto_optimize').is(':checked'));
+        
         const formData = {
-            auto_optimize: $('#auto_optimize').is(':checked'),
+            auto_optimize: $('#auto_optimize').is(':checked') ? 'true' : 'false',
             cpa_threshold: $('#cpa_threshold').val(),
             roas_threshold: $('#roas_threshold').val(),
             increase_budget: $('#increase_budget').val(),

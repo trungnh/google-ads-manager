@@ -50,10 +50,14 @@ class AdsAccountSettingsModel extends Model
 
     public function saveSettings($accountId, $data)
     {
+        // Debug log
+        log_message('info', 'Saving settings for account: ' . $accountId);
+        log_message('info', 'Input data: ' . json_encode($data));
+
         // Chuẩn hóa dữ liệu
         $settings = [
             'account_id' => $accountId,
-            'auto_optimize' => isset($data['auto_optimize']) ? 1 : 0,
+            'auto_optimize' => ($data['auto_optimize'] === 'true' || $data['auto_optimize'] === true || $data['auto_optimize'] === 1) ? 1 : 0,
             'cpa_threshold' => $data['cpa_threshold'] ?? 0,
             'roas_threshold' => $data['roas_threshold'] ?? 0,
             'increase_budget' => $data['increase_budget'] ?? 0,
@@ -64,6 +68,9 @@ class AdsAccountSettingsModel extends Model
             'gsheet_campaign_col' => strtoupper($data['gsheet_campaign_col'] ?? ''),
             'gsheet2' => $data['gsheet2'] ?? null
         ];
+
+        // Debug log
+        log_message('info', 'Processed settings: ' . json_encode($settings));
 
         // Kiểm tra xem đã có settings chưa
         $existing = $this->where('account_id', $accountId)->first();

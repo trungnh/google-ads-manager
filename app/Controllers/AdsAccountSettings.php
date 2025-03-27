@@ -85,8 +85,13 @@ class AdsAccountSettings extends BaseController
             $order = $this->request->getPost('order') ?? 0;
             $account = $this->adsAccountModel->find($adsAccountId);
 
+            // Debug log for auto_optimize value
+            $autoOptimizeValue = $this->request->getPost('auto_optimize');
+            log_message('info', 'Raw auto_optimize value: ' . $autoOptimizeValue);
+            log_message('info', 'auto_optimize type: ' . gettype($autoOptimizeValue));
+
             $settings = [
-                'auto_optimize' => $this->request->getPost('auto_optimize') ? 1 : 0,
+                'auto_optimize' => ($autoOptimizeValue === 'true' || $autoOptimizeValue === true) ? 1 : 0,
                 'cpa_threshold' => $this->request->getPost('cpa_threshold'),
                 'roas_threshold' => $this->request->getPost('roas_threshold'),
                 'increase_budget' => $this->request->getPost('increase_budget'),
@@ -99,7 +104,6 @@ class AdsAccountSettings extends BaseController
             ];
 
             log_message('info', 'Processed settings: ' . json_encode($settings));
-
             $result = $this->adsAccountSettingsModel->saveSettings($adsAccountId, $settings);
             $this->adsAccountModel->update($adsAccountId, ['order' => $order]);
             
