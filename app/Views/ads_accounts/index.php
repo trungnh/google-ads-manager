@@ -45,7 +45,7 @@
                             <?php foreach ($accounts as $account): ?>
                                 <tr>
                                     <td><?= $account['customer_id'] ?></td>
-                                    <td><?= $account['customer_name'] ?></td>
+                                    <td class="fw-bold"><?= $account['customer_name'] ?></td>
                                     <td><?= $account['currency_code'] ?? 'N/A' ?></td>
                                     <td><?= $account['time_zone'] ?? 'N/A' ?></td>
                                     <td>

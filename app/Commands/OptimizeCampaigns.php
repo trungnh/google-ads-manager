@@ -37,6 +37,11 @@ class OptimizeCampaigns extends BaseCommand
     public function run(array $params)
     {
         try {
+            $hour = date('H');
+            if($hour < 7 || $hour > 22){
+                CLI::write("Thời gian không hợp lệ, chỉ chạy từ 7:00 đến 22:00", 'yellow');
+                return;
+            }
             // Lấy danh sách tài khoản cần tối ưu
             $accounts = $this->adsAccountSettingsModel->getAccountsForOptimization();
             
