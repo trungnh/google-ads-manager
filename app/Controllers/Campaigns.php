@@ -168,7 +168,7 @@ class Campaigns extends BaseController
                     $processedCampaign['real_conversions'] = $tmpRealConversions;
                     $processedCampaign['real_conversion_value'] = $tmpRealConversionValue;
                     $processedCampaign['real_conversion_rate'] = isset($campaign['clicks']) && $campaign['clicks'] > 0 
-                        ? ($tmpRealConversions / $campaign['clicks']) * 100 
+                        ? ($tmpRealConversions / $campaign['clicks']) 
                         : 0;
                     $processedCampaign['real_cpa'] = $tmpRealConversions > 0 
                         ? ($campaign['cost'] ?? 0) / $tmpRealConversions
