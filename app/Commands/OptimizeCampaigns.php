@@ -257,7 +257,10 @@ class OptimizeCampaigns extends BaseCommand
                     $sheetData[$key]['conversion_value'] += $sheetData2[$key]['conversion_value'];
                 }
             }
-            $reportMessage = "====== {$account['customer_name']} =======\n";
+            $reportMessage = "====== **{$account['customer_name']}** =======\n";
+            $totalConversions = 0;
+            $totalConversionValue = 0;
+            $totalCost = 0;
             foreach ($campaigns as $campaign) {
                 if (!isset($campaign['campaign_id']) || !isset($campaign['cost']) || !isset($campaign['budget'])) {
                     CLI::write("Bỏ qua chiến dịch không hợp lệ: thiếu thông tin bắt buộc", 'yellow');
@@ -285,7 +288,14 @@ class OptimizeCampaigns extends BaseCommand
                     ? $campaignConversions['conversion_value'] / $campaign['cost']
                     : 0;
                 
-                $reportMessage .= "📊{$campaign['campaign_id']} - {$campaign['name']} - {$campaign['cost']} - {$campaignConversions['conversions']} - {$realCpa} - {$realRoas}\n";
+                $reportMessage .= "**{$campaign['name']}**\n";
+                $reportMessage .= "   💰 Chi tiêu: " . number_format($campaign['cost'], 0, '.', '')."\n";
+                $reportMessage .= "   🛒 Chuyển đổi: " . number_format($campaignConversions['conversions'], 0, '.', '')."\n";
+                $reportMessage .= "   🎯 CPA: " . number_format($realCpa, 0, '.', '')."\n";
+                $reportMessage .= "   🎯 ROAS: " . number_format($realRoas, 0, '.', '')."\n";
+                $totalConversions += $campaignConversions['conversions'];
+                $totalConversionValue += $campaignConversions['conversion_value'];
+                $totalCost += $campaign['cost'];
                 // Kiểm tra ROAS thực tế trước
                 if (isset($account['roas_threshold']) && $account['roas_threshold'] > 0) {
                     if ($realRoas > 0 && $realRoas < $account['roas_threshold']) {
@@ -331,7 +341,12 @@ class OptimizeCampaigns extends BaseCommand
                 $pausedCampaigns += $shouldPause ? 1 : 0;
                 $increasedBudgetCampaigns += $shouldIncreaseBudget ? 1 : 0;
             }
-
+            $reportMessage .= PHP_EOL;
+            $reportMessage .= "💰 Tổng chi tiêu: " . number_format($totalCost, 0, '.', '')."\n";
+            $reportMessage .= "🛒 Tổng chuyển đổi: " . number_format($totalConversions, 0, '.', '')."\n";
+            $reportMessage .= "🎯 CPA: " . number_format($totalCost / $totalConversions, 0, '.', '')."\n";
+            $reportMessage .= "🎯 ROAS: " . number_format($totalConversionValue / $totalCost, 0, '.', '')."\n";
+            
             $reportMessage .= "====== END ======\n";
             if($telegramChatId){
                 $this->telegramService->sendMessage($reportMessage, $telegramChatId);
