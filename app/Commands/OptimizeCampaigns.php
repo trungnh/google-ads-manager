@@ -257,7 +257,7 @@ class OptimizeCampaigns extends BaseCommand
                     $sheetData[$key]['conversion_value'] += $sheetData2[$key]['conversion_value'];
                 }
             }
-            $reportMessage = "====== {$campaign['customer_name']} =======\n";
+            $reportMessage = "====== {$account['customer_name']} =======\n";
             foreach ($campaigns as $campaign) {
                 if (!isset($campaign['campaign_id']) || !isset($campaign['cost']) || !isset($campaign['budget'])) {
                     CLI::write("Bỏ qua chiến dịch không hợp lệ: thiếu thông tin bắt buộc", 'yellow');
@@ -346,7 +346,7 @@ class OptimizeCampaigns extends BaseCommand
         } catch (\Exception $e) {
             log_message('error', 'Lỗi tối ưu chiến dịch: ' . $e->getMessage());
             if($telegramChatId){
-                $this->telegramService->sendMessage("❌ " . $e->getMessage(), $telegramChatId);
+                $this->telegramService->sendMessage("❌Lỗi tối ưu chiến dịch: " . $e->getMessage(), $telegramChatId);
             }
             // return false;
         }
