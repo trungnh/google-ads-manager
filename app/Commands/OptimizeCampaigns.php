@@ -288,11 +288,11 @@ class OptimizeCampaigns extends BaseCommand
                     ? $campaignConversions['conversion_value'] / $campaign['cost']
                     : 0;
                 
-                $reportMessage .= "{$campaign['name']}\n";
-                $reportMessage .= "   💰 Chi tiêu: " . number_format($campaign['cost'], 0, '', '.')."đ\n";
-                $reportMessage .= "   🛒 Đơn: " . number_format($campaignConversions['conversions'], 0, '', '.')."\n";
-                $reportMessage .= "   🎯 CPA: " . number_format($realCpa, 0, '', '.')."đ\n";
-                $reportMessage .= "   🎯 ROAS: " . number_format($realRoas, 0, '', '.')."\n";
+                // $reportMessage .= "{$campaign['name']}\n";
+                // $reportMessage .= "   💰 Chi tiêu: " . number_format($campaign['cost'], 0, '', '.')."đ\n";
+                // $reportMessage .= "   🛒 Đơn: " . number_format($campaignConversions['conversions'], 0, '', '.')."\n";
+                // $reportMessage .= "   🎯 CPA: " . number_format($realCpa, 0, '', '.')."đ\n";
+                // $reportMessage .= "   🎯 ROAS: " . number_format($realRoas, 0, '', '.')."\n";
                 $totalConversions += $campaignConversions['conversions'];
                 $totalConversionValue += $campaignConversions['conversion_value'];
                 $totalCost += $campaign['cost'];
@@ -348,8 +348,8 @@ class OptimizeCampaigns extends BaseCommand
                 $increasedBudgetCampaigns += $shouldIncreaseBudget ? 1 : 0;
             }
             $reportMessage .= PHP_EOL;
-            $reportMessage .= "💰 Tổng chi tiêu: " . number_format($totalCost, 0, '', '.')."đ\n";
-            $reportMessage .= "🛒 Tổng đơn " . number_format($totalConversions, 0, '', '.')."\n";
+            $reportMessage .= "💰 Chi tiêu: " . number_format($totalCost, 0, '', '.')."đ\n";
+            $reportMessage .= "🛒 Đơn: " . number_format($totalConversions, 0, '', '.')."\n";
             if($totalConversions > 0){
                 $reportMessage .= "🎯 CPA: " . number_format($totalCost / $totalConversions, 0, '', '.')."đ\n";
             } else {
