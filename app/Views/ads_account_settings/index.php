@@ -34,6 +34,15 @@
                         </div>
 
                         <div class="mb-3">
+                            <label for="cost_threshold" class="form-label">Ngưỡng chi tiêu (VNĐ)</label>
+                            <input type="number" class="form-control" id="cost_threshold" name="cost_threshold" 
+                                value="<?= isset($settings['cost_threshold']) ? $settings['cost_threshold'] : '' ?>">
+                            <small class="form-text text-muted">
+                                Chiến dịch sẽ bắt đầu được xem xét nếu chi tiêu vượt quá ngưỡng này (nên để = cpa hoặc x2 cpa)
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
                             <label for="cpa_threshold" class="form-label">Ngưỡng CPA (VNĐ)</label>
                             <input type="number" class="form-control" id="cpa_threshold" name="cpa_threshold" 
                                 value="<?= isset($settings['cpa_threshold']) ? $settings['cpa_threshold'] : '' ?>">
@@ -144,6 +153,7 @@ $(document).ready(function() {
         
         const formData = {
             auto_optimize: $('#auto_optimize').is(':checked') ? 'true' : 'false',
+            cost_threshold: $('#cost_threshold').val(),
             cpa_threshold: $('#cpa_threshold').val(),
             roas_threshold: $('#roas_threshold').val(),
             increase_budget: $('#increase_budget').val(),

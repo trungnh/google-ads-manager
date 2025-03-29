@@ -23,7 +23,8 @@ class AdsAccountSettingsModel extends Model
         'gsheet_value_col',
         'gsheet_campaign_col',
         'gsheet2',
-        'last_optimize_run'
+        'last_optimize_run',
+        'cost_threshold'
     ];
     protected $useTimestamps = true;
     protected $createdField = 'created_at';
@@ -40,7 +41,8 @@ class AdsAccountSettingsModel extends Model
         'gsheet_phone_col' => 'permit_empty|alpha|max_length[1]',
         'gsheet_value_col' => 'permit_empty|alpha|max_length[1]',
         'gsheet_campaign_col' => 'permit_empty|alpha|max_length[1]',
-        'gsheet2' => 'permit_empty|valid_url'
+        'gsheet2' => 'permit_empty|valid_url',
+        'cost_threshold' => 'permit_empty|decimal'
     ];
 
     public function getSettingsByAccountId($accountId)
@@ -66,7 +68,8 @@ class AdsAccountSettingsModel extends Model
             'gsheet_phone_col' => strtoupper($data['gsheet_phone_col'] ?? ''),
             'gsheet_value_col' => strtoupper($data['gsheet_value_col'] ?? ''),
             'gsheet_campaign_col' => strtoupper($data['gsheet_campaign_col'] ?? ''),
-            'gsheet2' => $data['gsheet2'] ?? null
+            'gsheet2' => $data['gsheet2'] ?? null,
+            'cost_threshold' => $data['cost_threshold'] ?? 0
         ];
 
         // Debug log
