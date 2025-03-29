@@ -257,7 +257,7 @@ class OptimizeCampaigns extends BaseCommand
                     $sheetData[$key]['conversion_value'] += $sheetData2[$key]['conversion_value'];
                 }
             }
-
+            $reportMessage = "====== {$campaign['customer_name']} =======\n";
             foreach ($campaigns as $campaign) {
                 if (!isset($campaign['campaign_id']) || !isset($campaign['cost']) || !isset($campaign['budget'])) {
                     CLI::write("Bỏ qua chiến dịch không hợp lệ: thiếu thông tin bắt buộc", 'yellow');
@@ -284,7 +284,8 @@ class OptimizeCampaigns extends BaseCommand
                 $realRoas = $campaign['cost'] > 0 
                     ? $campaignConversions['conversion_value'] / $campaign['cost']
                     : 0;
-
+                
+                $reportMessage .= "📊{$campaign['campaign_id']} - {$campaign['name']} - {$campaign['cost']} - {$campaignConversions['conversions']} - {$realCpa} - {$realRoas}\n";
                 // Kiểm tra ROAS thực tế trước
                 if (isset($account['roas_threshold']) && $account['roas_threshold'] > 0) {
                     if ($realRoas > 0 && $realRoas < $account['roas_threshold']) {
@@ -329,6 +330,11 @@ class OptimizeCampaigns extends BaseCommand
 
                 $pausedCampaigns += $shouldPause ? 1 : 0;
                 $increasedBudgetCampaigns += $shouldIncreaseBudget ? 1 : 0;
+            }
+
+            $reportMessage .= "====== END ======\n";
+            if($telegramChatId){
+                $this->telegramService->sendMessage($reportMessage, $telegramChatId);
             }
 
             // Cập nhật thời gian chạy cuối cùng
