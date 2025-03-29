@@ -289,10 +289,10 @@ class OptimizeCampaigns extends BaseCommand
                     : 0;
                 
                 $reportMessage .= "{$campaign['name']}\n";
-                $reportMessage .= "   💰 Chi tiêu: " . number_format($campaign['cost'], 0, '.', '')."\n";
-                $reportMessage .= "   🛒 Đơn: " . number_format($campaignConversions['conversions'], 0, '.', '')."\n";
-                $reportMessage .= "   🎯 CPA: " . number_format($realCpa, 0, '.', '')."\n";
-                $reportMessage .= "   🎯 ROAS: " . number_format($realRoas, 0, '.', '')."\n";
+                $reportMessage .= "   💰 Chi tiêu: " . number_format($campaign['cost'], 0, '', '.')."đ\n";
+                $reportMessage .= "   🛒 Đơn: " . number_format($campaignConversions['conversions'], 0, '', '.')."\n";
+                $reportMessage .= "   🎯 CPA: " . number_format($realCpa, 0, '', '.')."đ\n";
+                $reportMessage .= "   🎯 ROAS: " . number_format($realRoas, 0, '', '.')."\n";
                 $totalConversions += $campaignConversions['conversions'];
                 $totalConversionValue += $campaignConversions['conversion_value'];
                 $totalCost += $campaign['cost'];
@@ -306,14 +306,14 @@ class OptimizeCampaigns extends BaseCommand
                 if (isset($account['roas_threshold']) && $account['roas_threshold'] > 0) {
                     if ($realRoas > 0 && $realRoas < $account['roas_threshold']) {
                         $shouldPause = true;
-                        $action = "ROAS thực tế (".number_format($realRoas, 0, '.', '').") thấp hơn ngưỡng (".number_format($account['roas_threshold'], 0, '.', '').")";
+                        $action = "ROAS thực tế (".number_format($realRoas, 0, '', '.').") thấp hơn ngưỡng (".number_format($account['roas_threshold'], 0, '', '.').")";
                     } elseif ($realRoas == 0) {
                         // Nếu ROAS bằng 0 thì kiểm tra CPA
                         if (isset($account['cpa_threshold']) && $account['cpa_threshold'] > 0) {
                             // Nếu chi tiêu vượt ngưỡng CPA và không có chuyển đổi thực tế
                             if ($campaign['cost'] > $account['cpa_threshold'] && $campaignConversions['conversions'] == 0) {
                                 $shouldPause = true;
-                                $action = "ROAS = 0 và Chi tiêu (".number_format($campaign['cost'], 0, '.', '').") vượt ngưỡng (".number_format($account['cpa_threshold'], 0, '.', '').") và không có chuyển đổi thực tế";
+                                $action = "ROAS = 0 và Chi tiêu (".number_format($campaign['cost'], 0, '', '.').") vượt ngưỡng (".number_format($account['cpa_threshold'], 0, '', '.').") và không có chuyển đổi thực tế";
                             }
                         }
                     } else {
@@ -325,19 +325,19 @@ class OptimizeCampaigns extends BaseCommand
                 elseif (isset($account['cpa_threshold']) && $account['cpa_threshold'] > 0) {
                     if ($realCpa > $account['cpa_threshold'] && $campaignConversions['conversions'] > 0) {
                         $shouldPause = true;
-                        $action = "CPA thực tế (".number_format($realCpa, 0, '.', '').") vượt ngưỡng (".number_format($account['cpa_threshold'], 0, '.', '').")";
+                        $action = "CPA thực tế (".number_format($realCpa, 0, '', '.').") vượt ngưỡng (".number_format($account['cpa_threshold'], 0, '', '.').")";
                     }
                     // Kiểm tra chi tiêu và chuyển đổi thực tế
                     elseif ($campaign['cost'] > $account['cpa_threshold'] && $campaignConversions['conversions'] == 0) {
                         $shouldPause = true;
-                        $action = "Chi tiêu (".number_format($campaign['cost'], 0, '.', '').") vượt ngưỡng (".number_format($account['cpa_threshold'], 0, '.', '').") và không có chuyển đổi thực tế";
+                        $action = "Chi tiêu (".number_format($campaign['cost'], 0, '', '.').") vượt ngưỡng (".number_format($account['cpa_threshold'], 0, '', '.').") và không có chuyển đổi thực tế";
                     }
                 }
 
                 // Kiểm tra tăng ngân sách nếu chiến dịch không bị tạm dừng
                 if (!$shouldPause && isset($account['increase_budget']) && $campaign['cost'] > ($campaign['budget'] * 0.5)) {
                     $shouldIncreaseBudget = true;
-                    $action = "Chi tiêu (".number_format($campaign['cost'], 0, '.', '').") vượt 50% ngân sách (".number_format($campaign['budget'], 0, '.', '').")";
+                    $action = "Chi tiêu (".number_format($campaign['cost'], 0, '', '.').") vượt 50% ngân sách (".number_format($campaign['budget'], 0, '', '.').")";
                 }
 
                 if ($shouldPause || $shouldIncreaseBudget) {
@@ -348,15 +348,15 @@ class OptimizeCampaigns extends BaseCommand
                 $increasedBudgetCampaigns += $shouldIncreaseBudget ? 1 : 0;
             }
             $reportMessage .= PHP_EOL;
-            $reportMessage .= "💰 Tổng chi tiêu: " . number_format($totalCost, 0, '.', '')."\n";
-            $reportMessage .= "🛒 Tổng đơn " . number_format($totalConversions, 0, '.', '')."\n";
+            $reportMessage .= "💰 Tổng chi tiêu: " . number_format($totalCost, 0, '', '.')."đ\n";
+            $reportMessage .= "🛒 Tổng đơn " . number_format($totalConversions, 0, '', '.')."\n";
             if($totalConversions > 0){
-                $reportMessage .= "🎯 CPA: " . number_format($totalCost / $totalConversions, 0, '.', '')."\n";
+                $reportMessage .= "🎯 CPA: " . number_format($totalCost / $totalConversions, 0, '', '.')."đ\n";
             } else {
                 $reportMessage .= "🎯 CPA: 0\n";
             }   
             if($totalCost > 0){
-                $reportMessage .= "🎯 ROAS: " . number_format($totalConversionValue / $totalCost, 0, '.', '')."\n";
+                $reportMessage .= "🎯 ROAS: " . number_format($totalConversionValue / $totalCost, 0, '', '.')."\n";
             } else {
                 $reportMessage .= "🎯 ROAS: 0\n";
             }
@@ -467,7 +467,7 @@ class OptimizeCampaigns extends BaseCommand
                     );
                     
                     if ($result === true) {
-                        $message = "Tăng ngân sách chiến dịch {$accountName} - {$campaignName}[{$campaign['campaign_id']}] lên ".number_format($newBudget, 0, '.', '').": {$action}";
+                        $message = "Tăng ngân sách chiến dịch {$accountName} - {$campaignName}[{$campaign['campaign_id']}] lên ".number_format($newBudget, 0, '', '.').": {$action}";
                         CLI::write($message, 'green');
                         log_message('info', $message);
                         if($telegramChatId){
@@ -491,7 +491,7 @@ class OptimizeCampaigns extends BaseCommand
                         );
                         
                         if ($result === true) {
-                            $message = "Refresh token + Tăng ngân sách chiến dịch {$accountName} - {$campaignName}[{$campaign['campaign_id']}] lên ".number_format($newBudget, 0, '.', '').": {$action}";
+                            $message = "Refresh token + Tăng ngân sách chiến dịch {$accountName} - {$campaignName}[{$campaign['campaign_id']}] lên ".number_format($newBudget, 0, '', '.').": {$action}";
                             CLI::write($message, 'green');
                             log_message('info', $message);
                             if($telegramChatId){
