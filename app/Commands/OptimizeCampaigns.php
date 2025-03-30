@@ -349,7 +349,7 @@ class OptimizeCampaigns extends BaseCommand
                 }
 
                 if ($shouldPause || $shouldIncreaseBudget) {
-                    $this->executeCampaignAction($account, $campaign, $shouldPause, $shouldIncreaseBudget, $action, $accessToken, $mccId, $telegramChatId);
+                    $this->executeCampaignAction($account, $campaign, $shouldPause, $shouldIncreaseBudget, $action, $accessToken, $mccId, $telegramChatIds);
                 }
 
                 $pausedCampaigns += $shouldPause ? 1 : 0;
@@ -394,7 +394,7 @@ class OptimizeCampaigns extends BaseCommand
         ];
     }
 
-    protected function executeCampaignAction($account, $campaign, $shouldPause, $shouldIncreaseBudget, $action, $accessToken, $mccId = null, $telegramChatId = null)
+    protected function executeCampaignAction($account, $campaign, $shouldPause, $shouldIncreaseBudget, $action, $accessToken, $mccId = null, $telegramChatIds = [])
     {
         try {
             if (!isset($account['user_id']) || !isset($campaign['campaign_id']) || !isset($account['customer_id'])) {
