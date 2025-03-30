@@ -300,7 +300,7 @@ class OptimizeCampaigns extends BaseCommand
                 // $reportMessage .= "   💰 Chi tiêu: " . number_format($campaign['cost'], 0, '', '.')."đ\n";
                 // $reportMessage .= "   🛒 Đơn: " . number_format($campaignConversions['conversions'], 0, '', '.')."\n";
                 // $reportMessage .= "   🎯 CPA: " . number_format($realCpa, 0, '', '.')."đ\n";
-                // $reportMessage .= "   🎯 ROAS: " . number_format($realRoas, 0, '', '.')."\n";
+                // $reportMessage .= "   🎯 ROAS: " . number_format($realRoas, 1, ',', '.')."\n";
                 $totalConversions += $campaignConversions['conversions'];
                 $totalConversionValue += $campaignConversions['conversion_value'];
                 $totalCost += $campaign['cost'];
@@ -314,7 +314,7 @@ class OptimizeCampaigns extends BaseCommand
                 if (isset($account['roas_threshold']) && $account['roas_threshold'] > 0) {
                     if ($realRoas > 0 && $realRoas < $account['roas_threshold']) {
                         $shouldPause = true;
-                        $action = "ROAS thực tế (".number_format($realRoas, 0, '', '.').") thấp hơn ngưỡng (".number_format($account['roas_threshold'], 0, '', '.').")";
+                        $action = "ROAS thực tế (".number_format($realRoas, 1, ',', '.').") thấp hơn ngưỡng (".number_format($account['roas_threshold'], 1, ',', '.').")";
                     } elseif ($realRoas == 0) {
                         // Nếu ROAS bằng 0 thì kiểm tra CPA
                         if (isset($account['cpa_threshold']) && $account['cpa_threshold'] > 0) {
@@ -364,7 +364,7 @@ class OptimizeCampaigns extends BaseCommand
                 $reportMessage .= "🎯 CPA: 0\n";
             }   
             if($totalCost > 0){
-                $reportMessage .= "🎯 ROAS: " . number_format($totalConversionValue / $totalCost, 0, '', '.')."\n";
+                $reportMessage .= "🎯 ROAS: " . number_format($totalConversionValue / $totalCost, 1, ',', '.')."\n";
             } else {
                 $reportMessage .= "🎯 ROAS: 0\n";
             }
