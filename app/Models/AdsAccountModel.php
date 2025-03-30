@@ -29,4 +29,9 @@ class AdsAccountModel extends Model
         'customer_id' => 'required|string',
         'customer_name' => 'required|string'
     ];
+
+    public function getLinkedUsers($accountId)
+    {
+        return $this->select("user_id")->where("customer_id",$accountId)->findAll();
+    }
 }

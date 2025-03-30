@@ -10,6 +10,7 @@ use App\Services\TelegramService;
 use App\Models\AdsAccountSettingsModel;
 use App\Models\GoogleTokenModel;
 use App\Models\UserSettingsModel;
+use App\Models\AdsAccountModel;
 
 class OptimizeCampaigns extends BaseCommand
 {
@@ -23,6 +24,7 @@ class OptimizeCampaigns extends BaseCommand
     protected $googleTokenModel;
     protected $userSettingsModel;
     protected $telegramService;
+    protected $adsAccountsModel;
 
     public function __construct()
     {
@@ -32,13 +34,14 @@ class OptimizeCampaigns extends BaseCommand
         $this->googleTokenModel = new GoogleTokenModel();
         $this->userSettingsModel = new UserSettingsModel();
         $this->telegramService = new TelegramService();
+        $this->adsAccountsModel = new AdsAccountModel();
     }
 
     public function run(array $params)
     {
         try {
             $hour = date('H');
-            if($hour < 7 || $hour > 22){
+            if($hour < 7 || $hour > 21){
                 CLI::write("Thời gian không hợp lệ, chỉ chạy từ 7:00 đến 22:00", 'yellow');
                 return;
             }
@@ -48,13 +51,11 @@ class OptimizeCampaigns extends BaseCommand
             if (empty($accounts)) {
                 $message = 'Không có tài khoản nào cần tối ưu.';
                 CLI::write($message, 'yellow');
-                //$this->telegramService->sendMessage("🔄 " . $message);
                 return;
             }
 
             $message = "🔄 Bắt đầu tối ưu chiến dịch cho " . count($accounts) . " tài khoản";
             CLI::write($message, 'green');
-            //$this->telegramService->sendMessage($message);
 
             $totalCampaigns = 0;
             $totalOptimized = 0;
@@ -76,33 +77,40 @@ class OptimizeCampaigns extends BaseCommand
                 if (!isset($account['customer_id']) || !isset($account['user_id']) || !isset($account['id'])) {
                     $message = 'Dữ liệu tài khoản không hợp lệ: thiếu thông tin bắt buộc' . $account['id'];
                     CLI::write($message, 'red');
-                    //$this->telegramService->sendMessage("❌ " . $message);
                     continue;
                 }
 
                 $accountName = $account['customer_name'] ?? $account['customer_id'] ?? 'Unknown Account';
                 $message = "Đang tối ưu tài khoản: {$accountName}";
                 CLI::write($message, 'green');
-                //$this->telegramService->sendMessage("📊 " . $message);
                 
                 try {
                     // Lấy MCC ID từ user settings
                     $userSettings = $this->userSettingsModel->where('user_id', $account['user_id'])->first();
-                    $telegramChatId = $userSettings['telegram_chat_id'] ?? null;
                     $mccId = $userSettings['mcc_id'] ?? null;
+
+                    $linkedUsers = $this->adsAccountsModel->getLinkedUsers($account['customer_id']);
+                    $telegramChatIds = [];
+                    foreach($linkedUsers as $linkedUser){
+                        $userSettings = $this->userSettingsModel->where('user_id', $linkedUser['user_id'])->first();
+                        $telegramChatId = $userSettings['telegram_chat_id'] ?? null;
+                        if($telegramChatId){
+                            $telegramChatIds[] = $telegramChatId;
+                        }
+                    }
 
                     // Kiểm tra và refresh token trước khi xử lý
                     $tokenData = $this->ensureValidToken($account['user_id']);
                     if (!$tokenData) {
                         throw new \Exception('Không thể lấy token hợp lệ');
                     }
-                    $optimizeCampaignsResult = $this->optimizeCampaigns($account, $tokenData['access_token'], $mccId, $telegramChatId);
+                    $optimizeCampaignsResult = $this->optimizeCampaigns($account, $tokenData['access_token'], $mccId, $telegramChatIds);
                     $processedAccounts[] = $account['id'];
                 } catch (\Exception $e) {
                     $message = "Lỗi khi tối ưu tài khoản {$accountName}: " . $e->getMessage();
                     CLI::write($message, 'red');
                     log_message('error', $message);
-                    if($telegramChatId){
+                    foreach($telegramChatIds as $telegramChatId){
                         $this->telegramService->sendMessage("❌ " . $message, $telegramChatId);
                     }
                     $totalErrors++;
@@ -117,14 +125,14 @@ class OptimizeCampaigns extends BaseCommand
             $message .= "- Số lỗi: {$totalErrors}";
             
             CLI::write($message, 'green');
-            if($telegramChatId){
+            foreach($telegramChatIds as $telegramChatId){
                 $this->telegramService->sendMessage($message, $telegramChatId);
             }
         } catch (\Exception $e) {
             $message = 'Lỗi: ' . $e->getMessage();
             CLI::write($message, 'red');
             log_message('error', $message);
-            if($telegramChatId){
+            foreach($telegramChatIds as $telegramChatId){
                 $this->telegramService->sendMessage("❌ " . $message, $telegramChatId);
             }
         }
@@ -180,7 +188,7 @@ class OptimizeCampaigns extends BaseCommand
         }
     }
 
-    protected function optimizeCampaigns($account, $accessToken, $mccId = null, $telegramChatId = null)
+    protected function optimizeCampaigns($account, $accessToken, $mccId = null, $telegramChatIds = [])
     {
         $pausedCampaigns = 0;
         $increasedBudgetCampaigns = 0;
@@ -264,7 +272,7 @@ class OptimizeCampaigns extends BaseCommand
             foreach ($campaigns as $campaign) {
                 if (!isset($campaign['campaign_id']) || !isset($campaign['cost']) || !isset($campaign['budget'])) {
                     CLI::write("Bỏ qua chiến dịch không hợp lệ: thiếu thông tin bắt buộc", 'yellow');
-                    if($telegramChatId){
+                    foreach($telegramChatIds as $telegramChatId){
                         $this->telegramService->sendMessage("❌ Bỏ qua chiến dịch không hợp lệ: thiếu thông tin bắt buộc", $telegramChatId);
                     }
                     continue;
@@ -362,7 +370,7 @@ class OptimizeCampaigns extends BaseCommand
             }
             
             $reportMessage .= "====== END ======\n";
-            if($telegramChatId){
+            foreach($telegramChatIds as $telegramChatId){
                 $this->telegramService->sendMessage($reportMessage, $telegramChatId);
             }
 
@@ -374,7 +382,7 @@ class OptimizeCampaigns extends BaseCommand
             // return true;
         } catch (\Exception $e) {
             log_message('error', 'Lỗi tối ưu chiến dịch: ' . $e->getMessage());
-            if($telegramChatId){
+            foreach($telegramChatIds as $telegramChatId){
                 $this->telegramService->sendMessage("❌Lỗi tối ưu chiến dịch: " . $e->getMessage(), $telegramChatId);
             }
             // return false;
@@ -400,9 +408,6 @@ class OptimizeCampaigns extends BaseCommand
                 try {
                     $message = "Đang tạm dừng chiến dịch {$campaign['campaign_id']}...";
                     CLI::write($message, 'yellow');
-                    // if($telegramChatId){
-                    //     $this->telegramService->sendMessage("⏸️ " . $message, $telegramChatId);
-                    // }
                     
                     $result = $this->googleAdsService->toggleCampaignStatus(
                         $accessToken,
@@ -416,7 +421,7 @@ class OptimizeCampaigns extends BaseCommand
                         $message = "Tạm dừng chiến dịch {$accountName} - {$campaignName}[{$campaign['campaign_id']}]: {$action}";
                         CLI::write($message, 'green');
                         log_message('info', $message);
-                        if($telegramChatId){
+                        foreach($telegramChatIds as $telegramChatId){
                             $this->telegramService->sendMessage("⏸️ " . $message, $telegramChatId);
                         }
                     } else {
@@ -439,7 +444,7 @@ class OptimizeCampaigns extends BaseCommand
                             $message = "Refresh token + Tạm dừng chiến dịch {$accountName} - {$campaignName}[{$campaign['campaign_id']}]: {$action}";
                             CLI::write($message, 'green');
                             log_message('info', $message);
-                            if($telegramChatId){
+                            foreach($telegramChatIds as $telegramChatId){
                                 $this->telegramService->sendMessage("⏸️ " . $message, $telegramChatId);
                             }
                         } else {
@@ -454,9 +459,6 @@ class OptimizeCampaigns extends BaseCommand
                     $newBudget = $campaign['budget'] + $account['increase_budget'];
                     $message = "Đang tăng ngân sách chiến dịch {$campaign['campaign_id']}...";
                     CLI::write($message, 'yellow');
-                    // if($telegramChatId){
-                    //     $this->telegramService->sendMessage("💰 " . $message, $telegramChatId);
-                    // }
                     
                     $result = $this->googleAdsService->updateCampaignBudget(
                         $accessToken,
@@ -470,7 +472,7 @@ class OptimizeCampaigns extends BaseCommand
                         $message = "Tăng ngân sách chiến dịch {$accountName} - {$campaignName}[{$campaign['campaign_id']}] lên ".number_format($newBudget, 0, '', '.').": {$action}";
                         CLI::write($message, 'green');
                         log_message('info', $message);
-                        if($telegramChatId){
+                        foreach($telegramChatIds as $telegramChatId){
                             $this->telegramService->sendMessage("💰 " . $message, $telegramChatId);
                         }
                     } else {
@@ -494,7 +496,7 @@ class OptimizeCampaigns extends BaseCommand
                             $message = "Refresh token + Tăng ngân sách chiến dịch {$accountName} - {$campaignName}[{$campaign['campaign_id']}] lên ".number_format($newBudget, 0, '', '.').": {$action}";
                             CLI::write($message, 'green');
                             log_message('info', $message);
-                            if($telegramChatId){
+                            foreach($telegramChatIds as $telegramChatId){
                                 $this->telegramService->sendMessage("💰 " . $message, $telegramChatId);
                             }
                         } else {
@@ -509,7 +511,7 @@ class OptimizeCampaigns extends BaseCommand
             $message = "Lỗi thực hiện hành động cho chiến dịch {$campaign['campaign_id']}: " . $e->getMessage();
             CLI::write($message, 'red');
             log_message('error', $message);
-            if($telegramChatId){
+            foreach($telegramChatIds as $telegramChatId){
                 $this->telegramService->sendMessage("❌ " . $message, $telegramChatId);
             }
         }
