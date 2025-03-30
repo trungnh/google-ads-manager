@@ -43,11 +43,11 @@ class OptimizeCampaigns extends BaseCommand
     public function run(array $params)
     {
         try {
-            $hour = date('H');
-            if($hour < 7 || $hour > 21){
-                CLI::write("Thời gian không hợp lệ, chỉ chạy từ 7:00 đến 22:00", 'yellow');
-                return;
-            }
+            // $hour = date('H');
+            // if($hour < 7 || $hour > 21){
+            //     CLI::write("Thời gian không hợp lệ, chỉ chạy từ 7:00 đến 22:00", 'yellow');
+            //     return;
+            // }
             // Lấy danh sách tài khoản cần tối ưu
             $accounts = $this->adsAccountSettingsModel->getAccountsForOptimization();
             
@@ -128,8 +128,11 @@ class OptimizeCampaigns extends BaseCommand
             $message .= "- Số lỗi: {$totalErrors}";
             
             CLI::write($message, 'green');
-            foreach($telegramChatIds as $telegramChatId){
-                $this->telegramService->sendMessage($message, $telegramChatId);
+            // Chỉ gửi khi có  chiến dịch tạm dừng hoặc tăng ngân sách
+            if($optimizeCampaignsResult['paused_campaigns'] > 0 || $optimizeCampaignsResult['increased_budget_campaigns'] > 0){
+                foreach($telegramChatIds as $telegramChatId){
+                    $this->telegramService->sendMessage($message, $telegramChatId);
+                }
             }
         } catch (\Exception $e) {
             $message = 'Lỗi: ' . $e->getMessage();
@@ -373,8 +376,13 @@ class OptimizeCampaigns extends BaseCommand
             }
             
             $reportMessage .= "====== END ======\n";
-            foreach($telegramChatIds as $telegramChatId){
-                $this->telegramService->sendMessage($reportMessage, $telegramChatId);
+            $hour = date('H');
+            $minute = date('i');
+            // Chỉ gửi khi phút là 0 hoặc 30 và giờ là 7 hoặc 21
+            if(($minute == 0 || $minute == 30) && ($hour >= 7 && $hour <= 21)){
+                foreach($telegramChatIds as $telegramChatId){
+                    $this->telegramService->sendMessage($reportMessage, $telegramChatId);
+                }
             }
 
             // Cập nhật thời gian chạy cuối cùng
