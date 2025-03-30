@@ -31,6 +31,12 @@
                             <a class="nav-link" href="<?= base_url('adsaccounts') ?>">Ads Account</a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link" href="<?= base_url('optimize-logs') ?>">Lịch sử tối ưu</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="<?= base_url('settings') ?>">Cài đặt</a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" href="<?= base_url('google/oauth') ?>">Kết nối Google Ads</a>
                         </li>
                     <?php endif; ?>

@@ -11,12 +11,13 @@ use App\Models\AdsAccountSettingsModel;
 use App\Models\GoogleTokenModel;
 use App\Models\UserSettingsModel;
 use App\Models\AdsAccountModel;
+use App\Models\OptimizeLogsModel;
 
 class OptimizeCampaigns extends BaseCommand
 {
-    protected $group       = 'Ads';
-    protected $name       = 'ads:optimize';
-    protected $description = 'Tối ưu chiến dịch quảng cáo tự động';
+    protected $group        = 'Ads';
+    protected $name         = 'ads:optimize';
+    protected $description  = 'Tối ưu chiến dịch quảng cáo tự động';
 
     protected $googleAdsService;
     protected $googleSheetService;
@@ -25,6 +26,7 @@ class OptimizeCampaigns extends BaseCommand
     protected $userSettingsModel;
     protected $telegramService;
     protected $adsAccountsModel;
+    protected $optimizeLogsModel;
 
     public function __construct()
     {
@@ -35,6 +37,7 @@ class OptimizeCampaigns extends BaseCommand
         $this->userSettingsModel = new UserSettingsModel();
         $this->telegramService = new TelegramService();
         $this->adsAccountsModel = new AdsAccountModel();
+        $this->optimizeLogsModel = new OptimizeLogsModel();
     }
 
     public function run(array $params)
@@ -424,6 +427,17 @@ class OptimizeCampaigns extends BaseCommand
                         foreach($telegramChatIds as $telegramChatId){
                             $this->telegramService->sendMessage("⏸️ " . $message, $telegramChatId);
                         }
+
+                        // Lưu log
+                        $this->optimizeLogsModel->insert([
+                            'user_id' => $account['user_id'],
+                            'customer_id' => $account['customer_id'],
+                            'campaign_id' => $campaign['campaign_id'],
+                            'campaign_name' => $campaign['name'],
+                            'action' => 'pause',
+                            'details' => $action,
+                            'created_at' => date('Y-m-d H:i:s')
+                        ]);
                     } else {
                         throw new \Exception("Không thể tạm dừng chiến dịch");
                     }
@@ -447,6 +461,17 @@ class OptimizeCampaigns extends BaseCommand
                             foreach($telegramChatIds as $telegramChatId){
                                 $this->telegramService->sendMessage("⏸️ " . $message, $telegramChatId);
                             }
+
+                            // Lưu log
+                            $this->optimizeLogsModel->insert([
+                                'user_id' => $account['user_id'],
+                                'customer_id' => $account['customer_id'],
+                                'campaign_id' => $campaign['campaign_id'],
+                                'campaign_name' => $campaign['name'],
+                                'action' => 'pause',
+                                'details' => $action,
+                                'created_at' => date('Y-m-d H:i:s')
+                            ]);
                         } else {
                             throw new \Exception("Không thể tạm dừng chiến dịch sau khi refresh token");
                         }
@@ -475,6 +500,17 @@ class OptimizeCampaigns extends BaseCommand
                         foreach($telegramChatIds as $telegramChatId){
                             $this->telegramService->sendMessage("💰 " . $message, $telegramChatId);
                         }
+
+                        // Lưu log
+                        $this->optimizeLogsModel->insert([
+                            'user_id' => $account['user_id'],
+                            'customer_id' => $account['customer_id'],
+                            'campaign_id' => $campaign['campaign_id'],
+                            'campaign_name' => $campaign['name'],
+                            'action' => 'increase_budget',
+                            'details' => $action,
+                            'created_at' => date('Y-m-d H:i:s')
+                        ]);
                     } else {
                         throw new \Exception("Không thể tăng ngân sách chiến dịch");
                     }
@@ -499,6 +535,17 @@ class OptimizeCampaigns extends BaseCommand
                             foreach($telegramChatIds as $telegramChatId){
                                 $this->telegramService->sendMessage("💰 " . $message, $telegramChatId);
                             }
+
+                            // Lưu log
+                            $this->optimizeLogsModel->insert([
+                                'user_id' => $account['user_id'],
+                                'customer_id' => $account['customer_id'],
+                                'campaign_id' => $campaign['campaign_id'],
+                                'campaign_name' => $campaign['name'],
+                                'action' => 'increase_budget',
+                                'details' => $action,
+                                'created_at' => date('Y-m-d H:i:s')
+                            ]);
                         } else {
                             throw new \Exception("Không thể tăng ngân sách chiến dịch sau khi refresh token");
                         }

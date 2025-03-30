@@ -75,6 +75,9 @@ $routes->group('', ['filter' => 'auth'], function($routes) {
 $routes->get('google/oauth', 'GoogleAuth::oauth');
 $routes->get('google/callback', 'GoogleAuth::callback');
 
+// Optimize Logs route
+$routes->get('optimize-logs', 'OptimizeLogs::index');
+
 /*
  * --------------------------------------------------------------------
  * Additional Routing
