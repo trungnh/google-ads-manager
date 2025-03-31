@@ -563,7 +563,7 @@ class OptimizeCampaigns extends BaseCommand
                 }
             }
         } catch (\Exception $e) {
-            $message = "Lỗi thực hiện hành động cho chiến dịch {$campaign['campaign_id']}: " . $e->getMessage();
+            $message = "Lỗi thực hiện hành động cho chiến dịch {$accountName} - {$campaignName} | {$campaign['campaign_id']}: " . $e->getMessage();
             CLI::write($message, 'red');
             log_message('error', $message);
             foreach($telegramChatIds as $telegramChatId){
