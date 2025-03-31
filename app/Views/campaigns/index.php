@@ -436,36 +436,34 @@ $(document).ready(function() {
             // Disable button while processing
             btn.prop('disabled', true);
             
-            $.ajax({
-                url: '<?= base_url('campaigns/toggleStatus') ?>/' + customerId + '/' + campaignId,
-                method: 'POST',
-                data: { status: newStatus },
-                success: function(response) {
-                    if (response.success) {
-                        // Update button appearance
-                        btn.data('status', response.newStatus);
-                        if (response.newStatus === 'ENABLED') {
-                            btn.removeClass('btn-success').addClass('btn-danger');
-                            btn.html('<i class="fas fa-power-off"></i> Tắt');
-                        } else {
-                            btn.removeClass('btn-danger').addClass('btn-success');
-                            btn.html('<i class="fas fa-power-off"></i> Bật');
-                        }
-                        toastr.success(response.message);
-                        
-                        // Reload campaigns data after successful toggle
-                        loadCampaignsData(true);
-                    } else {
-                        toastr.error(response.message);
-                    }
-                },
-                error: function(xhr) {
-                    toastr.error('Có lỗi xảy ra khi cập nhật trạng thái chiến dịch');
-                },
-                complete: function() {
-                    btn.prop('disabled', false);
+            toggleStatus(customerId, campaignId, currentStatus);
+        });
+    }
+
+    function toggleStatus(customerId, campaignId, currentStatus) {
+        const newStatus = currentStatus === 'ENABLED' ? 'PAUSED' : 'ENABLED';
+        
+        $.ajax({
+            url: `/campaigns/toggleStatus/${customerId}/${campaignId}`,
+            method: 'POST',
+            data: { status: newStatus },
+            success: function(response) {
+                if (response.success) {
+                    showNotification(response.message);
+                    // Cập nhật UI
+                    const statusCell = $(`#campaign-${campaignId} .status-cell`);
+                    const newStatusText = newStatus === 'ENABLED' ? 'Đang chạy' : 'Đã tạm dừng';
+                    const newStatusClass = newStatus === 'ENABLED' ? 'text-success' : 'text-danger';
+                    
+                    statusCell.removeClass('text-success text-danger').addClass(newStatusClass);
+                    statusCell.text(newStatusText);
+                } else {
+                    showNotification(response.message, 'error');
                 }
-            });
+            },
+            error: function(xhr, status, error) {
+                showNotification('Có lỗi xảy ra khi cập nhật trạng thái chiến dịch', 'error');
+            }
         });
     }
 
