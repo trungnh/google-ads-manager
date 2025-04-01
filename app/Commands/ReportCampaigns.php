@@ -138,11 +138,12 @@ class ReportCampaigns extends BaseCommand
             'campaign_col' => 'D'
         ];
 
+        $accountSettings = $this->adsAccountSettingsModel->where('account_id', $account['id'])->first();
         // Nếu có cấu hình trong settings thì sử dụng
-        if (isset($account['gsheet_date_col'])) $columnConfig['gsheet_date_col'] = $account['gsheet_date_col'];
-        if (isset($account['gsheet_phone_col'])) $columnConfig['gsheet_phone_col'] = $account['gsheet_phone_col'];
-        if (isset($account['gsheet_value_col'])) $columnConfig['gsheet_value_col'] = $account['gsheet_value_col'];
-        if (isset($account['gsheet_campaign_col'])) $columnConfig['gsheet_campaign_col'] = $account['gsheet_campaign_col'];
+        if (isset($accountSettings['gsheet_date_col'])) $columnConfig['gsheet_date_col'] = $accountSettings['gsheet_date_col'];
+        if (isset($accountSettings['gsheet_phone_col'])) $columnConfig['gsheet_phone_col'] = $accountSettings['gsheet_phone_col'];
+        if (isset($accountSettings['gsheet_value_col'])) $columnConfig['gsheet_value_col'] = $accountSettings['gsheet_value_col'];
+        if (isset($accountSettings['gsheet_campaign_col'])) $columnConfig['gsheet_campaign_col'] = $accountSettings['gsheet_campaign_col'];
 
         $sheetData = [];
         if (!empty($account['gsheet1'])) {
