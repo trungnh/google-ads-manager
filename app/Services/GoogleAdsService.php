@@ -232,7 +232,9 @@ class GoogleAdsService
                 campaign.advertising_channel_type,
                 campaign.bidding_strategy_type,
                 campaign.maximize_conversions.target_cpa_micros,
+                campaign.target_cpa.target_cpa_micros,
                 campaign.maximize_conversion_value.target_roas,
+                campaign.target_roas.target_roas,
                 metrics.cost_micros,
                 metrics.conversions,
                 metrics.conversions_value,
@@ -267,16 +269,33 @@ class GoogleAdsService
                             $metrics = $result['metrics'] ?? [];
                             $budget = $result['campaignBudget'] ?? null;
                             
-                            // Xác định target CPA và ROAS
+                            // Xác định target CPA và ROAS dựa trên chiến lược đặt giá thầu
                             $targetCpa = null;
                             $targetRoas = null;
                             
-                            // Lấy từ maximize_conversions và maximize_conversion_value
-                            if (isset($campaign['maximizeConversions']['targetCpaMicros'])) {
+                            $biddingStrategyType = $campaign['biddingStrategyType'] ?? '';
+                            
+                            // Lấy CPA mục tiêu từ các loại chiến lược đặt giá thầu khác nhau
+                            if (isset($campaign['maximizeConversions']['targetCpaMicros']) && $campaign['maximizeConversions']['targetCpaMicros'] > 0) {
                                 $targetCpa = $this->microToStandard($campaign['maximizeConversions']['targetCpaMicros']);
+                            } elseif (isset($campaign['targetCpa']['targetCpaMicros']) && $campaign['targetCpa']['targetCpaMicros'] > 0) {
+                                $targetCpa = $this->microToStandard($campaign['targetCpa']['targetCpaMicros']);
                             }
-                            if (isset($campaign['maximizeConversionValue']['targetRoas'])) {
+                            
+                            // Lấy ROAS mục tiêu từ các loại chiến lược đặt giá thầu khác nhau
+                            if (isset($campaign['maximizeConversionValue']['targetRoas']) && $campaign['maximizeConversionValue']['targetRoas'] > 0) {
                                 $targetRoas = $campaign['maximizeConversionValue']['targetRoas'];
+                            } elseif (isset($campaign['targetRoas']['targetRoas']) && $campaign['targetRoas']['targetRoas'] > 0) {
+                                $targetRoas = $campaign['targetRoas']['targetRoas'];
+                            }
+                            
+                            // Log để debug
+                            log_message('debug', 'Campaign ID: ' . $campaign['id'] . ' - Bidding Strategy: ' . $biddingStrategyType);
+                            if ($targetCpa !== null) {
+                                log_message('debug', 'Target CPA: ' . $targetCpa);
+                            }
+                            if ($targetRoas !== null) {
+                                log_message('debug', 'Target ROAS: ' . $targetRoas);
                             }
                             
                             $campaigns[] = [
@@ -291,6 +310,7 @@ class GoogleAdsService
                                     ? $this->microToStandard($metrics['costMicros']) / $metrics['conversions'] 
                                     : 0,
                                 'conversion_rate' => $metrics['conversionsFromInteractionsRate'] ?? 0,
+                                'bidding_strategy' => $biddingStrategyType,
                                 'target_cpa' => $targetCpa,
                                 'target_roas' => $targetRoas,
                                 'ctr' => $metrics['ctr'] ?? 0,

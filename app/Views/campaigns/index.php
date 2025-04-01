@@ -77,6 +77,7 @@
                     <th class="sortable" data-sort="average_cpc">CPC</th>
                     <th class="sortable" data-sort="conversion_value">Conv value</th>
                     <th class="sortable" data-sort="conversion_rate">Conv rate</th>
+                    <th class="" data-sort="bidding_strategy">Chiến lược</th>
                     <th>Thao tác</th>
                 </tr>
             </thead>
@@ -338,6 +339,10 @@ $(document).ready(function() {
                         aValue = parseFloat(a.real_conversion_rate) || 0;
                         bValue = parseFloat(b.real_conversion_rate) || 0;
                         break;
+                    case 'bidding_strategy':
+                        aValue = a.bidding_strategy || '-';
+                        bValue = b.bidding_strategy || '-';
+                        break;
                     default:
                         return 0;
                 }
@@ -382,6 +387,11 @@ $(document).ready(function() {
                     <td>${formatNumber(campaign.average_cpc)}</td>
                     <td>${(campaign.real_conversion_value > 0) ? formatNumber(campaign.real_conversion_value) : '-'}</td>
                     <td>${(campaign.real_conversion_rate > 0) ? formatPercent(campaign.real_conversion_rate) : '-'}</td>
+                    <td class="small text-muted">
+                        ${campaign.bidding_strategy || '-'}
+                        ${campaign.target_cpa ? '<br>CPA: ' + formatNumber(campaign.target_cpa) : ''}
+                        ${campaign.target_roas ? '<br>ROAS: ' + formatNumberWithoutCurrency2(campaign.target_roas) : ''}
+                    </td>
                     <td>
                         <button class="btn ${campaign.status === 'ENABLED' ? 'btn-danger' : 'btn-success'} btn-sm toggle-status"
                                 data-customer-id="<?= $account['customer_id'] ?>"
@@ -414,6 +424,7 @@ $(document).ready(function() {
                 <td>${formatNumber(totalAverageCPC)}</td>
                 <td>${formatNumber(totals.real_conversion_value)}</td>
                 <td>${formatPercent(totalRealConversionRate)}</td>
+                <td>-</td>
                 <td>-</td>
             </tr>
         `;
