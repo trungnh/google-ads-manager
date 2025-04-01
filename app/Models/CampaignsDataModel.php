@@ -115,4 +115,19 @@ class CampaignsDataModel extends Model
         
         return true;
     }
+
+    public function saveCampaignStatus($customerId, $campaignId, $status)
+    {
+        $data = [
+            'customer_id' => $customerId,
+            'campaign_id' => $campaignId,
+            'status' => $status 
+        ];
+
+        $this->db->table('campaigns_data')
+                ->where('customer_id', $customerId)
+                ->where('campaign_id', $campaignId)
+                ->update($data);    
+    }
+    
 } 

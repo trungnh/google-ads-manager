@@ -144,56 +144,6 @@ class OptimizeCampaigns extends BaseCommand
         }
     }
 
-    protected function ensureValidToken($userId)
-    {
-        try {
-            if (empty($userId)) {
-                throw new \Exception('User ID không hợp lệ');
-            }
-
-            // Lấy token hiện tại
-            $tokenData = $this->googleTokenModel->getValidToken($userId);
-            
-            if (empty($tokenData)) {
-                throw new \Exception('Không tìm thấy token cho user');
-            }
-
-            if (!isset($tokenData['refresh_token']) || !isset($tokenData['expires_at']) || !isset($tokenData['access_token'])) {
-                throw new \Exception('Token không hợp lệ: thiếu thông tin token');
-            }
-
-            // Kiểm tra token có sắp hết hạn không (ít hơn 5 phút)
-            $expiresIn = strtotime($tokenData['expires_at']) - time();
-            if ($expiresIn < 300) { // 5 phút = 300 giây
-                CLI::write("Token sắp hết hạn, đang refresh...", 'yellow');
-                
-                // Refresh token
-                $newToken = $this->googleAdsService->refreshToken($tokenData['refresh_token']);
-                if (!$newToken || !isset($newToken['access_token']) || !isset($newToken['expires_in'])) {
-                    throw new \Exception('Không thể refresh token: dữ liệu token không hợp lệ');
-                }
-
-                // Cập nhật token mới vào database
-                $this->googleTokenModel->update($tokenData['id'], [
-                    'access_token' => $newToken['access_token'],
-                    'expires_at' => date('Y-m-d H:i:s', time() + $newToken['expires_in']),
-                    'updated_at' => date('Y-m-d H:i:s')
-                ]);
-
-                CLI::write("Đã refresh token thành công", 'green');
-                return [
-                    'access_token' => $newToken['access_token'],
-                    'expires_at' => date('Y-m-d H:i:s', time() + $newToken['expires_in'])
-                ];
-            }
-
-            return $tokenData;
-        } catch (\Exception $e) {
-            log_message('error', "Lỗi refresh token cho user {$userId}: " . $e->getMessage());
-            throw $e;
-        }
-    }
-
     protected function optimizeCampaigns($account, $accessToken, $mccId = null, $telegramChatIds = [])
     {
         $pausedCampaigns = 0;
@@ -271,10 +221,10 @@ class OptimizeCampaigns extends BaseCommand
                     $sheetData[$key]['conversion_value'] += $sheetData2[$key]['conversion_value'];
                 }
             }
-            $reportMessage = "====== {$account['customer_name']} =======\n";
-            $totalConversions = 0;
-            $totalConversionValue = 0;
-            $totalCost = 0;
+            // $reportMessage = "====== {$account['customer_name']} =======\n";
+            // $totalConversions = 0;
+            // $totalConversionValue = 0;
+            // $totalCost = 0;
             foreach ($campaigns as $campaign) {
                 if (!isset($campaign['campaign_id']) || !isset($campaign['cost']) || !isset($campaign['budget'])) {
                     CLI::write("Bỏ qua chiến dịch không hợp lệ: thiếu thông tin bắt buộc", 'yellow');
@@ -307,9 +257,9 @@ class OptimizeCampaigns extends BaseCommand
                 // $reportMessage .= "   🛒 Đơn: " . number_format($campaignConversions['conversions'], 0, '', '.')."\n";
                 // $reportMessage .= "   🎯 CPA: " . number_format($realCpa, 0, '', '.')."đ\n";
                 // $reportMessage .= "   🎯 ROAS: " . number_format($realRoas, 1, ',', '.')."\n";
-                $totalConversions += $campaignConversions['conversions'];
-                $totalConversionValue += $campaignConversions['conversion_value'];
-                $totalCost += $campaign['cost'];
+                // $totalConversions += $campaignConversions['conversions'];
+                // $totalConversionValue += $campaignConversions['conversion_value'];
+                // $totalCost += $campaign['cost'];
                 // Kiểm tra chi tiêu trước
                 if(isset($account['cost_threshold']) && $account['cost_threshold'] > 0){
                     if($campaign['cost'] <= $account['cost_threshold']){
@@ -361,29 +311,29 @@ class OptimizeCampaigns extends BaseCommand
                 $pausedCampaigns += $shouldPause ? 1 : 0;
                 $increasedBudgetCampaigns += $shouldIncreaseBudget ? 1 : 0;
             }
-            $reportMessage .= PHP_EOL;
-            $reportMessage .= "💰 Chi tiêu: " . number_format($totalCost, 0, '', '.')."đ\n";
-            $reportMessage .= "🛒 Đơn: " . number_format($totalConversions, 0, '', '.')."\n";
-            if($totalConversions > 0){
-                $reportMessage .= "🎯 CPA: " . number_format($totalCost / $totalConversions, 0, '', '.')."đ\n";
-            } else {
-                $reportMessage .= "🎯 CPA: 0\n";
-            }   
-            if($totalCost > 0){
-                $reportMessage .= "🎯 ROAS: " . number_format($totalConversionValue / $totalCost, 1, ',', '.')."\n";
-            } else {
-                $reportMessage .= "🎯 ROAS: 0\n";
-            }
+            // $reportMessage .= PHP_EOL;
+            // $reportMessage .= "💰 Chi tiêu: " . number_format($totalCost, 0, '', '.')."đ\n";
+            // $reportMessage .= "🛒 Đơn: " . number_format($totalConversions, 0, '', '.')."\n";
+            // if($totalConversions > 0){
+            //     $reportMessage .= "🎯 CPA: " . number_format($totalCost / $totalConversions, 0, '', '.')."đ\n";
+            // } else {
+            //     $reportMessage .= "🎯 CPA: 0\n";
+            // }   
+            // if($totalCost > 0){
+            //     $reportMessage .= "🎯 ROAS: " . number_format($totalConversionValue / $totalCost, 1, ',', '.')."\n";
+            // } else {
+            //     $reportMessage .= "🎯 ROAS: 0\n";
+            // }
             
-            $reportMessage .= "====== END ======\n";
-            $hour = date('H');
-            $minute = date('i');
-            // Chỉ gửi khi phút là 0 hoặc 30 và giờ là 7 hoặc 21
-            if(($minute == 0 || $minute == 30) && ($hour >= 7 && $hour <= 21)){
-                foreach($telegramChatIds as $telegramChatId){
-                    $this->telegramService->sendMessage($reportMessage, $telegramChatId);
-                }
-            }
+            // $reportMessage .= "====== END ======\n";
+            // $hour = date('H');
+            // $minute = date('i');
+            // // Chỉ gửi khi phút là 0 hoặc 30 và giờ là 7 hoặc 21
+            // if(($minute == 0 || $minute == 30) && ($hour >= 7 && $hour <= 21)){
+            //     foreach($telegramChatIds as $telegramChatId){
+            //         $this->telegramService->sendMessage($reportMessage, $telegramChatId);
+            //     }
+            // }
 
             // Cập nhật thời gian chạy cuối cùng
             $this->adsAccountSettingsModel->update($account['id'], [
@@ -569,6 +519,56 @@ class OptimizeCampaigns extends BaseCommand
             foreach($telegramChatIds as $telegramChatId){
                 $this->telegramService->sendMessage("❌ " . $message, $telegramChatId);
             }
+        }
+    }
+
+    protected function ensureValidToken($userId)
+    {
+        try {
+            if (empty($userId)) {
+                throw new \Exception('User ID không hợp lệ');
+            }
+
+            // Lấy token hiện tại
+            $tokenData = $this->googleTokenModel->getValidToken($userId);
+            
+            if (empty($tokenData)) {
+                throw new \Exception('Không tìm thấy token cho user');
+            }
+
+            if (!isset($tokenData['refresh_token']) || !isset($tokenData['expires_at']) || !isset($tokenData['access_token'])) {
+                throw new \Exception('Token không hợp lệ: thiếu thông tin token');
+            }
+
+            // Kiểm tra token có sắp hết hạn không (ít hơn 5 phút)
+            $expiresIn = strtotime($tokenData['expires_at']) - time();
+            if ($expiresIn < 300) { // 5 phút = 300 giây
+                CLI::write("Token sắp hết hạn, đang refresh...", 'yellow');
+                
+                // Refresh token
+                $newToken = $this->googleAdsService->refreshToken($tokenData['refresh_token']);
+                if (!$newToken || !isset($newToken['access_token']) || !isset($newToken['expires_in'])) {
+                    throw new \Exception('Không thể refresh token: dữ liệu token không hợp lệ');
+                }
+
+                // Cập nhật token mới vào database
+                $this->googleTokenModel->update($tokenData['id'], [
+                    'access_token' => $newToken['access_token'],
+                    'expires_at' => date('Y-m-d H:i:s', time() + $newToken['expires_in']),
+                    'updated_at' => date('Y-m-d H:i:s')
+                ]);
+
+                CLI::write("Đã refresh token thành công", 'green');
+                return [
+                    'access_token' => $newToken['access_token'],
+                    'expires_at' => date('Y-m-d H:i:s', time() + $newToken['expires_in'])
+                ];
+            }
+
+            return $tokenData;
+        } catch (\Exception $e) {
+            log_message('error', "Lỗi refresh token cho user {$userId}: " . $e->getMessage());
+            throw $e;
         }
     }
 } 

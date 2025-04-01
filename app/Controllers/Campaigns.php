@@ -328,6 +328,8 @@ class Campaigns extends BaseController
 
             if ($result === true) {
                 $message = $status === 'ENABLED' ? 'Đã bật chiến dịch thành công' : 'Đã tắt chiến dịch thành công';
+                $this->campaignsDataModel->saveCampaignStatus($customerId, $campaignId, $status);
+                
                 return $this->response->setJSON([
                     'success' => true, 
                     'message' => $message,
