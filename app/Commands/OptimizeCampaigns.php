@@ -175,10 +175,10 @@ class OptimizeCampaigns extends BaseCommand
             // Lấy dữ liệu chuyển đổi thực tế từ Google Sheet
             // Sử dụng giá trị mặc định cho cấu hình cột
             $columnConfig = [
-                'date_col' => 'A',
-                'phone_col' => 'B',
-                'value_col' => 'C',
-                'campaign_col' => 'D'
+                'gsheet_date_col' => 'A',
+                'gsheet_phone_col' => 'B',
+                'gsheet_value_col' => 'C',
+                'gsheet_campaign_col' => 'D'
             ];
 
             // Nếu có cấu hình trong settings thì sử dụng

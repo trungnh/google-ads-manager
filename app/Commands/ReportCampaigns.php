@@ -132,10 +132,10 @@ class ReportCampaigns extends BaseCommand
         // Lấy dữ liệu chuyển đổi thực tế từ Google Sheet
         // Sử dụng giá trị mặc định cho cấu hình cột
         $columnConfig = [
-            'date_col' => 'A',
-            'phone_col' => 'B',
-            'value_col' => 'C',
-            'campaign_col' => 'D'
+            'gsheet_date_col' => 'A',
+            'gsheet_date_col' => 'B',
+            'gsheet_value_col' => 'C',
+            'gsheet_campaign_col' => 'D'
         ];
 
         $accountSettings = $this->adsAccountSettingsModel->where('account_id', $account['id'])->first();
@@ -146,10 +146,10 @@ class ReportCampaigns extends BaseCommand
         if (isset($accountSettings['gsheet_campaign_col'])) $columnConfig['gsheet_campaign_col'] = $accountSettings['gsheet_campaign_col'];
 
         $sheetData = [];
-        if (!empty($account['gsheet1'])) {
+        if (!empty($accountSettings['gsheet1'])) {
             try {
                 $sheetData = $this->googleSheetService->getConversionsFromCsv(
-                    $account['gsheet1'],
+                    $accountSettings['gsheet1'],
                     date('Y-m-d'),
                     date('Y-m-d'),
                     $columnConfig
@@ -160,10 +160,10 @@ class ReportCampaigns extends BaseCommand
         }
         // Lấy dữ liệu chuyển đổi thực tế từ Google Sheet 2
         $sheetData2 = [];
-        if (!empty($account['gsheet2'])) {
+        if (!empty($accountSettings['gsheet2'])) {
             try {
                 $sheetData2 = $this->googleSheetService->getConversionsFromCsv(
-                    $account['gsheet2'],
+                    $accountSettings['gsheet2'],
                     date('Y-m-d'),
                     date('Y-m-d'),
                     $columnConfig
