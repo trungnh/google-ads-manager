@@ -531,4 +531,126 @@ class GoogleAdsService
             throw $e;
         }
     }
+
+    public function updateCampaignTarget($accessToken, $customerId, $campaignId, $type, $value, $mccId = null)
+    {
+        $formattedCustomerId = $this->formatCustomerId($customerId);
+        
+        try {
+            // First, get campaign details to determine bidding strategy
+            $url = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedCustomerId . '/googleAds:searchStream';
+            
+            $query = "
+                SELECT
+                    campaign.id,
+                    campaign.resource_name,
+                    campaign.bidding_strategy_type,
+                    campaign.maximize_conversions.target_cpa_micros,
+                    campaign.target_cpa.target_cpa_micros,
+                    campaign.maximize_conversion_value.target_roas,
+                    campaign.target_roas.target_roas
+                FROM campaign
+                WHERE campaign.id = " . $campaignId;
+            
+            $data = [
+                'query' => $query
+            ];
+            
+            $response = $this->makeCurlRequest($url, 'POST', $accessToken, json_encode($data), $mccId);
+            
+            if (!isset($response[0]['results'][0]['campaign'])) {
+                throw new \Exception('Không tìm thấy chiến dịch');
+            }
+            
+            $campaign = $response[0]['results'][0]['campaign'];
+            $resourceName = $campaign['resourceName'];
+            $biddingStrategyType = $campaign['biddingStrategyType'] ?? '';
+            
+            log_message('debug', 'Campaign bidding strategy: ' . $biddingStrategyType);
+            
+            // Determine the update structure based on bidding strategy and target type
+            $updateUrl = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedCustomerId . '/campaigns:mutate';
+            $campaignObject = [
+                'resourceName' => $resourceName
+            ];
+            
+            $updateMask = '';
+            $valueMicros = null;
+            
+            if ($type === 'cpa') {
+                // Convert to micro amount (multiply by 1,000,000)
+                $valueMicros = (float)$value * 1000000;
+                
+                // Check bidding strategy to determine where to set CPA
+                if ($biddingStrategyType === 'MAXIMIZE_CONVERSIONS') {
+                    $campaignObject['maximizeConversions'] = [
+                        'targetCpaMicros' => $valueMicros
+                    ];
+                    $updateMask = 'maximize_conversions.target_cpa_micros';
+                } elseif ($biddingStrategyType === 'TARGET_CPA') {
+                    $campaignObject['targetCpa'] = [
+                        'targetCpaMicros' => $valueMicros
+                    ];
+                    $updateMask = 'target_cpa.target_cpa_micros';
+                } else {
+                    throw new \Exception('Chiến dịch không sử dụng chiến lược đặt giá thầu TARGET_CPA hoặc MAXIMIZE_CONVERSIONS');
+                }
+            } elseif ($type === 'roas') {
+                // ROAS is a ratio value, not in micro amount
+                $roas = (float)$value;
+                
+                // Check bidding strategy to determine where to set ROAS
+                if ($biddingStrategyType === 'MAXIMIZE_CONVERSION_VALUE') {
+                    $campaignObject['maximizeConversionValue'] = [
+                        'targetRoas' => $roas
+                    ];
+                    $updateMask = 'maximize_conversion_value.target_roas';
+                } elseif ($biddingStrategyType === 'TARGET_ROAS') {
+                    $campaignObject['targetRoas'] = [
+                        'targetRoas' => $roas
+                    ];
+                    $updateMask = 'target_roas.target_roas';
+                } else {
+                    throw new \Exception('Chiến dịch không sử dụng chiến lược đặt giá thầu TARGET_ROAS hoặc MAXIMIZE_CONVERSION_VALUE');
+                }
+            } else {
+                throw new \Exception('Loại mục tiêu không hợp lệ. Chỉ hỗ trợ "cpa" hoặc "roas"');
+            }
+            
+            // Create update request
+            $updateData = [
+                'operations' => [
+                    [
+                        'update' => $campaignObject,
+                        'updateMask' => $updateMask
+                    ]
+                ],
+                'validateOnly' => false
+            ];
+            
+            // Log request data for debugging
+            log_message('debug', 'Campaign target update URL: ' . $updateUrl);
+            log_message('debug', 'Campaign target update request: ' . json_encode($updateData));
+            
+            $updateResponse = $this->makeCurlRequest($updateUrl, 'POST', $accessToken, json_encode($updateData), $mccId);
+            
+            // Log response for debugging
+            log_message('debug', 'Campaign target update response: ' . json_encode($updateResponse));
+            
+            // Check response
+            if (isset($updateResponse['error'])) {
+                throw new \Exception('API Error: ' . json_encode($updateResponse['error']));
+            }
+            
+            // Check mutate results
+            if (!isset($updateResponse['results']) || empty($updateResponse['results'])) {
+                throw new \Exception('Không nhận được kết quả từ API khi cập nhật mục tiêu');
+            }
+            
+            return true;
+        } catch (\Exception $e) {
+            log_message('error', 'Lỗi khi cập nhật mục tiêu chiến dịch: ' . $e->getMessage());
+            throw $e;
+        }
+    }
 }

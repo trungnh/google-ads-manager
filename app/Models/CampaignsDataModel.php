@@ -130,4 +130,11 @@ class CampaignsDataModel extends Model
                 ->update($data);    
     }
     
+    public function getCampaignsByID($customerId, $campaignId)
+    {
+        return $this->where([
+            'customer_id' => $customerId,
+            'campaign_id' => $campaignId
+        ])->orderBy('date', 'DESC')->findAll(1);
+    }
 } 

@@ -122,6 +122,40 @@
 .datepicker {
     z-index: 1060 !important;
 }
+
+/* Editable target styles */
+.editable-target {
+    cursor: pointer;
+    padding: 2px 5px;
+    border-radius: 3px;
+    background-color: #f8f9fa;
+    border: 1px solid transparent;
+}
+
+.editable-target:hover {
+    border-color: #ddd;
+    background-color: #fff;
+}
+
+.editable-target.editing {
+    background-color: #fff;
+    border-color: #80bdff;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.target-btn-group {
+    margin-left: 5px;
+    display: inline-flex;
+}
+
+.target-btn-group .btn {
+    padding: 0px 5px;
+    font-size: 0.7rem;
+    line-height: 1.2;
+    margin-left: 2px;
+    border-radius: 3px;
+}
 </style>
 
 <!-- Add Font Awesome -->
@@ -131,6 +165,8 @@
 <!-- Add Bootstrap Datepicker JS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/locales/bootstrap-datepicker.vi.min.js"></script>
+<!-- Add Bootstrap Notify for notifications -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-notify/0.2.0/js/bootstrap-notify.min.js"></script>
 
 <script>
 $(document).ready(function() {
@@ -389,8 +425,22 @@ $(document).ready(function() {
                     <td>${(campaign.real_conversion_rate > 0) ? formatPercent(campaign.real_conversion_rate) : '-'}</td>
                     <td class="small text-muted">
                         ${campaign.bidding_strategy || '-'}
-                        ${campaign.target_cpa ? '<br>CPA: ' + formatNumber(campaign.target_cpa) : ''}
-                        ${campaign.target_roas ? '<br>ROAS: ' + formatNumberWithoutCurrency2(campaign.target_roas) : ''}
+                        ${campaign.target_cpa ? 
+                            `<br>CPA: <span class="editable-target" 
+                                data-type="cpa" 
+                                data-campaign-id="${campaign.campaign_id}" 
+                                data-current="${campaign.target_cpa}"
+                                title="Click to edit">${formatNumber(campaign.target_cpa)}</span>` : 
+                            ''
+                        }
+                        ${campaign.target_roas ? 
+                            `<br>ROAS: <span class="editable-target" 
+                                data-type="roas" 
+                                data-campaign-id="${campaign.campaign_id}" 
+                                data-current="${campaign.target_roas}"
+                                title="Click to edit">${formatNumberWithoutCurrency2(campaign.target_roas)}</span>` : 
+                            ''
+                        }
                     </td>
                     <td>
                         <button class="btn ${campaign.status === 'ENABLED' ? 'btn-danger' : 'btn-success'} btn-sm toggle-status"
@@ -431,6 +481,7 @@ $(document).ready(function() {
         
         $('#campaignsBody').html(html);
         initializeToggleButtons();
+        initializeEditableTargets();
     }
 
     // Di chuyển event handler ra function riêng
@@ -476,6 +527,204 @@ $(document).ready(function() {
                 showNotification('Có lỗi xảy ra khi cập nhật trạng thái chiến dịch', 'error');
             }
         });
+    }
+
+    // Initialize editable target fields
+    function initializeEditableTargets() {
+        // Remove any existing handlers first
+        $(document).off('click', '.editable-target');
+        $(document).off('keydown', '.editable-target.editing');
+        $(document).off('blur', '.editable-target.editing');
+        $(document).off('click', '.save-target-btn, .cancel-target-btn');
+        
+        // Click to edit
+        $(document).on('click', '.editable-target', function(e) {
+            const span = $(this);
+            if (span.hasClass('editing')) return;
+            
+            // Close any other open editors first
+            $('.editable-target.editing').each(function() {
+                cancelEdit($(this));
+            });
+            
+            const type = span.data('type');
+            const currentValue = span.data('current');
+            const campaignId = span.data('campaign-id');
+            
+            // Save original content to restore if canceled
+            span.data('original-text', span.html());
+            span.data('original-value', currentValue);
+            
+            // Make editable
+            span.addClass('editing').attr('contenteditable', 'true');
+            
+            // Add save/cancel buttons after the span
+            const buttonGroup = $(`
+                <span class="target-btn-group ml-2">
+                    <button class="btn btn-sm btn-success save-target-btn" data-campaign-id="${campaignId}" data-type="${type}">
+                        <i class="fas fa-check"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger cancel-target-btn" data-campaign-id="${campaignId}" data-type="${type}">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </span>
+            `);
+            span.after(buttonGroup);
+            
+            // Select all text
+            document.execCommand('selectAll', false, null);
+            
+            // Focus the element
+            span.focus();
+        });
+        
+        // Handle keyboard actions
+        $(document).on('keydown', '.editable-target.editing', function(e) {
+            const span = $(this);
+            
+            // Enter key - save
+            if (e.which === 13) {
+                e.preventDefault();
+                const campaignId = span.data('campaign-id');
+                const type = span.data('type');
+                saveEdit(span, campaignId, type);
+                return false;
+            }
+            
+            // Escape key - cancel
+            if (e.which === 27) {
+                e.preventDefault();
+                cancelEdit(span);
+                return false;
+            }
+            
+            // Only allow numbers, decimal point, and control keys
+            const allowedKeys = [8, 9, 37, 38, 39, 40, 46]; // Backspace, Tab, arrow keys, delete
+            const isAllowedKey = allowedKeys.indexOf(e.which) !== -1;
+            const isNumber = (e.which >= 48 && e.which <= 57) || (e.which >= 96 && e.which <= 105);
+            const isDecimalPoint = e.which === 190 || e.which === 110;
+            
+            if (!isNumber && !isAllowedKey && (!isDecimalPoint || span.text().includes('.'))) {
+                e.preventDefault();
+                return false;
+            }
+        });
+        
+        // Handle save button click
+        $(document).on('click', '.save-target-btn', function(e) {
+            e.preventDefault();
+            
+            const button = $(this);
+            const campaignId = button.data('campaign-id');
+            const type = button.data('type');
+            const span = $(`.editable-target[data-campaign-id="${campaignId}"][data-type="${type}"]`);
+            
+            saveEdit(span, campaignId, type);
+        });
+        
+        // Handle cancel button click
+        $(document).on('click', '.cancel-target-btn', function(e) {
+            e.preventDefault();
+            
+            const button = $(this);
+            const campaignId = button.data('campaign-id');
+            const type = button.data('type');
+            const span = $(`.editable-target[data-campaign-id="${campaignId}"][data-type="${type}"]`);
+            
+            cancelEdit(span);
+        });
+        
+        // Cancel edit if clicked outside
+        $(document).on('click', function(e) {
+            if ($(e.target).closest('.editable-target, .target-btn-group').length === 0) {
+                $('.editable-target.editing').each(function() {
+                    cancelEdit($(this));
+                });
+            }
+        });
+    }
+    
+    function saveEdit(span, campaignId, type) {
+        let newValue = span.text().trim().replace(/[^0-9.]/g, '');
+        
+        // Convert to number
+        newValue = parseFloat(newValue);
+        
+        // Validate
+        if (isNaN(newValue) || newValue <= 0) {
+            cancelEdit(span);
+            showNotification('Giá trị không hợp lệ! Vui lòng nhập số lớn hơn 0.', 'error');
+            return;
+        }
+        
+        // Format display value based on type
+        const displayValue = type === 'cpa' 
+            ? formatNumber(newValue) 
+            : formatNumberWithoutCurrency2(newValue);
+        
+        // End editing mode
+        span.removeClass('editing').removeAttr('contenteditable');
+        span.html(displayValue);
+        
+        // Remove buttons
+        span.next('.target-btn-group').remove();
+        
+        // Send update to server
+        updateTargetValue(<?= $account['customer_id'] ?>, campaignId, type, newValue, span);
+    }
+    
+    function cancelEdit(span) {
+        // Restore original content
+        span.html(span.data('original-text'));
+        span.removeClass('editing').removeAttr('contenteditable');
+        
+        // Remove buttons
+        span.next('.target-btn-group').remove();
+    }
+    
+    function updateTargetValue(customerId, campaignId, type, value, element) {
+        $.ajax({
+            url: `/campaigns/updateTarget/${customerId}/${campaignId}`,
+            method: 'POST',
+            data: {
+                type: type,
+                value: value
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Update the data attribute
+                    element.data('current', value);
+                    showNotification(response.message);
+                } else {
+                    // Revert to original on error
+                    element.html(element.data('original-text'));
+                    showNotification(response.message, 'error');
+                }
+            },
+            error: function(xhr, status, error) {
+                // Revert to original on error
+                element.html(element.data('original-text'));
+                showNotification('Có lỗi xảy ra khi cập nhật giá trị!', 'error');
+            }
+        });
+    }
+    
+    function showNotification(message, type = 'success') {
+        if ($.notify) {
+            $.notify({
+                message: message
+            }, {
+                type: type,
+                placement: {
+                    from: 'top',
+                    align: 'center'
+                },
+                z_index: 9999,
+                timer: 2000
+            });
+        } else {
+            alert(message);
+        }
     }
 
     function formatNumber(number) {

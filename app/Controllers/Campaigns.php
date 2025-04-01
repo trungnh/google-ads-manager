@@ -343,4 +343,72 @@ class Campaigns extends BaseController
             return $this->response->setJSON(['success' => false, 'message' => $e->getMessage()]);
         }
     }
+
+    public function updateTarget($customerId, $campaignId)
+    {
+        if (!session()->get('isLoggedIn')) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Unauthorized']);
+        }
+
+        try {
+            $userId = session()->get('id');
+            $type = $this->request->getPost('type'); // 'cpa' or 'roas'
+            $value = $this->request->getPost('value');
+            
+            // Validate input
+            if (!in_array($type, ['cpa', 'roas'])) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Loại mục tiêu không hợp lệ']);
+            }
+            
+            if (!is_numeric($value) || $value <= 0) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Giá trị mục tiêu không hợp lệ']);
+            }
+            
+            // Get access token
+            $tokenData = $this->googleTokenModel->getValidToken($userId);
+            if (empty($tokenData) || empty($tokenData['access_token'])) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Bạn cần kết nối lại với Google Ads']);
+            }
+
+            // Get MCC ID from settings
+            $settings = $this->userSettingsModel->where('user_id', $userId)->first();
+            $mccId = $settings['mcc_id'] ?? null;
+
+            // Call API to update target
+            $result = $this->googleAdsService->updateCampaignTarget(
+                $tokenData['access_token'],
+                $customerId,
+                $campaignId,
+                $type,
+                $value,
+                $mccId
+            );
+
+            if ($result === true) {
+                // Update local data
+                $campaigns = $this->campaignsDataModel->getCampaignsByID($customerId, $campaignId);
+                if (!empty($campaigns)) {
+                    $campaign = $campaigns[0];
+                    if ($type === 'cpa') {
+                        $campaign['target_cpa'] = $value;
+                    } else {
+                        $campaign['target_roas'] = $value;
+                    }
+                    $this->campaignsDataModel->saveCampaignsData($customerId, [$campaign]);
+                }
+                
+                $message = $type === 'cpa' ? 'Đã cập nhật CPA mục tiêu thành công' : 'Đã cập nhật ROAS mục tiêu thành công';
+                return $this->response->setJSON([
+                    'success' => true, 
+                    'message' => $message,
+                    'newValue' => $value
+                ]);
+            } else {
+                return $this->response->setJSON(['success' => false, 'message' => 'Không thể cập nhật mục tiêu chiến dịch']);
+            }
+        } catch (Exception $e) {
+            log_message('error', 'Lỗi khi cập nhật mục tiêu chiến dịch: ' . $e->getMessage());
+            return $this->response->setJSON(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
 } 
