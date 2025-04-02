@@ -201,7 +201,7 @@
 $(document).ready(function() {
     let campaignsData = [];
     let accountSettings = <?= json_encode($accountSettings) ?>;
-    let mccId = <?= $mccId ?>;
+    let mccId = '<?= $mccId ?>';
     let currentSort = {
         column: 'cost',
         direction: 'desc'

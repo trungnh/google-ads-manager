@@ -126,70 +126,6 @@ class Campaigns extends BaseController
         }
     }
 
-    protected function processRealConversions($campaigns, $gsheetUrl, $startDate, $endDate, $settings)
-    {
-        // Kiểm tra input
-        if (empty($campaigns) || !is_array($campaigns)) {
-            log_message('error', 'Invalid campaigns data: ' . json_encode($campaigns));
-            return [];
-        }
-
-        if (empty($gsheetUrl)) {
-            return $campaigns;
-        }
-
-        try {
-            // Lấy dữ liệu chuyển đổi từ Google Sheet
-            $sheetData = $this->googleSheetService->getConversionsFromCsv($gsheetUrl, $startDate, $endDate, $settings);
-            
-            // Tạo mảng mới để lưu kết quả
-            $processedCampaigns = [];
-
-            // Tính toán các chỉ số thực tế cho mỗi chiến dịch
-            foreach ($campaigns as $campaign) {
-                // Đảm bảo campaign là array và có campaign_id
-                if (!is_array($campaign) || !isset($campaign['campaign_id'])) {
-                    log_message('error', 'Invalid campaign data: ' . json_encode($campaign));
-                    continue;
-                }
-                
-                // Tạo bản sao của campaign để tránh tham chiếu
-                $processedCampaign = $campaign;
-                $campaignId = $campaign['campaign_id'];
-                
-                // Nếu có dữ liệu chuyển đổi cho chiến dịch này
-                if (isset($sheetData[$campaignId])) {
-                    $tmpRealConversions = $processedCampaign['real_conversions'] ?? 0;
-                    $tmpRealConversionValue = $processedCampaign['real_conversion_value'] ?? 0;
-
-                    $tmpRealConversions += $sheetData[$campaignId]['conversions'];
-                    $tmpRealConversionValue += $sheetData[$campaignId]['conversion_value'];
-
-                    $processedCampaign['real_conversions'] = $tmpRealConversions;
-                    $processedCampaign['real_conversion_value'] = $tmpRealConversionValue;
-                    $processedCampaign['real_conversion_rate'] = isset($campaign['clicks']) && $campaign['clicks'] > 0 
-                        ? ($tmpRealConversions / $campaign['clicks']) 
-                        : 0;
-                    $processedCampaign['real_cpa'] = $tmpRealConversions > 0 
-                        ? ($campaign['cost'] ?? 0) / $tmpRealConversions
-                        : 0;
-                } 
-                
-                $processedCampaign['real_conversions'] = $processedCampaign['real_conversions'] ?? 0;
-                $processedCampaign['real_conversion_value'] = $processedCampaign['real_conversion_value'] ?? 0;
-                $processedCampaign['real_conversion_rate'] = $processedCampaign['real_conversion_rate'] ?? 0;
-                $processedCampaign['real_cpa'] = $processedCampaign['real_cpa'] ?? 0;
-                
-                $processedCampaigns[] = $processedCampaign;
-            }
-
-            return $processedCampaigns;
-        } catch (Exception $e) {
-            log_message('error', 'Error in processRealConversions: ' . $e->getMessage());
-            return $campaigns; // Trả về dữ liệu gốc nếu có lỗi
-        }
-    }
-
     public function loadCampaigns($customerId)
     {
         if (!session()->get('isLoggedIn')) {
@@ -464,6 +400,70 @@ class Campaigns extends BaseController
                 'success' => false,
                 'message' => 'Lỗi khi cập nhật ngân sách: ' . $e->getMessage()
             ]);
+        }
+    }
+
+    protected function processRealConversions($campaigns, $gsheetUrl, $startDate, $endDate, $settings)
+    {
+        // Kiểm tra input
+        if (empty($campaigns) || !is_array($campaigns)) {
+            log_message('error', 'Invalid campaigns data: ' . json_encode($campaigns));
+            return [];
+        }
+
+        if (empty($gsheetUrl)) {
+            return $campaigns;
+        }
+
+        try {
+            // Lấy dữ liệu chuyển đổi từ Google Sheet
+            $sheetData = $this->googleSheetService->getConversionsFromCsv($gsheetUrl, $startDate, $endDate, $settings);
+            
+            // Tạo mảng mới để lưu kết quả
+            $processedCampaigns = [];
+
+            // Tính toán các chỉ số thực tế cho mỗi chiến dịch
+            foreach ($campaigns as $campaign) {
+                // Đảm bảo campaign là array và có campaign_id
+                if (!is_array($campaign) || !isset($campaign['campaign_id'])) {
+                    log_message('error', 'Invalid campaign data: ' . json_encode($campaign));
+                    continue;
+                }
+                
+                // Tạo bản sao của campaign để tránh tham chiếu
+                $processedCampaign = $campaign;
+                $campaignId = $campaign['campaign_id'];
+                
+                // Nếu có dữ liệu chuyển đổi cho chiến dịch này
+                if (isset($sheetData[$campaignId])) {
+                    $tmpRealConversions = $processedCampaign['real_conversions'] ?? 0;
+                    $tmpRealConversionValue = $processedCampaign['real_conversion_value'] ?? 0;
+
+                    $tmpRealConversions += $sheetData[$campaignId]['conversions'];
+                    $tmpRealConversionValue += $sheetData[$campaignId]['conversion_value'];
+
+                    $processedCampaign['real_conversions'] = $tmpRealConversions;
+                    $processedCampaign['real_conversion_value'] = $tmpRealConversionValue;
+                    $processedCampaign['real_conversion_rate'] = isset($campaign['clicks']) && $campaign['clicks'] > 0 
+                        ? ($tmpRealConversions / $campaign['clicks']) 
+                        : 0;
+                    $processedCampaign['real_cpa'] = $tmpRealConversions > 0 
+                        ? ($campaign['cost'] ?? 0) / $tmpRealConversions
+                        : 0;
+                } 
+                
+                $processedCampaign['real_conversions'] = $processedCampaign['real_conversions'] ?? 0;
+                $processedCampaign['real_conversion_value'] = $processedCampaign['real_conversion_value'] ?? 0;
+                $processedCampaign['real_conversion_rate'] = $processedCampaign['real_conversion_rate'] ?? 0;
+                $processedCampaign['real_cpa'] = $processedCampaign['real_cpa'] ?? 0;
+                
+                $processedCampaigns[] = $processedCampaign;
+            }
+
+            return $processedCampaigns;
+        } catch (Exception $e) {
+            log_message('error', 'Error in processRealConversions: ' . $e->getMessage());
+            return $campaigns; // Trả về dữ liệu gốc nếu có lỗi
         }
     }
 } 
