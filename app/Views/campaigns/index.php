@@ -201,6 +201,7 @@
 $(document).ready(function() {
     let campaignsData = [];
     let accountSettings = <?= json_encode($accountSettings) ?>;
+    let mccId = <?= $mccId ?>;
     let currentSort = {
         column: 'cost',
         direction: 'desc'
@@ -460,7 +461,7 @@ $(document).ready(function() {
                         <span class="editable-budget" 
                               data-campaign-id="${campaign.campaign_id}"
                               data-customer-id="${campaign.customer_id}"
-                              data-mcc-id="${campaign.mcc_id}"
+                              data-mcc-id="${mccId}"
                               data-original="${campaign.budget}">
                             ${number_format(parseFloat(campaign.budget), 0, ',', '.')} VND
                         </span>
@@ -846,9 +847,31 @@ $(document).ready(function() {
         
         $this.html($input);
         $buttonGroup.show();
+        
+        // Focus the input and select all text
         $input.focus();
+        
+        // Use setTimeout to ensure select() works after the input is fully rendered
+        // $input.select();
+        // setTimeout(function() {
+        //     $input.select();
+        // }, 0);
     });
 
+    // Add a click handler for the input field to ensure it selects all text when clicked
+    $(document).on('click', '.editable-budget input', function(e) {
+        // Prevent event propagation to avoid toggling edit mode repeatedly
+        e.stopPropagation();
+        // Select all text in the input
+        // $(this).select();
+    });
+    
+    // Fix cursor position issue by preventing the default mouseup behavior
+    $(document).on('mouseup', '.editable-budget input', function(e) {
+        // Prevent the default behavior that would deselect the text
+        e.preventDefault();
+    });
+    
     $(document).on('click', '.save-budget', function() {
         const $this = $(this);
         const $editable = $this.closest('td').find('.editable-budget');
@@ -891,6 +914,10 @@ $(document).ready(function() {
     });
 
     $(document).on('click', '.cancel-budget', function() {
+        const $editable = $(this).closest('td').find('.editable-budget');
+        cancelBudgetEdit($editable);
+    });
+    $(document).on('blur', '.editable-budget input', function() {
         const $editable = $(this).closest('td').find('.editable-budget');
         cancelBudgetEdit($editable);
     });

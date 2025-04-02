@@ -77,6 +77,8 @@ class Campaigns extends BaseController
             $showPaused = $this->request->getGet('showPaused') === 'true';
             $campaigns = $this->campaignsDataModel->getCampaignsByDate($customerId, $today, $showPaused);
             $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($account['id']);
+            $userSettings = $this->userSettingsModel->where('user_id', $userId)->first();
+            $mccId = $userSettings['mcc_id'] ?? null;
 
             // 6. Nếu không có dữ liệu trong database, lấy từ API
             if (empty($campaigns)) {
@@ -85,9 +87,6 @@ class Campaigns extends BaseController
                     session()->setFlashdata('error', 'Bạn cần kết nối lại với Google Ads');
                     return redirect()->to('/adsaccounts');
                 }
-
-                $userSettings = $this->userSettingsModel->where('user_id', $userId)->first();
-                $mccId = $userSettings['mcc_id'] ?? null;
 
                 $campaigns = $this->googleAdsService->getCampaigns(
                     $customerId, 
@@ -116,7 +115,8 @@ class Campaigns extends BaseController
                 'account' => $account,
                 'accounts' => $accounts,
                 'campaigns' => $campaigns,
-                'accountSettings' => $settings
+                'accountSettings' => $settings,
+                'mccId' => $mccId
             ]);
 
         } catch (Exception $e) {
