@@ -345,31 +345,60 @@ class GoogleAdsService
 
     public function toggleCampaignStatus($accessToken, $customerId, $campaignId, $status, $mccId = null)
     {
-        $formattedCustomerId = $this->formatCustomerId($customerId);
-        
-        // Sửa lại endpoint đúng theo Google Ads API v19
-        $updateUrl = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedCustomerId . '/campaigns:mutate';
-        
-        $updateData = [
-            'operations' => [
-                [
-                    'updateMask' => 'status',
-                    'update' => [
-                        'resourceName' => 'customers/' . $formattedCustomerId . '/campaigns/' . $campaignId,
-                        'status' => $status
+        try {
+            // Validate input
+            if (empty($customerId)) {
+                log_message('error', 'Customer ID is empty in toggleCampaignStatus');
+                throw new Exception('ID tài khoản không hợp lệ');
+            }
+
+            if (empty($campaignId)) {
+                log_message('error', 'Campaign ID is empty in toggleCampaignStatus');
+                throw new Exception('ID chiến dịch không hợp lệ');
+            }
+
+            if (!in_array($status, ['ENABLED', 'PAUSED'])) {
+                log_message('error', 'Invalid status in toggleCampaignStatus: ' . $status);
+                throw new Exception('Trạng thái không hợp lệ');
+            }
+
+            // Format customer ID
+            $formattedCustomerId = $this->formatCustomerId($customerId);
+            
+            // Prepare the request URL
+            $url = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedCustomerId . '/googleAds:mutate';
+            
+            // Prepare the request data
+            $data = [
+                'mutateOperations' => [
+                    [
+                        'campaignOperation' => [
+                            'update' => [
+                                'resourceName' => "customers/{$formattedCustomerId}/campaigns/{$campaignId}",
+                                'status' => $status
+                            ],
+                            'updateMask' => [
+                                'paths' => ['status']
+                            ]
+                        ]
                     ]
                 ]
-            ]
-        ];
-        
-        try {
-            $response = $this->makeCurlRequest($updateUrl, 'POST', $accessToken, json_encode($updateData), $mccId);
-            if (!isset($response['results']) || empty($response['results'])) {
-                throw new \Exception('Không nhận được kết quả từ API');
+            ];
+
+            log_message('info', 'Making API request to toggle campaign status: ' . json_encode($data));
+
+            // Make the API request - loginCustomerId will be handled in makeCurlRequest header
+            $response = $this->makeCurlRequest($url, 'POST', $accessToken, json_encode($data), $mccId);
+
+            if (isset($response['mutateOperationResponses'][0]['campaignResult'])) {
+                log_message('info', 'Successfully toggled campaign status');
+                return true;
+            } else {
+                log_message('error', 'Failed to toggle campaign status. Response: ' . json_encode($response));
+                throw new Exception('Không thể cập nhật trạng thái chiến dịch');
             }
-            return true;
-        } catch (\Exception $e) {
-            log_message('error', 'Lỗi khi cập nhật trạng thái chiến dịch: ' . $e->getMessage());
+        } catch (Exception $e) {
+            log_message('error', 'Error in toggleCampaignStatus: ' . $e->getMessage());
             throw $e;
         }
     }
@@ -446,12 +475,78 @@ class GoogleAdsService
         }
     }
 
+    protected function makeCampaignBudgetRequest($url, $method, $accessToken, $data, $loginCustomerId = null)
+    {
+        $ch = curl_init();
+        
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
+        
+        $headers = [
+            'Authorization: Bearer ' . $accessToken,
+            'Content-Type: application/json',
+            'Accept: application/json',
+            'developer-token: ' . getenv('GOOGLE_ADS_DEVELOPER_TOKEN')
+        ];
+
+        if ($loginCustomerId) {
+            $formattedLoginCustomerId = $this->formatCustomerId($loginCustomerId);
+            $headers[] = 'login-customer-id: ' . $formattedLoginCustomerId;
+            log_message('debug', '[Budget Request] Using login-customer-id: ' . $formattedLoginCustomerId);
+        }
+        
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        
+        if ($data && $method !== 'GET') {
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+            log_message('debug', '[Budget Request] Request body: ' . $data);
+        }
+        
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        
+        if (curl_errno($ch)) {
+            $error = curl_error($ch);
+            curl_close($ch);
+            log_message('error', '[Budget Request] cURL Error: ' . $error);
+            throw new Exception('cURL error: ' . $error);
+        }
+
+        curl_close($ch);
+        
+        $decodedResponse = json_decode($response, true);
+        
+        if ($httpCode >= 400) {
+            $errorMessage = isset($decodedResponse['error']['message']) 
+                ? $decodedResponse['error']['message'] 
+                : 'API request failed with status ' . $httpCode . '. Response: ' . $response;
+            
+            log_message('error', '[Budget Request] Google Ads API Error: ' . $errorMessage);
+            throw new Exception('API request failed with status ' . $httpCode . '. Response: ' . $response);
+        }
+        
+        return $decodedResponse;
+    }
+
     public function updateCampaignBudget($accessToken, $customerId, $campaignId, $newBudget, $mccId = null)
     {
-        $formattedCustomerId = $this->formatCustomerId($customerId);
-        
         try {
-            log_message('debug', "updateCampaignBudget: Starting budget update for campaign {$campaignId} with customerId {$customerId}");
+            // Validate input
+            if (empty($customerId)) {
+                log_message('error', 'Customer ID is empty in updateCampaignBudget');
+                throw new Exception('ID tài khoản không hợp lệ');
+            }
+
+            if (empty($campaignId)) {
+                log_message('error', 'Campaign ID is empty in updateCampaignBudget');
+                throw new Exception('ID chiến dịch không hợp lệ');
+            }
+
+            // Format customer ID
+            $formattedCustomerId = $this->formatCustomerId($customerId);
+            
+            log_message('debug', "updateCampaignBudget: Starting budget update for campaign {$campaignId} with customerId {$formattedCustomerId}");
             
             // Get campaign and its current budget resource name
             $searchUrl = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedCustomerId . '/googleAds:searchStream';
@@ -473,16 +568,16 @@ class GoogleAdsService
             
             log_message('debug', "updateCampaignBudget: Searching for budget info with query: " . json_encode($data));
             
-            $response = $this->makeCurlRequest($searchUrl, 'POST', $accessToken, json_encode($data), $mccId);
+            $response = $this->makeCampaignBudgetRequest($searchUrl, 'POST', $accessToken, json_encode($data), $mccId);
             
             if (!isset($response[0]['results'][0]['campaign']['resourceName'])) {
                 log_message('error', "updateCampaignBudget: Campaign not found. Response: " . json_encode($response));
-                throw new \Exception('Campaign not found');
+                throw new Exception('Campaign not found');
             }
             
             if (!isset($response[0]['results'][0]['campaignBudget']['resourceName'])) {
                 log_message('error', "updateCampaignBudget: Campaign budget not found. Response: " . json_encode($response));
-                throw new \Exception('Campaign budget not found');
+                throw new Exception('Campaign budget not found');
             }
             
             $campaignResourceName = $response[0]['results'][0]['campaign']['resourceName'];
@@ -516,18 +611,18 @@ class GoogleAdsService
             
             log_message('debug', "updateCampaignBudget: Updating existing budget with data: " . json_encode($updateBudgetData));
             
-            $updateResponse = $this->makeCurlRequest($updateBudgetUrl, 'POST', $accessToken, json_encode($updateBudgetData), $mccId);
+            $updateResponse = $this->makeCampaignBudgetRequest($updateBudgetUrl, 'POST', $accessToken, json_encode($updateBudgetData), $mccId);
             
             log_message('debug', "updateCampaignBudget: Budget update response: " . json_encode($updateResponse));
             
             if (!isset($updateResponse['mutateOperationResponses'][0]['campaignBudgetResult'])) {
                 log_message('error', "updateCampaignBudget: Failed to update budget. Response: " . json_encode($updateResponse));
-                throw new \Exception('Failed to update campaign budget');
+                throw new Exception('Failed to update campaign budget');
             }
             
             log_message('debug', "updateCampaignBudget: Budget update successful");
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             log_message('error', 'Error updating campaign budget: ' . $e->getMessage());
             throw $e;
         }

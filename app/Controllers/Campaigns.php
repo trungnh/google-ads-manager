@@ -235,23 +235,38 @@ class Campaigns extends BaseController
         }
 
         try {
+            // Validate input
+            if (empty($customerId)) {
+                log_message('error', 'Customer ID is empty in toggleStatus');
+                return $this->response->setJSON(['success' => false, 'message' => 'ID tài khoản không hợp lệ']);
+            }
+
+            if (empty($campaignId)) {
+                log_message('error', 'Campaign ID is empty in toggleStatus');
+                return $this->response->setJSON(['success' => false, 'message' => 'ID chiến dịch không hợp lệ']);
+            }
+
             $userId = session()->get('id');
             $status = $this->request->getPost('status');
             
             // Validate status
             if (!in_array($status, ['ENABLED', 'PAUSED'])) {
+                log_message('error', 'Invalid status in toggleStatus: ' . $status);
                 return $this->response->setJSON(['success' => false, 'message' => 'Trạng thái không hợp lệ']);
             }
             
             // Lấy access token
             $tokenData = $this->googleTokenModel->getValidToken($userId);
             if (empty($tokenData) || empty($tokenData['access_token'])) {
+                log_message('error', 'No valid access token found for user: ' . $userId);
                 return $this->response->setJSON(['success' => false, 'message' => 'Bạn cần kết nối lại với Google Ads']);
             }
 
             // Lấy MCC ID từ settings
             $settings = $this->userSettingsModel->where('user_id', $userId)->first();
             $mccId = $settings['mcc_id'] ?? null;
+
+            log_message('info', 'Calling toggleCampaignStatus with params: customerId=' . $customerId . ', campaignId=' . $campaignId . ', status=' . $status);
 
             // Gọi API để toggle status
             $result = $this->googleAdsService->toggleCampaignStatus(
@@ -266,12 +281,15 @@ class Campaigns extends BaseController
                 $message = $status === 'ENABLED' ? 'Đã bật chiến dịch thành công' : 'Đã tắt chiến dịch thành công';
                 $this->campaignsDataModel->saveCampaignStatus($customerId, $campaignId, $status);
                 
+                log_message('info', 'Successfully toggled campaign status: ' . $message);
+                
                 return $this->response->setJSON([
                     'success' => true, 
                     'message' => $message,
                     'newStatus' => $status
                 ]);
             } else {
+                log_message('error', 'Failed to toggle campaign status');
                 return $this->response->setJSON(['success' => false, 'message' => 'Không thể cập nhật trạng thái chiến dịch']);
             }
         } catch (Exception $e) {

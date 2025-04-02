@@ -202,6 +202,7 @@ $(document).ready(function() {
     let campaignsData = [];
     let accountSettings = <?= json_encode($accountSettings) ?>;
     let mccId = '<?= $mccId ?>';
+    let currentCustomerId = '<?= $account['customer_id'] ?>';
     let currentSort = {
         column: 'cost',
         direction: 'desc'
@@ -454,7 +455,7 @@ $(document).ready(function() {
         sortedCampaigns.forEach(campaign => {
             let tmpRoas = (campaign.cost > 0) ? campaign.real_conversion_value / campaign.cost : 0;
             html += `
-                <tr>
+                <tr id="campaign-${campaign.campaign_id}">
                     <td>${campaign.campaign_id}</td>
                     <td>${campaign.name}</td>
                     <td>
@@ -471,7 +472,7 @@ $(document).ready(function() {
                         </div>
                     </td>
                     <td>
-                        <span class="badge ${campaign.status === 'ENABLED' ? 'bg-success' : 'bg-warning'}">
+                        <span class="badge ${campaign.status === 'ENABLED' ? 'bg-success' : 'bg-warning'} status-badge">
                             ${campaign.status === 'ENABLED' ? 'Đang chạy' : 'Tạm dừng'}
                         </span>
                     </td>
@@ -559,21 +560,31 @@ $(document).ready(function() {
             e.preventDefault();
             
             const btn = $(this);
-            const customerId = btn.data('customer-id');
+            const customerId = currentCustomerId;
             const campaignId = btn.data('campaign-id');
             const currentStatus = btn.data('status');
             const newStatus = currentStatus === 'ENABLED' ? 'PAUSED' : 'ENABLED';
             
-            // Disable button while processing
-            btn.prop('disabled', true);
+            // Validate
+            if (!customerId || !campaignId) {
+                showNotification('Lỗi: Thiếu thông tin cần thiết', 'error');
+                return;
+            }
             
-            toggleStatus(customerId, campaignId, currentStatus);
+            toggleStatus(customerId, campaignId, newStatus);
         });
     }
 
-    function toggleStatus(customerId, campaignId, currentStatus) {
-        const newStatus = currentStatus === 'ENABLED' ? 'PAUSED' : 'ENABLED';
-        
+    function toggleStatus(customerId, campaignId, newStatus) {
+        // Kiểm tra customerId
+        if (!customerId) {
+            showNotification('Lỗi: Không tìm thấy ID tài khoản', 'error');
+            return;
+        }
+
+        // Disable button while processing
+        $(`.toggle-status[data-campaign-id="${campaignId}"]`).prop('disabled', true);
+
         $.ajax({
             url: `/campaigns/toggleStatus/${customerId}/${campaignId}`,
             method: 'POST',
@@ -582,18 +593,31 @@ $(document).ready(function() {
                 if (response.success) {
                     showNotification(response.message);
                     // Cập nhật UI
-                    const statusCell = $(`#campaign-${campaignId} .status-cell`);
-                    const newStatusText = newStatus === 'ENABLED' ? 'Đang chạy' : 'Đã tạm dừng';
-                    const newStatusClass = newStatus === 'ENABLED' ? 'text-success' : 'text-danger';
+                    const row = $(`#campaign-${campaignId}`);
+                    const statusBadge = row.find('.status-badge');
+                    const toggleButton = row.find('.toggle-status');
                     
-                    statusCell.removeClass('text-success text-danger').addClass(newStatusClass);
-                    statusCell.text(newStatusText);
+                    // Cập nhật badge
+                    statusBadge.removeClass('bg-success bg-warning')
+                        .addClass(newStatus === 'ENABLED' ? 'bg-success' : 'bg-warning')
+                        .text(newStatus === 'ENABLED' ? 'Đang chạy' : 'Tạm dừng');
+                    
+                    // Cập nhật nút toggle
+                    toggleButton.removeClass('btn-success btn-danger')
+                        .addClass(newStatus === 'ENABLED' ? 'btn-danger' : 'btn-success')
+                        .data('status', newStatus)
+                        .html(`<i class="fas fa-power-off"></i> ${newStatus === 'ENABLED' ? 'Tắt' : 'Bật'}`);
                 } else {
                     showNotification(response.message, 'error');
                 }
             },
             error: function(xhr, status, error) {
+                console.error('Error:', xhr.responseText);
                 showNotification('Có lỗi xảy ra khi cập nhật trạng thái chiến dịch', 'error');
+            },
+            complete: function() {
+                // Re-enable button
+                $(`.toggle-status[data-campaign-id="${campaignId}"]`).prop('disabled', false);
             }
         });
     }
