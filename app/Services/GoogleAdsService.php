@@ -183,21 +183,35 @@ class GoogleAdsService
 
         // Thêm login-customer-id header nếu có
         if ($loginCustomerId) {
-            $headers[] = 'login-customer-id: ' . $this->formatCustomerId($loginCustomerId);
+            // Đảm bảo ID được định dạng đúng (không có dấu gạch ngang)
+            $formattedLoginCustomerId = $this->formatCustomerId($loginCustomerId);
+            $headers[] = 'login-customer-id: ' . $formattedLoginCustomerId;
+            
+            // Log để debug
+            log_message('debug', '[CURL] Using login-customer-id header: ' . $formattedLoginCustomerId);
+        } else {
+            log_message('debug', '[CURL] No login-customer-id provided');
         }
+        
+        // Log tất cả các header để debug
+        log_message('debug', '[CURL] Headers: ' . json_encode($headers));
         
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         
         if ($data && $method !== 'GET') {
             curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+            log_message('debug', '[CURL] Request body: ' . $data);
         }
         
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         
+        log_message('debug', '[CURL] HTTP Status Code: ' . $httpCode);
+        
         if (curl_errno($ch)) {
             $error = curl_error($ch);
             curl_close($ch);
+            log_message('error', '[CURL] Error: ' . $error);
             throw new Exception('cURL error: ' . $error);
         }
 
@@ -211,8 +225,8 @@ class GoogleAdsService
                 ? $decodedResponse['error']['message'] 
                 : 'API request failed with status ' . $httpCode . '. Response: ' . $response;
             
-            log_message('error', 'Google Ads API Error: ' . $errorMessage);
-            throw new Exception($errorMessage);
+            log_message('error', '[CURL] Google Ads API Error: ' . $errorMessage);
+            throw new Exception('API request failed with status ' . $httpCode . '. Response: ' . $response);
         }
         
         return $decodedResponse;
@@ -436,54 +450,85 @@ class GoogleAdsService
     {
         $formattedCustomerId = $this->formatCustomerId($customerId);
         
-        // Đầu tiên lấy thông tin budget hiện tại
-        $url = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedCustomerId . '/googleAds:searchStream';
-        
-        $query = "
-            SELECT
-                campaign.id,
-                campaign_budget.id,
-                campaign_budget.amount_micros
-            FROM campaign
-            WHERE campaign.id = " . $campaignId;
-        
-        $data = [
-            'query' => $query
-        ];
-        
         try {
-            $response = $this->makeCurlRequest($url, 'POST', $accessToken, json_encode($data), $mccId);
+            log_message('debug', "updateCampaignBudget: Starting budget update for campaign {$campaignId} with customerId {$customerId}");
             
-            if (!isset($response[0]['results'][0]['campaignBudget'])) {
-                throw new \Exception('Không tìm thấy budget của chiến dịch');
+            // Get campaign and its current budget resource name
+            $searchUrl = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedCustomerId . '/googleAds:searchStream';
+            
+            $query = "
+                SELECT
+                    campaign.id,
+                    campaign.resource_name,
+                    campaign_budget.id,
+                    campaign_budget.resource_name,
+                    campaign_budget.amount_micros,
+                    campaign_budget.type
+                FROM campaign
+                WHERE campaign.id = " . $campaignId;
+            
+            $data = [
+                'query' => $query
+            ];
+            
+            log_message('debug', "updateCampaignBudget: Searching for budget info with query: " . json_encode($data));
+            
+            $response = $this->makeCurlRequest($searchUrl, 'POST', $accessToken, json_encode($data), $mccId);
+            
+            if (!isset($response[0]['results'][0]['campaign']['resourceName'])) {
+                log_message('error', "updateCampaignBudget: Campaign not found. Response: " . json_encode($response));
+                throw new \Exception('Campaign not found');
             }
             
-            $budgetId = $response[0]['results'][0]['campaignBudget']['id'];
+            if (!isset($response[0]['results'][0]['campaignBudget']['resourceName'])) {
+                log_message('error', "updateCampaignBudget: Campaign budget not found. Response: " . json_encode($response));
+                throw new \Exception('Campaign budget not found');
+            }
             
-            // Thực hiện update budget với endpoint đúng
-            $updateUrl = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedCustomerId . '/campaignBudgets:mutate';
+            $campaignResourceName = $response[0]['results'][0]['campaign']['resourceName'];
+            $budgetResourceName = $response[0]['results'][0]['campaignBudget']['resourceName'];
+            $budgetType = $response[0]['results'][0]['campaignBudget']['type'] ?? 'STANDARD';
             
-            $updateData = [
-                'operations' => [
+            log_message('debug', "updateCampaignBudget: Found campaign resource: {$campaignResourceName}");
+            log_message('debug', "updateCampaignBudget: Found budget resource: {$budgetResourceName}");
+            
+            // Convert budget to micros (1 unit = 1,000,000 micros)
+            $budgetMicros = (int)($newBudget * 1000000);
+            
+            // Update the existing budget directly
+            $updateBudgetUrl = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedCustomerId . '/googleAds:mutate';
+            
+            $updateBudgetData = [
+                'mutateOperations' => [
                     [
-                        'update' => [
-                            'resourceName' => 'customers/' . $formattedCustomerId . '/campaignBudgets/' . $budgetId,
-                            'amountMicros' => $newBudget * 1000000
-                        ],
-                        'updateMask' => 'amountMicros'
+                        'campaignBudgetOperation' => [
+                            'update' => [
+                                'resourceName' => $budgetResourceName,
+                                'amountMicros' => $budgetMicros,
+                            ],
+                            'updateMask' => [
+                                'paths' => ['amount_micros']
+                            ]
+                        ]
                     ]
                 ]
             ];
             
-            $response = $this->makeCurlRequest($updateUrl, 'POST', $accessToken, json_encode($updateData), $mccId);
+            log_message('debug', "updateCampaignBudget: Updating existing budget with data: " . json_encode($updateBudgetData));
             
-            if (!isset($response['results']) || empty($response['results'])) {
-                throw new \Exception('Không nhận được kết quả từ API khi cập nhật ngân sách');
+            $updateResponse = $this->makeCurlRequest($updateBudgetUrl, 'POST', $accessToken, json_encode($updateBudgetData), $mccId);
+            
+            log_message('debug', "updateCampaignBudget: Budget update response: " . json_encode($updateResponse));
+            
+            if (!isset($updateResponse['mutateOperationResponses'][0]['campaignBudgetResult'])) {
+                log_message('error', "updateCampaignBudget: Failed to update budget. Response: " . json_encode($updateResponse));
+                throw new \Exception('Failed to update campaign budget');
             }
             
+            log_message('debug', "updateCampaignBudget: Budget update successful");
             return true;
         } catch (\Exception $e) {
-            log_message('error', 'Lỗi khi cập nhật ngân sách chiến dịch: ' . $e->getMessage());
+            log_message('error', 'Error updating campaign budget: ' . $e->getMessage());
             throw $e;
         }
     }

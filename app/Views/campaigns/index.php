@@ -156,6 +156,35 @@
     margin-left: 2px;
     border-radius: 3px;
 }
+
+.editable-budget {
+    cursor: pointer;
+    padding: 2px 5px;
+    border-radius: 3px;
+}
+
+.editable-budget:hover {
+    background-color: #f8f9fa;
+}
+
+.editable-budget input {
+    width: 120px;
+    padding: 2px 5px;
+    border: 1px solid #ced4da;
+    border-radius: 3px;
+}
+
+.button-group {
+    display: inline-block;
+    margin-left: 5px;
+}
+
+.button-group button {
+    padding: 2px 5px;
+    font-size: 12px;
+    line-height: 1;
+    margin: 0 1px;
+}
 </style>
 
 <!-- Add Font Awesome -->
@@ -176,6 +205,33 @@ $(document).ready(function() {
         column: 'cost',
         direction: 'desc'
     };
+
+    // Thêm hàm number_format
+    function number_format(number, decimals, dec_point, thousands_sep) {
+        number = (number + '').replace(/[^0-9+\-Ee.]/g, '');
+        var n = !isFinite(+number) ? 0 : +number,
+            prec = !isFinite(+decimals) ? 0 : Math.abs(decimals),
+            sep = (typeof thousands_sep === 'undefined') ? ',' : thousands_sep,
+            dec = (typeof dec_point === 'undefined') ? '.' : dec_point,
+            s = '',
+            toFixedFix = function(n, prec) {
+                var k = Math.pow(10, prec);
+                return '' + (Math.round(n * k) / k)
+                    .toFixed(prec);
+            };
+        s = (prec ? toFixedFix(n, prec) : '' + Math.round(n))
+            .split('.');
+        if (s[0].length > 3) {
+            s[0] = s[0].replace(/\B(?=(?:\d{3})+(?!\d))/g, sep);
+        }
+        if ((s[1] || '')
+            .length < prec) {
+            s[1] = s[1] || '';
+            s[1] += new Array(prec - s[1].length + 1)
+                .join('0');
+        }
+        return s.join(dec);
+    }
 
     // Initialize datepickers
     $('#startDate, #endDate').datepicker({
@@ -400,7 +456,19 @@ $(document).ready(function() {
                 <tr>
                     <td>${campaign.campaign_id}</td>
                     <td>${campaign.name}</td>
-                    <td>${formatNumber(campaign.budget)}</td>
+                    <td>
+                        <span class="editable-budget" 
+                              data-campaign-id="${campaign.campaign_id}"
+                              data-customer-id="${campaign.customer_id}"
+                              data-mcc-id="${campaign.mcc_id}"
+                              data-original="${campaign.budget}">
+                            ${number_format(parseFloat(campaign.budget), 0, ',', '.')} VND
+                        </span>
+                        <div class="button-group" style="display: none;">
+                            <button class="btn btn-sm btn-success save-budget">✓</button>
+                            <button class="btn btn-sm btn-danger cancel-budget">✗</button>
+                        </div>
+                    </td>
                     <td>
                         <span class="badge ${campaign.status === 'ENABLED' ? 'bg-success' : 'bg-warning'}">
                             ${campaign.status === 'ENABLED' ? 'Đang chạy' : 'Tạm dừng'}
@@ -444,7 +512,7 @@ $(document).ready(function() {
                     </td>
                     <td>
                         <button class="btn ${campaign.status === 'ENABLED' ? 'btn-danger' : 'btn-success'} btn-sm toggle-status"
-                                data-customer-id="<?= $account['customer_id'] ?>"
+                                data-customer-id="${campaign.customer_id}"
                                 data-campaign-id="${campaign.campaign_id}"
                                 data-status="${campaign.status}">
                             <i class="fas fa-power-off"></i>
@@ -768,6 +836,79 @@ $(document).ready(function() {
             second: '2-digit'
         });
     }
+
+    // Gestion de l'édition du budget
+    $(document).on('click', '.editable-budget', function() {
+        const $this = $(this);
+        const currentValue = $this.data('original');
+        const $input = $('<input type="number" class="form-control form-control-sm" value="' + currentValue + '">');
+        const $buttonGroup = $this.siblings('.button-group');
+        
+        $this.html($input);
+        $buttonGroup.show();
+        $input.focus();
+    });
+
+    $(document).on('click', '.save-budget', function() {
+        const $this = $(this);
+        const $editable = $this.closest('td').find('.editable-budget');
+        const $input = $editable.find('input');
+        const newValue = $input.val();
+        const originalValue = $editable.data('original');
+        
+        if (newValue === originalValue) {
+            cancelBudgetEdit($editable);
+            return;
+        }
+        
+        const campaignId = $editable.data('campaign-id');
+        const customerId = $editable.data('customer-id');
+        
+        $.ajax({
+            url: `/campaigns/updateBudget/${customerId}/${campaignId}`,
+            method: 'POST',
+            data: {
+                budget: newValue
+            },
+            success: function(response) {
+                if (response.success) {
+                    $editable.data('original', newValue);
+                    $editable.html(number_format(newValue, 0, ',', '.') + ' VND');
+                    showNotification('Cập nhật ngân sách thành công', 'success');
+                } else {
+                    showNotification(response.message, 'error');
+                    $editable.html(number_format(originalValue, 0, ',', '.') + ' VND');
+                }
+            },
+            error: function() {
+                showNotification('Có lỗi xảy ra khi cập nhật ngân sách', 'error');
+                $editable.html(number_format(originalValue, 0, ',', '.') + ' VND');
+            },
+            complete: function() {
+                cancelBudgetEdit($editable);
+            }
+        });
+    });
+
+    $(document).on('click', '.cancel-budget', function() {
+        const $editable = $(this).closest('td').find('.editable-budget');
+        cancelBudgetEdit($editable);
+    });
+
+    function cancelBudgetEdit($editable) {
+        const originalValue = $editable.data('original');
+        $editable.html(number_format(originalValue, 0, ',', '.') + ' VND');
+        $editable.siblings('.button-group').hide();
+    }
+
+    // Gestion des événements clavier pour l'édition du budget
+    $(document).on('keydown', '.editable-budget input', function(e) {
+        if (e.key === 'Enter') {
+            $(this).closest('td').find('.save-budget').click();
+        } else if (e.key === 'Escape') {
+            $(this).closest('td').find('.cancel-budget').click();
+        }
+    });
 
     // Trigger initial load
     $('#loadCampaigns').click();

@@ -411,4 +411,59 @@ class Campaigns extends BaseController
             return $this->response->setJSON(['success' => false, 'message' => $e->getMessage()]);
         }
     }
+
+    public function updateBudget($customerId, $campaignId)
+    {
+        if (!session()->get('isLoggedIn')) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Unauthorized']);
+        }
+
+        try {
+            $userId = session()->get('id');
+            $newBudget = $this->request->getPost('budget');
+            
+            if (!$newBudget) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Thiếu tham số cần thiết']);
+            }
+            
+            // Lấy access token từ database
+            $tokenData = $this->googleTokenModel->getValidToken($userId);
+            if (empty($tokenData) || empty($tokenData['access_token'])) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Bạn cần kết nối lại với Google Ads']);
+            }
+
+            // Lấy MCC ID từ settings - sử dụng phương pháp giống như trong toggleStatus
+            $settings = $this->userSettingsModel->where('user_id', $userId)->first();
+            $mccId = $settings['mcc_id'] ?? null;
+
+            // Cập nhật ngân sách
+            $result = $this->googleAdsService->updateCampaignBudget(
+                $tokenData['access_token'],
+                $customerId,
+                $campaignId,
+                $newBudget,
+                $mccId
+            );
+            
+            // Cập nhật dữ liệu trong database
+            $campaigns = $this->campaignsDataModel->getCampaignsByID($customerId, $campaignId);
+            if (!empty($campaigns)) {
+                $campaign = $campaigns[0];
+                $campaign['budget'] = $newBudget;
+                $this->campaignsDataModel->saveCampaignsData($customerId, [$campaign]);
+            }
+            
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Cập nhật ngân sách thành công',
+                'new_budget' => $newBudget
+            ]);
+        } catch (\Exception $e) {
+            log_message('error', 'Lỗi khi cập nhật ngân sách chiến dịch: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Lỗi khi cập nhật ngân sách: ' . $e->getMessage()
+            ]);
+        }
+    }
 } 

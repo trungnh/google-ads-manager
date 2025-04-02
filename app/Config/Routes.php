@@ -70,6 +70,7 @@ $routes->group('', ['filter' => 'auth'], function($routes) {
     $routes->get('campaigns/load/(:segment)', 'Campaigns::loadCampaigns/$1');
     $routes->post('campaigns/toggleStatus/(:segment)/(:segment)', 'Campaigns::toggleStatus/$1/$2');
     $routes->post('campaigns/updateTarget/(:segment)/(:segment)', 'Campaigns::updateTarget/$1/$2');
+    $routes->post('campaigns/updateBudget/(:segment)/(:segment)', 'Campaigns::updateBudget/$1/$2');
 });
 
 // Google Auth routes (without auth filter)
