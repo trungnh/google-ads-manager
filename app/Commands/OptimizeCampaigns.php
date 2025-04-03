@@ -12,6 +12,7 @@ use App\Models\GoogleTokenModel;
 use App\Models\UserSettingsModel;
 use App\Models\AdsAccountModel;
 use App\Models\OptimizeLogsModel;
+use App\Models\CampaignsDataModel;
 
 class OptimizeCampaigns extends BaseCommand
 {
@@ -27,6 +28,7 @@ class OptimizeCampaigns extends BaseCommand
     protected $telegramService;
     protected $adsAccountsModel;
     protected $optimizeLogsModel;
+    protected $campaignsDataModel;
 
     public function __construct()
     {
@@ -38,6 +40,7 @@ class OptimizeCampaigns extends BaseCommand
         $this->telegramService = new TelegramService();
         $this->adsAccountsModel = new AdsAccountModel();
         $this->optimizeLogsModel = new OptimizeLogsModel();
+        $this->campaignsDataModel = new CampaignsDataModel();
     }
 
     public function run(array $params)
@@ -225,6 +228,7 @@ class OptimizeCampaigns extends BaseCommand
             // $totalConversions = 0;
             // $totalConversionValue = 0;
             // $totalCost = 0;
+            $campaignsData = [];
             foreach ($campaigns as $campaign) {
                 if (!isset($campaign['campaign_id']) || !isset($campaign['cost']) || !isset($campaign['budget'])) {
                     CLI::write("Bỏ qua chiến dịch không hợp lệ: thiếu thông tin bắt buộc", 'yellow');
@@ -310,7 +314,16 @@ class OptimizeCampaigns extends BaseCommand
 
                 $pausedCampaigns += $shouldPause ? 1 : 0;
                 $increasedBudgetCampaigns += $shouldIncreaseBudget ? 1 : 0;
+                $saveCampaignData = $campaign;
+                $saveCampaignData['real_cpa'] = $realCpa;
+                $saveCampaignData['real_roas'] = $realRoas;
+                $saveCampaignData['real_conversions'] = $campaignConversions['conversions'];
+                $saveCampaignData['real_conversion_value'] = $campaignConversions['conversion_value'];
+                $campaignsData[] = $saveCampaignData;
             }
+            // Save campaign data
+            $this->campaignsDataModel->saveCampaignsData($account['customer_id'], $campaignsData, date('Y-m-d'));
+
             // $reportMessage .= PHP_EOL;
             // $reportMessage .= "💰 Chi tiêu: " . number_format($totalCost, 0, '', '.')."đ\n";
             // $reportMessage .= "🛒 Đơn: " . number_format($totalConversions, 0, '', '.')."\n";

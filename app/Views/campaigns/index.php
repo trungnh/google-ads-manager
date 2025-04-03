@@ -941,10 +941,10 @@ $(document).ready(function() {
         const $editable = $(this).closest('td').find('.editable-budget');
         cancelBudgetEdit($editable);
     });
-    $(document).on('blur', '.editable-budget input', function() {
-        const $editable = $(this).closest('td').find('.editable-budget');
-        cancelBudgetEdit($editable);
-    });
+    // $(document).on('blur', '.editable-budget input', function() {
+    //     const $editable = $(this).closest('td').find('.editable-budget');
+    //     cancelBudgetEdit($editable);
+    // });
 
     function cancelBudgetEdit($editable) {
         const originalValue = $editable.data('original');
