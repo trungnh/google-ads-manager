@@ -307,7 +307,6 @@ class OptimizeCampaigns extends BaseCommand
                     $shouldIncreaseBudget = true;
                     $action = "Chi tiêu (".number_format($campaign['cost'], 0, '', '.').") vượt 50% ngân sách (".number_format($campaign['budget'], 0, '', '.').")";
                 }
-
                 if ($shouldPause || $shouldIncreaseBudget) {
                     $this->executeCampaignAction($account, $campaign, $shouldPause, $shouldIncreaseBudget, $action, $accessToken, $mccId, $telegramChatIds);
                 }
@@ -379,151 +378,16 @@ class OptimizeCampaigns extends BaseCommand
             $campaignName = $campaign['name'] ?? $campaign['name'] ?? '';
 
             if ($shouldPause) {
-                try {
-                    $message = "Đang tạm dừng chiến dịch {$campaign['campaign_id']}...";
-                    CLI::write($message, 'yellow');
-                    
-                    $result = $this->googleAdsService->toggleCampaignStatus(
-                        $accessToken,
-                        $account['customer_id'],
-                        $campaign['campaign_id'],
-                        'PAUSED',
-                        $mccId
-                    );
-                    
-                    if ($result === true) {
-                        $message = "Tạm dừng chiến dịch {$accountName} - {$campaignName}[{$campaign['campaign_id']}]: {$action}";
-                        CLI::write($message, 'green');
-                        log_message('info', $message);
-                        foreach($telegramChatIds as $telegramChatId){
-                            $this->telegramService->sendMessage("⏸️ " . $message, $telegramChatId);
-                        }
-
-                        // Lưu log
-                        $this->optimizeLogsModel->insert([
-                            'user_id' => $account['user_id'],
-                            'customer_id' => $account['customer_id'],
-                            'campaign_id' => $campaign['campaign_id'],
-                            'campaign_name' => $campaign['name'],
-                            'action' => 'pause',
-                            'details' => $action,
-                            'created_at' => date('Y-m-d H:i:s')
-                        ]);
-                    } else {
-                        throw new \Exception("Không thể tạm dừng chiến dịch");
-                    }
-                } catch (\Exception $e) {
-                    if (strpos($e->getMessage(), '401') !== false) {
-                        CLI::write("Token không hợp lệ, đang thử refresh...", 'yellow');
-                        // Thử refresh token và gọi lại API
-                        $newToken = $this->ensureValidToken($account['user_id']);
-                        $result = $this->googleAdsService->toggleCampaignStatus(
-                            $newToken['access_token'],
-                            $account['customer_id'],
-                            $campaign['campaign_id'],
-                            'PAUSED',
-                            $mccId
-                        );
-                        
-                        if ($result === true) {
-                            $message = "Refresh token + Tạm dừng chiến dịch {$accountName} - {$campaignName}[{$campaign['campaign_id']}]: {$action}";
-                            CLI::write($message, 'green');
-                            log_message('info', $message);
-                            foreach($telegramChatIds as $telegramChatId){
-                                $this->telegramService->sendMessage("⏸️ " . $message, $telegramChatId);
-                            }
-
-                            // Lưu log
-                            $this->optimizeLogsModel->insert([
-                                'user_id' => $account['user_id'],
-                                'customer_id' => $account['customer_id'],
-                                'campaign_id' => $campaign['campaign_id'],
-                                'campaign_name' => $campaign['name'],
-                                'action' => 'pause',
-                                'details' => $action,
-                                'created_at' => date('Y-m-d H:i:s')
-                            ]);
-                        } else {
-                            throw new \Exception("Không thể tạm dừng chiến dịch sau khi refresh token");
-                        }
-                    } else {
-                        throw $e;
+                if(isset($account['auto_on_off']) && $account['auto_on_off'] == 1){
+                    $this->pauseCampaign($account, $campaign, $action, $accessToken, $mccId, $telegramChatIds);
+                } else {
+                    $message = "CHÚ Ý: Chiến dịch {$account['customer_name']} - {$campaign['name']}[{$campaign['campaign_id']}]: {$action}";
+                    foreach($telegramChatIds as $telegramChatId){
+                        $this->telegramService->sendMessage("📢 " . $message, $telegramChatId);
                     }
                 }
             } elseif ($shouldIncreaseBudget && isset($account['increase_budget'])) {
-                try {
-                    $newBudget = $campaign['budget'] + $account['increase_budget'];
-                    $message = "Đang tăng ngân sách chiến dịch {$campaign['campaign_id']}...";
-                    CLI::write($message, 'yellow');
-                    
-                    $result = $this->googleAdsService->updateCampaignBudget(
-                        $accessToken,
-                        $account['customer_id'],
-                        $campaign['campaign_id'],
-                        $newBudget,
-                        $mccId
-                    );
-                    
-                    if ($result === true) {
-                        $message = "Tăng ngân sách chiến dịch {$accountName} - {$campaignName}[{$campaign['campaign_id']}] lên ".number_format($newBudget, 0, '', '.').": {$action}";
-                        CLI::write($message, 'green');
-                        log_message('info', $message);
-                        foreach($telegramChatIds as $telegramChatId){
-                            $this->telegramService->sendMessage("💰 " . $message, $telegramChatId);
-                        }
-
-                        // Lưu log
-                        $this->optimizeLogsModel->insert([
-                            'user_id' => $account['user_id'],
-                            'customer_id' => $account['customer_id'],
-                            'campaign_id' => $campaign['campaign_id'],
-                            'campaign_name' => $campaign['name'],
-                            'action' => 'increase_budget',
-                            'details' => $action,
-                            'created_at' => date('Y-m-d H:i:s')
-                        ]);
-                    } else {
-                        throw new \Exception("Không thể tăng ngân sách chiến dịch");
-                    }
-                } catch (\Exception $e) {
-                    if (strpos($e->getMessage(), '401') !== false) {
-                        CLI::write("Token không hợp lệ, đang thử refresh...", 'yellow');
-                        // Thử refresh token và gọi lại API
-                        $newToken = $this->ensureValidToken($account['user_id']);
-                        $newBudget = $campaign['budget'] + $account['increase_budget'];
-                        $result = $this->googleAdsService->updateCampaignBudget(
-                            $newToken['access_token'],
-                            $account['customer_id'],
-                            $campaign['campaign_id'],
-                            $newBudget,
-                            $mccId
-                        );
-                        
-                        if ($result === true) {
-                            $message = "Refresh token + Tăng ngân sách chiến dịch {$accountName} - {$campaignName}[{$campaign['campaign_id']}] lên ".number_format($newBudget, 0, '', '.').": {$action}";
-                            CLI::write($message, 'green');
-                            log_message('info', $message);
-                            foreach($telegramChatIds as $telegramChatId){
-                                $this->telegramService->sendMessage("💰 " . $message, $telegramChatId);
-                            }
-
-                            // Lưu log
-                            $this->optimizeLogsModel->insert([
-                                'user_id' => $account['user_id'],
-                                'customer_id' => $account['customer_id'],
-                                'campaign_id' => $campaign['campaign_id'],
-                                'campaign_name' => $campaign['name'],
-                                'action' => 'increase_budget',
-                                'details' => $action,
-                                'created_at' => date('Y-m-d H:i:s')
-                            ]);
-                        } else {
-                            throw new \Exception("Không thể tăng ngân sách chiến dịch sau khi refresh token");
-                        }
-                    } else {
-                        throw $e;
-                    }
-                }
+                $this->increaseBudgetCampaign($account, $campaign, $action, $accessToken, $mccId, $telegramChatIds);
             }
         } catch (\Exception $e) {
             $message = "Lỗi thực hiện hành động cho chiến dịch {$accountName} - {$campaignName} | {$campaign['campaign_id']}: " . $e->getMessage();
@@ -531,6 +395,158 @@ class OptimizeCampaigns extends BaseCommand
             log_message('error', $message);
             foreach($telegramChatIds as $telegramChatId){
                 $this->telegramService->sendMessage("❌ " . $message, $telegramChatId);
+            }
+        }
+    }
+
+    protected function pauseCampaign($account, $campaign, $action, $accessToken, $mccId = null, $telegramChatIds = [])
+    {
+        try {
+            $message = "Đang tạm dừng chiến dịch {$campaign['campaign_id']}...";
+            CLI::write($message, 'yellow');
+            
+            $result = $this->googleAdsService->toggleCampaignStatus(
+                $accessToken,
+                $account['customer_id'],
+                $campaign['campaign_id'],
+                'PAUSED',
+                $mccId
+            );
+            
+            if ($result === true) {
+                $message = "Tạm dừng chiến dịch {$account['customer_name']} - {$campaign['name']}[{$campaign['campaign_id']}]: {$action}";
+                CLI::write($message, 'green');
+                log_message('info', $message);
+                foreach($telegramChatIds as $telegramChatId){
+                    $this->telegramService->sendMessage("⏸️ " . $message, $telegramChatId);
+                }
+
+                // Lưu log
+                $this->optimizeLogsModel->insert([
+                    'user_id' => $account['user_id'],
+                    'customer_id' => $account['customer_id'],
+                    'campaign_id' => $campaign['campaign_id'],
+                    'campaign_name' => $campaign['name'],
+                    'action' => 'pause',
+                    'details' => $action,
+                    'created_at' => date('Y-m-d H:i:s')
+                ]);
+            } else {
+                throw new \Exception("Không thể tạm dừng chiến dịch");
+            }
+        } catch (\Exception $e) {
+            if (strpos($e->getMessage(), '401') !== false) {
+                CLI::write("Token không hợp lệ, đang thử refresh...", 'yellow');
+                // Thử refresh token và gọi lại API
+                $newToken = $this->ensureValidToken($account['user_id']);
+                $result = $this->googleAdsService->toggleCampaignStatus(
+                    $newToken['access_token'],
+                    $account['customer_id'],
+                    $campaign['campaign_id'],
+                    'PAUSED',
+                    $mccId
+                );
+                
+                if ($result === true) {
+                    $message = "Refresh token + Tạm dừng chiến dịch {$account['customer_name']} - {$campaign['name']}[{$campaign['campaign_id']}]: {$action}";
+                    CLI::write($message, 'green');
+                    log_message('info', $message);
+                    foreach($telegramChatIds as $telegramChatId){
+                        $this->telegramService->sendMessage("⏸️ " . $message, $telegramChatId);
+                    }
+
+                    // Lưu log
+                    $this->optimizeLogsModel->insert([
+                        'user_id' => $account['user_id'],
+                        'customer_id' => $account['customer_id'],
+                        'campaign_id' => $campaign['campaign_id'],
+                        'campaign_name' => $campaign['name'],
+                        'action' => 'pause',
+                        'details' => $action,
+                        'created_at' => date('Y-m-d H:i:s')
+                    ]);
+                } else {
+                    throw new \Exception("Không thể tạm dừng chiến dịch sau khi refresh token");
+                }
+            } else {
+                throw $e;
+            }
+        }
+    }
+
+    protected function increaseBudgetCampaign($account, $campaign, $action, $accessToken, $mccId = null, $telegramChatIds = [])
+    {
+        try {
+            $newBudget = $campaign['budget'] + $account['increase_budget'];
+            $message = "Đang tăng ngân sách chiến dịch {$campaign['campaign_id']}...";
+            CLI::write($message, 'yellow');
+            
+            $result = $this->googleAdsService->updateCampaignBudget(
+                $accessToken,
+                $account['customer_id'],
+                $campaign['campaign_id'],
+                $newBudget,
+                $mccId
+            );
+            
+            if ($result === true) {
+                $message = "Tăng ngân sách chiến dịch {$account['customer_name']} - {$campaign['name']}[{$campaign['campaign_id']}] lên ".number_format($newBudget, 0, '', '.').": {$action}";
+                CLI::write($message, 'green');
+                log_message('info', $message);
+                foreach($telegramChatIds as $telegramChatId){
+                    $this->telegramService->sendMessage("💰 " . $message, $telegramChatId);
+                }
+
+                // Lưu log
+                $this->optimizeLogsModel->insert([
+                    'user_id' => $account['user_id'],
+                    'customer_id' => $account['customer_id'],
+                    'campaign_id' => $campaign['campaign_id'],
+                    'campaign_name' => $campaign['name'],
+                    'action' => 'increase_budget',
+                    'details' => $action,
+                    'created_at' => date('Y-m-d H:i:s')
+                ]);
+            } else {
+                throw new \Exception("Không thể tăng ngân sách chiến dịch");
+            }
+        } catch (\Exception $e) {
+            if (strpos($e->getMessage(), '401') !== false) {
+                CLI::write("Token không hợp lệ, đang thử refresh...", 'yellow');
+                // Thử refresh token và gọi lại API
+                $newToken = $this->ensureValidToken($account['user_id']);
+                $newBudget = $campaign['budget'] + $account['increase_budget'];
+                $result = $this->googleAdsService->updateCampaignBudget(
+                    $newToken['access_token'],
+                    $account['customer_id'],
+                    $campaign['campaign_id'],
+                    $newBudget,
+                    $mccId
+                );
+                
+                if ($result === true) {
+                    $message = "Refresh token + Tăng ngân sách chiến dịch {$account['customer_name']} - {$campaign['name']}[{$campaign['campaign_id']}] lên ".number_format($newBudget, 0, '', '.').": {$action}";
+                    CLI::write($message, 'green');
+                    log_message('info', $message);
+                    foreach($telegramChatIds as $telegramChatId){
+                        $this->telegramService->sendMessage("💰 " . $message, $telegramChatId);
+                    }
+
+                    // Lưu log
+                    $this->optimizeLogsModel->insert([
+                        'user_id' => $account['user_id'],
+                        'customer_id' => $account['customer_id'],
+                        'campaign_id' => $campaign['campaign_id'],
+                        'campaign_name' => $campaign['name'],
+                        'action' => 'increase_budget',
+                        'details' => $action,
+                        'created_at' => date('Y-m-d H:i:s')
+                    ]);
+                } else {
+                    throw new \Exception("Không thể tăng ngân sách chiến dịch sau khi refresh token");
+                }
+            } else {
+                throw $e;
             }
         }
     }
