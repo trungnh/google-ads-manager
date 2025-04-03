@@ -12,6 +12,7 @@ use App\Models\GoogleTokenModel;
 use App\Models\UserSettingsModel;
 use App\Models\AdsAccountModel;
 use App\Models\OptimizeLogsModel;
+use App\Models\CampaignsDataModel;
 
 class ReportCampaigns extends BaseCommand
 {
