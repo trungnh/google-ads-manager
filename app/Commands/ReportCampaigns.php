@@ -27,6 +27,7 @@ class ReportCampaigns extends BaseCommand
     protected $telegramService;
     protected $adsAccountsModel;
     protected $optimizeLogsModel;
+    protected $campaignsDataModel;
 
     public function __construct()
     {
@@ -38,6 +39,7 @@ class ReportCampaigns extends BaseCommand
         $this->userSettingsModel = new UserSettingsModel();
         $this->adsAccountsModel = new AdsAccountModel();
         $this->optimizeLogsModel = new OptimizeLogsModel();
+        $this->campaignsDataModel = new CampaignsDataModel();
     }
 
     public function run(array $params)
@@ -184,6 +186,7 @@ class ReportCampaigns extends BaseCommand
         $totalConversions = 0;
         $totalConversionValue = 0;
         $totalCost = 0;
+        $campaignsData = [];
         foreach ($campaigns as $campaign) {
             if (!isset($campaign['campaign_id']) || !isset($campaign['cost']) || !isset($campaign['budget'])) {
                 CLI::write("Bỏ qua chiến dịch không hợp lệ: thiếu thông tin bắt buộc", 'yellow');
@@ -200,7 +203,17 @@ class ReportCampaigns extends BaseCommand
             $totalConversions += $campaignConversions['conversions'];
             $totalConversionValue += $campaignConversions['conversion_value'];
             $totalCost += $campaign['cost'];
+
+            $saveCampaignData = $campaign;
+            $saveCampaignData['real_cpa'] = $realCpa;
+            $saveCampaignData['real_roas'] = $realRoas;
+            $saveCampaignData['real_conversions'] = $campaignConversions['conversions'];
+            $saveCampaignData['real_conversion_value'] = $campaignConversions['conversion_value'];
+            $campaignsData[] = $saveCampaignData;
         }
+
+        // Save campaign data
+        $this->campaignsDataModel->saveCampaignsData($account['customer_id'], $campaignsData, date('Y-m-d'));
 
         $reportMessage .= "💰 Chi tiêu: " . number_format($totalCost, 0, '', '.')."đ\n";
         $reportMessage .= "🛒 Đơn: " . number_format($totalConversions, 0, '', '.')."\n";
