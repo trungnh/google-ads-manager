@@ -34,6 +34,26 @@
                         </div>
 
                         <div class="mb-3">
+                            <label for="increase_budget" class="form-label">Tăng ngân sách (VNĐ)</label>
+                            <input type="number" class="form-control" id="increase_budget" name="increase_budget" 
+                                value="<?= isset($settings['increase_budget']) ? $settings['increase_budget'] : '' ?>">
+                            <small class="form-text text-muted">
+                                Số tiền tăng thêm khi chiến dịch đã chi tiêu > 50% ngân sách (Nếu chiến dịch thoả mãn điều kiện ngưỡng ROAS/CPA bên dưới)
+                            </small>
+                        </div>
+
+                        <div class="mb-3 mt-5">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="auto_on_off" name="auto_on_off" 
+                                    <?= isset($settings['auto_on_off']) && $settings['auto_on_off'] ? 'checked' : '' ?>>
+                                <label class="form-check-label" for="auto_on_off">Tự động bật/tắt chiến dịch</label>
+                            </div>
+                            <small class="form-text text-muted">
+                                Khi bật, hệ thống sẽ tự động bật/tắt chiến dịch dựa trên ngưỡng chi tiêu và CPA
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
                             <label for="cost_threshold" class="form-label">Ngưỡng chi tiêu (VNĐ)</label>
                             <input type="number" class="form-control" id="cost_threshold" name="cost_threshold" 
                                 value="<?= isset($settings['cost_threshold']) ? $settings['cost_threshold'] : '' ?>">
@@ -57,17 +77,8 @@
                                 value="<?= isset($settings['roas_threshold']) ? $settings['roas_threshold'] : '' ?>">
                             <small class="form-text text-muted">Nhập ngưỡng ROAS để tự động tắt chiến dịch khi ROAS thực tế thấp hơn ngưỡng này</small>
                         </div>
-
-                        <div class="mb-3">
-                            <label for="increase_budget" class="form-label">Tăng ngân sách (VNĐ)</label>
-                            <input type="number" class="form-control" id="increase_budget" name="increase_budget" 
-                                value="<?= isset($settings['increase_budget']) ? $settings['increase_budget'] : '' ?>">
-                            <small class="form-text text-muted">
-                                Số tiền tăng thêm khi chiến dịch đã chi tiêu > 50% ngân sách
-                            </small>
-                        </div>
-
-                        <h5 class="card-title mb-4 mt-5">Cài đặt Google Sheet (Chuyển đổi thực tế)</h5>
+                        <hr class="my-4">
+                        <h5 class="card-title mb-4 mt-4">Cài đặt Google Sheet (Chuyển đổi thực tế)</h5>
 
                         <div class="mb-3">
                             <label for="gsheet1" class="form-label">URL Google Sheet (CSV)</label>
@@ -163,7 +174,8 @@ $(document).ready(function() {
             gsheet_value_col: $('#gsheet_value_col').val().toUpperCase(),
             gsheet_campaign_col: $('#gsheet_campaign_col').val().toUpperCase(),
             gsheet2: $('#gsheet2').val(),
-            order: $('#order').val()
+            order: $('#order').val(),
+            auto_on_off: $('#auto_on_off').is(':checked') ? 'true' : 'false'
         };
         
         $.ajax({

@@ -24,7 +24,8 @@ class AdsAccountSettingsModel extends Model
         'gsheet_campaign_col',
         'gsheet2',
         'last_optimize_run',
-        'cost_threshold'
+        'cost_threshold',
+        'auto_on_off'
     ];
     protected $useTimestamps = true;
     protected $createdField = 'created_at';
@@ -42,7 +43,8 @@ class AdsAccountSettingsModel extends Model
         'gsheet_value_col' => 'permit_empty|alpha|max_length[1]',
         'gsheet_campaign_col' => 'permit_empty|alpha|max_length[1]',
         'gsheet2' => 'permit_empty|valid_url',
-        'cost_threshold' => 'permit_empty|decimal'
+        'cost_threshold' => 'permit_empty|decimal',
+        'auto_on_off' => 'permit_empty|in_list[0,1]'
     ];
 
     public function getSettingsByAccountId($accountId)
@@ -69,7 +71,8 @@ class AdsAccountSettingsModel extends Model
             'gsheet_value_col' => strtoupper($data['gsheet_value_col'] ?? ''),
             'gsheet_campaign_col' => strtoupper($data['gsheet_campaign_col'] ?? ''),
             'gsheet2' => $data['gsheet2'] ?? null,
-            'cost_threshold' => $data['cost_threshold'] ?? 0
+            'cost_threshold' => $data['cost_threshold'] ?? 0,
+            'auto_on_off' => ($data['auto_on_off'] === 'true' || $data['auto_on_off'] === true || $data['auto_on_off'] === 1) ? 1 : 0
         ];
 
         // Debug log
