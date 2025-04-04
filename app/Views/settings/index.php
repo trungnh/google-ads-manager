@@ -39,7 +39,7 @@
                             <input type="text" class="form-control" id="telegram_chat_id" name="telegram_chat_id" 
                                    placeholder="Example: -1001234567890" 
                                    value="<?= isset($settings['telegram_chat_id']) ? $settings['telegram_chat_id'] : '' ?>">
-                            <small class="form-text text-muted">Nhập Telegram Chat ID để nhận thông báo. Để lấy Chat ID, thêm bot @your_bot vào group chat và gửi tin nhắn /chat_id</small>
+                            <small class="form-text text-muted">Nhập Telegram Chat ID để nhận thông báo. Để lấy Chat ID, thêm bot <strong>@check_don_bot</strong> vào group chat và gửi tin nhắn <strong>/chat_id</strong></small>
                         </div>
                         
                         <button type="submit" class="btn btn-primary">Save Settings</button>
