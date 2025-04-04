@@ -201,6 +201,15 @@ class ReportCampaigns extends BaseCommand
                 'conversions' => 0,
                 'conversion_value' => 0
             ];
+            // Tính CPA và ROAS thực tế
+            $realCpa = $campaignConversions['conversions'] > 0 
+                ? $campaign['cost'] / $campaignConversions['conversions'] 
+                : 0;
+
+            $realRoas = $campaign['cost'] > 0 
+                ? $campaignConversions['conversion_value'] / $campaign['cost']
+                : 0;
+
             $totalConversions += $campaignConversions['conversions'];
             $totalConversionValue += $campaignConversions['conversion_value'];
             $totalCost += $campaign['cost'];

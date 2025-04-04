@@ -11,24 +11,131 @@ class GoogleAdsService
     
     public function getAccessibleAccounts($accessToken, $mccId = null)
     {
-        $accounts = [];
-        
         try {
-            if ($mccId) {
-                // Nếu có MCC ID, lấy danh sách tài khoản từ MCC
-                $accounts = $this->getAccountsFromMcc($accessToken, $mccId);
-            } else {
-                // Nếu không có MCC ID, lấy danh sách tất cả tài khoản có thể truy cập
-                $accounts = $this->getAccountsFromOwnAccess($accessToken);
+            $url = $this->baseUrl . $this->apiVersion . '/customers:listAccessibleCustomers';
+            
+            // Tạo một phương thức request riêng cho việc lấy danh sách tài khoản
+            $response = $this->makeAccountListRequest($url, 'GET', $accessToken, null, $mccId);
+            
+            if (!isset($response['resourceNames']) || empty($response['resourceNames'])) {
+                log_message('error', 'No accessible customers found');
+                return [];
+            }
+            
+            $accounts = [];
+            foreach ($response['resourceNames'] as $resourceName) {
+                // Extract customer ID from resource name (customers/1234567890)
+                $customerId = str_replace('customers/', '', $resourceName);
+                
+                // Get account details
+                $accountDetails = $this->getAccountDetails($accessToken, $customerId, $mccId);
+                if ($accountDetails) {
+                    $accounts[] = $accountDetails;
+                }
             }
             
             return $accounts;
         } catch (Exception $e) {
             log_message('error', 'Lỗi khi lấy danh sách tài khoản: ' . $e->getMessage());
-            throw new Exception('Lỗi khi lấy danh sách tài khoản: ' . $e->getMessage());
+            throw $e;
         }
     }
-    
+
+    protected function makeAccountListRequest($url, $method, $accessToken, $data = null, $loginCustomerId = null)
+    {
+        $ch = curl_init();
+        
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
+        
+        $headers = [
+            'Authorization: Bearer ' . $accessToken,
+            'Content-Type: application/json',
+            'Accept: application/json',
+            'developer-token: ' . getenv('GOOGLE_ADS_DEVELOPER_TOKEN')
+        ];
+
+        // Thêm login-customer-id header nếu có
+        if ($loginCustomerId) {
+            $formattedLoginCustomerId = $this->formatCustomerId($loginCustomerId);
+            $headers[] = 'login-customer-id: ' . $formattedLoginCustomerId;
+            log_message('debug', '[Account List] Using login-customer-id: ' . $formattedLoginCustomerId);
+        }
+        
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        
+        if ($data && $method !== 'GET') {
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+            log_message('debug', '[Account List] Request body: ' . $data);
+        }
+        
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        
+        if (curl_errno($ch)) {
+            $error = curl_error($ch);
+            curl_close($ch);
+            log_message('error', '[Account List] cURL Error: ' . $error);
+            throw new Exception('cURL error: ' . $error);
+        }
+
+        curl_close($ch);
+        
+        $decodedResponse = json_decode($response, true);
+        
+        if ($httpCode >= 400) {
+            $errorMessage = isset($decodedResponse['error']['message']) 
+                ? $decodedResponse['error']['message'] 
+                : 'API request failed with status ' . $httpCode . '. Response: ' . $response;
+            
+            log_message('error', '[Account List] Google Ads API Error: ' . $errorMessage);
+            throw new Exception('API request failed with status ' . $httpCode . '. Response: ' . $response);
+        }
+        
+        return $decodedResponse;
+    }
+
+    protected function getAccountDetails($accessToken, $customerId, $mccId = null)
+    {
+        try {
+            $formattedCustomerId = $this->formatCustomerId($customerId);
+            $url = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedCustomerId . '/googleAds:searchStream';
+            
+            $query = "
+                SELECT
+                    customer.id,
+                    customer.descriptive_name,
+                    customer.currency_code,
+                    customer.time_zone,
+                    customer.status
+                FROM customer
+                WHERE customer.id = " . $formattedCustomerId;
+            
+            $data = [
+                'query' => $query
+            ];
+            
+            $response = $this->makeAccountListRequest($url, 'POST', $accessToken, json_encode($data), $mccId);
+            
+            if (isset($response[0]['results'][0]['customer'])) {
+                $customer = $response[0]['results'][0]['customer'];
+                return [
+                    'customer_id' => $customer['id'],
+                    'customer_name' => $customer['descriptiveName'] ?? 'Unknown',
+                    'currency_code' => $customer['currencyCode'] ?? null,
+                    'time_zone' => $customer['timeZone'] ?? null,
+                    'status' => $customer['status'] ?? 'UNKNOWN'
+                ];
+            }
+            
+            return null;
+        } catch (Exception $e) {
+            log_message('error', 'Error getting account details for customer ' . $customerId . ': ' . $e->getMessage());
+            return null;
+        }
+    }
+
     protected function getAccountsFromMcc($accessToken, $mccId)
     {
         // Đảm bảo MCC ID có định dạng xxx-xxx-xxxx thành xxxxxxxxxx
