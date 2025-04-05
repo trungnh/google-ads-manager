@@ -28,9 +28,14 @@ class GoogleAuth extends Controller
         
         // Tạo OAuth URL
         $googleOAuthUrl = $this->buildGoogleOAuthUrl($clientId, $redirectUri, $scopes, $state);
+
+        $userId = session()->get('id');
+        $googleTokenModel = new GoogleTokenModel();
+        $token = $googleTokenModel->getValidToken($userId);
         
         $data = [
-            'googleOAuthUrl' => $googleOAuthUrl
+            'googleOAuthUrl' => $googleOAuthUrl,
+            'hasGoogleToken' => !empty($token)
         ];
         
         return view('google/oauth', $data);

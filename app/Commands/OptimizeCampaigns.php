@@ -159,7 +159,7 @@ class OptimizeCampaigns extends BaseCommand
 
             // Lấy dữ liệu chiến dịch realtime từ Google Ads
             try {
-                $campaigns = $this->googleAdsService->getTodayCampaignMetrics($account['customer_id'], $accessToken, $mccId);
+                $campaigns = $this->googleAdsService->getCampaigns($account['customer_id'], $accessToken, $mccId, false, date('Y-m-d'), date('Y-m-d'));
                 if (empty($campaigns)) {
                     CLI::write("Không tìm thấy chiến dịch nào cho tài khoản {$account['customer_id']}", 'yellow');
                     return false;
@@ -169,7 +169,7 @@ class OptimizeCampaigns extends BaseCommand
                     CLI::write("Token không hợp lệ, đang thử refresh...", 'yellow');
                     // Thử refresh token và gọi lại API
                     $newToken = $this->ensureValidToken($account['user_id']);
-                    $campaigns = $this->googleAdsService->getTodayCampaignMetrics($account['customer_id'], $newToken['access_token'], $mccId);
+                    $campaigns = $this->googleAdsService->getCampaigns($account['customer_id'], $newToken['access_token'], $mccId, false, date('Y-m-d'), date('Y-m-d'));
                 } else {
                     throw $e;
                 }
