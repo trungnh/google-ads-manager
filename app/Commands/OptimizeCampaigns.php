@@ -255,6 +255,13 @@ class OptimizeCampaigns extends BaseCommand
                 $realRoas = $campaign['cost'] > 0 
                     ? $campaignConversions['conversion_value'] / $campaign['cost']
                     : 0;
+
+                $saveCampaignData = $campaign;
+                $saveCampaignData['real_cpa'] = $realCpa;
+                $saveCampaignData['real_roas'] = $realRoas;
+                $saveCampaignData['real_conversions'] = $campaignConversions['conversions'];
+                $saveCampaignData['real_conversion_value'] = $campaignConversions['conversion_value'];
+                $campaignsData[] = $saveCampaignData;
                 
                 // $reportMessage .= "{$campaign['name']}\n";
                 // $reportMessage .= "   💰 Chi tiêu: " . number_format($campaign['cost'], 0, '', '.')."đ\n";
@@ -313,13 +320,8 @@ class OptimizeCampaigns extends BaseCommand
 
                 $pausedCampaigns += $shouldPause ? 1 : 0;
                 $increasedBudgetCampaigns += $shouldIncreaseBudget ? 1 : 0;
-                $saveCampaignData = $campaign;
-                $saveCampaignData['real_cpa'] = $realCpa;
-                $saveCampaignData['real_roas'] = $realRoas;
-                $saveCampaignData['real_conversions'] = $campaignConversions['conversions'];
-                $saveCampaignData['real_conversion_value'] = $campaignConversions['conversion_value'];
-                $campaignsData[] = $saveCampaignData;
             }
+            
             // Save campaign data
             $this->campaignsDataModel->saveCampaignsData($account['customer_id'], $campaignsData, date('Y-m-d'));
 
