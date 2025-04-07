@@ -436,7 +436,8 @@ class GoogleAdsService
                                 'target_roas' => $targetRoas,
                                 'ctr' => $metrics['ctr'] ?? 0,
                                 'clicks' => $metrics['clicks'] ?? 0,
-                                'average_cpc' => isset($metrics['averageCpc']) ? $this->microToStandard($metrics['averageCpc']) : 0
+                                'average_cpc' => isset($metrics['averageCpc']) ? $this->microToStandard($metrics['averageCpc']) : 0,
+                                'customer_id' => $customerId
                             ];
                         }
                     }
@@ -567,7 +568,8 @@ class GoogleAdsService
                                     'conversions' => $metrics['conversions'] ?? 0,
                                     'cost_per_conversion' => isset($metrics['costMicros'], $metrics['conversions']) && $metrics['conversions'] > 0 
                                         ? $this->microToStandard($metrics['costMicros']) / $metrics['conversions'] 
-                                        : 0
+                                        : 0,
+                                    'customer_id' => $customerId
                                 ];
                             }
                         }
