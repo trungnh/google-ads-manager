@@ -11,33 +11,21 @@ class GoogleAdsService
     
     public function getAccessibleAccounts($accessToken, $mccId = null)
     {
+        $accounts = [];
+        
         try {
-            $url = $this->baseUrl . $this->apiVersion . '/customers:listAccessibleCustomers';
-            
-            // Tạo một phương thức request riêng cho việc lấy danh sách tài khoản
-            $response = $this->makeAccountListRequest($url, 'GET', $accessToken, null, $mccId);
-            
-            if (!isset($response['resourceNames']) || empty($response['resourceNames'])) {
-                log_message('error', 'No accessible customers found');
-                return [];
-            }
-            
-            $accounts = [];
-            foreach ($response['resourceNames'] as $resourceName) {
-                // Extract customer ID from resource name (customers/1234567890)
-                $customerId = str_replace('customers/', '', $resourceName);
-                
-                // Get account details
-                $accountDetails = $this->getAccountDetails($accessToken, $customerId, $mccId);
-                if ($accountDetails) {
-                    $accounts[] = $accountDetails;
-                }
+            if ($mccId) {
+                // Nếu có MCC ID, lấy danh sách tài khoản từ MCC
+                $accounts = $this->getAccountsFromMcc($accessToken, $mccId);
+            } else {
+                // Nếu không có MCC ID, lấy danh sách tất cả tài khoản có thể truy cập
+                $accounts = $this->getAccountsFromOwnAccess($accessToken);
             }
             
             return $accounts;
         } catch (Exception $e) {
             log_message('error', 'Lỗi khi lấy danh sách tài khoản: ' . $e->getMessage());
-            throw $e;
+            throw new Exception('Lỗi khi lấy danh sách tài khoản: ' . $e->getMessage());
         }
     }
 
@@ -171,6 +159,9 @@ class GoogleAdsService
                         $customerClient = $result['customerClient'] ?? null;
                         
                         if ($customerClient) {
+                            if ($mccId == $customerClient['id']) {
+                                continue;
+                            }
                             $accounts[] = [
                                 'customer_id' => $customerClient['id'],
                                 'customer_name' => $customerClient['descriptiveName'] ?? 'Unknown',
