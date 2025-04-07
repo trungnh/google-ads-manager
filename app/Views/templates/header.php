@@ -89,9 +89,17 @@
                         <li class="nav-item">
                             <a class="nav-link" href="<?= base_url('adsaccounts') ?>">Ads Account</a>
                         </li>
+                        <?php if (in_array(session()->get('role'), ['superadmin', 'admin'])): ?>
                         <li class="nav-item">
                             <a class="nav-link" href="<?= base_url('optimize-logs') ?>">Lịch sử tối ưu</a>
                         </li>
+                        <?php endif; ?>
+                        
+                        <?php if (session()->get('role') === 'superadmin'): ?>
+                        <li class="nav-item">
+                            <a class="nav-link" href="<?= base_url('users') ?>">Quản lý Users</a>
+                        </li>
+                        <?php endif; ?>
                         <li class="nav-item">
                             <a class="nav-link" href="<?= base_url('settings') ?>">Cài đặt</a>
                         </li>

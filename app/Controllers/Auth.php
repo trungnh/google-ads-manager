@@ -71,93 +71,22 @@ class Auth extends Controller
     }
     
     /**
-     * Hiển thị form đăng ký
-     */
-    public function register()
-    {
-        // Nếu đã đăng nhập rồi thì chuyển hướng đến trang chủ
-        if (session()->get('isLoggedIn')) {
-            return redirect()->to('/dashboard');
-        }
-        
-        return view('auth/register');
-    }
-    
-    /**
-     * Xử lý đăng ký
-     */
-    public function attemptRegister()
-    {
-        $rules = [
-            'email' => 'required|valid_email|is_unique[users.email]',
-            'username' => 'required|min_length[3]|max_length[30]|is_unique[users.username]',
-            'password' => 'required|min_length[8]',
-            'password_confirm' => 'required|matches[password]',
-        ];
-        
-        if (!$this->validate($rules)) {
-            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
-        }
-        
-        try {
-            $userModel = new UserModel();
-        
-            // Lấy dữ liệu từ form
-            $email = $this->request->getPost('email');
-            $username = $this->request->getPost('username');
-            $password = $this->request->getPost('password');
-            
-            // Kiểm tra dữ liệu có tồn tại không
-            if (empty($email) || empty($username) || empty($password)) {
-                return redirect()->back()->withInput()->with('error', 'Vui lòng điền đầy đủ thông tin');
-            }
-            
-            $userData = [
-                'email' => $email,
-                'username' => $username,
-                'password' => $password
-            ];
-            
-            // Log dữ liệu trước khi tạo user
-            log_message('debug', 'Attempting to create user with data: ' . json_encode($userData));
-            
-            $userId = $userModel->createUser($userData);
-            
-            if (!$userId) {
-                // Log lỗi validation nếu có
-                if ($userModel->errors()) {
-                    log_message('error', 'Validation errors: ' . json_encode($userModel->errors()));
-                }
-                return redirect()->back()->withInput()->with('error', 'Có lỗi xảy ra khi đăng ký: ' . implode(', ', $userModel->errors()));
-            }
-            
-            // Lấy thông tin user vừa tạo
-            $user = $userModel->find($userId);
-            
-            // Đăng nhập luôn sau khi đăng ký
-            $this->setUserSession($user);
-            
-            // Chuyển hướng đến trang chủ
-            return redirect()->to('/dashboard')->with('success', 'Đăng ký thành công!');
-            
-        } catch (\Exception $e) {
-            log_message('error', 'Registration error: ' . $e->getMessage());
-            return redirect()->back()->withInput()->with('error', 'Có lỗi xảy ra khi đăng ký: ' . $e->getMessage());
-        }
-    }
-    
-    /**
      * Lưu thông tin user vào session
      */
     private function setUserSession($user)
     {
         $data = [
             'id' => $user['id'],
+            'user_id' => $user['id'], // Thêm user_id để tương thích với mã cũ
             'username' => $user['username'],
             'email' => $user['email'],
+            'role' => $user['role'],
             'isLoggedIn' => true,
         ];
         
         session()->set($data);
+        
+        // Log thông tin đăng nhập
+        log_message('info', 'User logged in: ' . $user['username'] . ' (ID: ' . $user['id'] . ', Role: ' . $user['role'] . ')');
     }
 }
