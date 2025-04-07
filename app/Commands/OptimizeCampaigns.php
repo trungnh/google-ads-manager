@@ -46,11 +46,11 @@ class OptimizeCampaigns extends BaseCommand
     public function run(array $params)
     {
         try {
-            // $hour = date('H');
-            // if($hour < 7 || $hour > 21){
-            //     CLI::write("Thời gian không hợp lệ, chỉ chạy từ 7:00 đến 22:00", 'yellow');
-            //     return;
-            // }
+            $hour = date('H');
+            if($hour < 6 || $hour > 21){
+                CLI::write("Thời gian không hợp lệ, chỉ chạy từ 7:00 đến 22:00", 'yellow');
+                return;
+            }
             // Lấy danh sách tài khoản cần tối ưu
             $accounts = $this->adsAccountSettingsModel->getAccountsForOptimization();
             
@@ -318,7 +318,9 @@ class OptimizeCampaigns extends BaseCommand
                     $this->executeCampaignAction($account, $campaign, $shouldPause, $shouldIncreaseBudget, $action, $accessToken, $mccId, $telegramChatIds);
                 }
 
-                $pausedCampaigns += $shouldPause ? 1 : 0;
+                if(isset($account['auto_on_off']) && $account['auto_on_off'] == 1){
+                    $pausedCampaigns += $shouldPause ? 1 : 0;
+                }
                 $increasedBudgetCampaigns += $shouldIncreaseBudget ? 1 : 0;
             }
             
