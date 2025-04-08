@@ -115,7 +115,7 @@ class Campaigns extends BaseController
                 'account' => $account,
                 'accounts' => $accounts,
                 'campaigns' => $campaigns,
-                'accountSettings' => $settings,
+                'accountSettings' => $settings ?? [],
                 'mccId' => $mccId
             ]);
 
