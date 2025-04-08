@@ -95,11 +95,6 @@
                         </li>
                         <?php endif; ?>
                         
-                        <?php if (session()->get('role') === 'superadmin'): ?>
-                        <li class="nav-item">
-                            <a class="nav-link" href="<?= base_url('users') ?>">Quản lý Users</a>
-                        </li>
-                        <?php endif; ?>
                         <li class="nav-item">
                             <a class="nav-link" href="<?= base_url('settings') ?>">Cài đặt</a>
                         </li>
@@ -115,6 +110,9 @@
                                 <?= session()->get('username') ?>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                                <?php if (session()->get('role') === 'superadmin'): ?>
+                                    <li><a class="dropdown-item" href="<?= base_url('users') ?>">Quản lý Users</a></li>
+                                <?php endif; ?>
                                 <li><a class="dropdown-item" href="<?= base_url('logout') ?>">Đăng xuất</a></li>
                             </ul>
                         </li>
