@@ -218,10 +218,12 @@ class OptimizeCampaigns extends BaseCommand
                 }
             }
 
-            foreach($sheetData as $key => $value){
+            $totalSheetData = [];
+            foreach($sheetData as $key => &$value){
+                $totalSheetData[$key] = $value;
                 if (isset($sheetData2[$key])) {
-                    $sheetData[$key]['conversions'] += $sheetData2[$key]['conversions'];
-                    $sheetData[$key]['conversion_value'] += $sheetData2[$key]['conversion_value'];
+                    $totalSheetData[$key]['conversions'] += $sheetData2[$key]['conversions'];
+                    $totalSheetData[$key]['conversion_value'] += $sheetData2[$key]['conversion_value'];
                 }
             }
             // $reportMessage = "====== {$account['customer_name']} =======\n";
@@ -243,7 +245,7 @@ class OptimizeCampaigns extends BaseCommand
                 $action = '';
 
                 // Lấy dữ liệu chuyển đổi thực tế cho chiến dịch này
-                $campaignConversions = isset($sheetData[$campaign['campaign_id']]) ? $sheetData[$campaign['campaign_id']] : [
+                $campaignConversions = isset($totalSheetData[$campaign['campaign_id']]) ? $totalSheetData[$campaign['campaign_id']] : [
                     'conversions' => 0,
                     'conversion_value' => 0
                 ];
