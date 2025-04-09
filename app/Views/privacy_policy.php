@@ -93,7 +93,7 @@
         <li><strong>Yêu cầu xóa dữ liệu:</strong> Bạn có quyền yêu cầu chúng tôi xóa dữ liệu cá nhân của bạn mà chúng tôi thu thập và lưu trữ, trừ khi chúng tôi có nghĩa vụ pháp lý phải giữ lại thông tin đó.</li>
         <li><strong>Ngừng sử dụng dịch vụ bất kỳ lúc nào:</strong> Bạn có thể ngừng sử dụng Dịch vụ của chúng tôi bất kỳ lúc nào.</li>
         <li><strong>Thu hồi quyền truy cập Google Ads:</strong> Bạn có thể thu hồi quyền truy cập của ứng dụng chúng tôi vào tài khoản Google Ads của bạn thông qua cài đặt tài khoản Google của bạn. Việc thu hồi quyền truy cập này có thể ảnh hưởng đến khả năng cung cấp đầy đủ các tính năng của Dịch vụ.</li>
-        <li><strong>Truy cập và chỉnh sửa thông tin:</strong> Bạn có quyền yêu cầu truy cập và chỉnh sửa các thông tin cá nhân mà chúng tôi lưu trữ (nếu có).</li>
+        <li><strong>Truy cập và chỉnh sửa thông tin:</strong> Bạn có toanf quyền yêu cầu truy cập và chỉnh sửa các thông tin cá nhân. Chúng tôi không lưu trữ thông tin cá nhân của bạn bên ngoài hệ thống nơi mà bạn không kiểm tra và kiểm soát được.</li>
     </ul>
     <p>Để thực hiện các quyền này, vui lòng liên hệ với chúng tôi theo thông tin liên hệ được cung cấp dưới đây.</p>
 
