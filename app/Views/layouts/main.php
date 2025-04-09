@@ -33,8 +33,21 @@
                             <a class="nav-link" href="/adsaccounts">Tài khoản</a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link" href="/syncads">Đồng bộ tài khoản</a>
+                        </li>
+                        
+                        <?php if (in_array(session()->get('role'), ['superadmin', 'admin'])): ?>
+                        <li class="nav-item">
                             <a class="nav-link" href="/optimize-logs">Lịch sử tối ưu</a>
                         </li>
+                        <?php endif; ?>
+                        
+                        <?php if (session()->get('role') === 'superadmin'): ?>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/users">Quản lý người dùng</a>
+                        </li>
+                        <?php endif; ?>
+                        
                         <li class="nav-item">
                             <a class="nav-link" href="/settings">Cài đặt</a>
                         </li>
@@ -43,14 +56,14 @@
                 <ul class="navbar-nav ms-auto">
                     <?php if (session()->get('isLoggedIn')): ?>
                         <li class="nav-item">
+                            <span class="nav-link text-muted"><?= session()->get('username') ?> (<?= ucfirst(session()->get('role')) ?>)</span>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" href="/logout">Đăng xuất</a>
                         </li>
                     <?php else: ?>
                         <li class="nav-item">
                             <a class="nav-link" href="/login">Đăng nhập</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="/register">Đăng ký</a>
                         </li>
                     <?php endif; ?>
                 </ul>

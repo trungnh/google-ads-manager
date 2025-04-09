@@ -9,6 +9,7 @@ use CodeIgniter\Filters\Honeypot;
 use CodeIgniter\Filters\InvalidChars;
 use CodeIgniter\Filters\SecureHeaders;
 use App\Filters\Auth;
+use App\Filters\RoleFilter;
 
 class Filters extends BaseConfig
 {
@@ -25,6 +26,7 @@ class Filters extends BaseConfig
         'invalidchars'  => InvalidChars::class,
         'secureheaders' => SecureHeaders::class,
         'auth'          => Auth::class,
+        'role'          => RoleFilter::class,
     ];
 
     /**
@@ -73,6 +75,11 @@ class Filters extends BaseConfig
                 'adsaccounts/*',
                 'campaigns',
                 'campaigns/*',
+                'google/oauth',
+                'google/callback',
+                'optimize-logs',
+                'users',
+                'users/*',
             ],
         ],
     ];

@@ -58,9 +58,11 @@
                                         <a href="<?= base_url('campaigns/index/' . $account['customer_id']) ?>" class="btn btn-sm btn-info">
                                             View Campaigns
                                         </a>
+                                        <?php if (in_array(session()->get('role'), ['superadmin', 'admin'])): ?>
                                         <a href="<?= base_url('adsaccounts/settings/' . $account['id']) ?>" class="btn btn-sm btn-primary">
                                             <i class="fas fa-cog"></i> Settings
                                         </a>
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
