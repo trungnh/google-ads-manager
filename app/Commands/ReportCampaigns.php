@@ -94,7 +94,7 @@ class ReportCampaigns extends BaseCommand
                 $processedAccounts[] = $account['customer_id'];
                 
             }
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             log_message('error', 'Lỗi khi báo cáo chiến dịch: ' . $e->getMessage());
             foreach($telegramChatIds as $telegramChatId){
                 $this->telegramService->sendMessage("❌ Lỗi khi báo cáo chiến dịch: " . $account['customer_id'], $telegramChatId);

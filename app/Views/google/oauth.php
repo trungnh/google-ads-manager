@@ -7,7 +7,12 @@
                 <h4 class="card-title">Kết nối với Google Ads</h4>
             </div>
             <div class="card-body">
-            <?php if (!$hasGoogleToken): ?>
+            <?php if ($hasGoogleToken): ?>
+                <div class="alert alert-success mt-4">
+                    <p><strong>Đã kết nối với Google Ads!</strong></p>
+                    <p>Bạn đã sẵn sàng để sử dụng các tính năng quản lý Google Ads.</p>
+                </div>
+            <?php endif; ?>
                 <p>Để sử dụng các tính năng quản lý Google Ads, bạn cần kết nối tài khoản Google của mình với ứng dụng.</p>
                 
                 <div class="text-center my-4">
@@ -27,14 +32,6 @@
                         <li>Sau khi cấp quyền, bạn sẽ được chuyển hướng trở lại ứng dụng.</li>
                     </ul>
                 </div>
-            <?php else: ?>
-                <p><strong>Đã kết nối với Google Ads!</strong></p>
-                <div class="alert alert-success mt-4">
-                    <p><strong>Đã kết nối với Google Ads!</strong></p>
-                    <p>Bạn đã sẵn sàng để sử dụng các tính năng quản lý Google Ads.</p>
-                </div>
-                <a href="<?= base_url('dashboard') ?>" class="btn btn-primary">Trở lại trang chủ</a>
-            <?php endif; ?>
             </div>
         </div>
     </div>
