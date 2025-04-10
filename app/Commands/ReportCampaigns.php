@@ -132,14 +132,15 @@ class ReportCampaigns extends BaseCommand
             }
         }
 
+        $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($account['id']);
         // Lấy dữ liệu chuyển đổi thực tế từ Google Sheet
-        $gsheetUrl = $account['gsheet1'] ?? null;
+        $gsheetUrl = $settings['gsheet1'] ?? null;
         if (!empty($campaigns) && !empty($gsheetUrl)) {
-            $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, date('Y-m-d'), date('Y-m-d'), $account);
+            $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, date('Y-m-d'), date('Y-m-d'), $settings);
         }
-        $gsheetUrl2 = $account['gsheet2'] ?? null;
+        $gsheetUrl2 = $settings['gsheet2'] ?? null;
         if (!empty($campaigns) && !empty($gsheetUrl2)) {
-            $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl2, date('Y-m-d'), date('Y-m-d'), $account);
+            $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl2, date('Y-m-d'), date('Y-m-d'), $settings);
         }
 
         $reportMessage = "====== {$account['customer_name']} =======\n";
