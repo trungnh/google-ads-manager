@@ -175,14 +175,13 @@ class OptimizeCampaigns extends BaseCommand
                 }
             }
             
-            $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($account['id']);
-            $gsheetUrl = $settings['gsheet1'] ?? null;
+            $gsheetUrl = $account['gsheet1'] ?? null;
             if (!empty($campaigns) && !empty($gsheetUrl)) {
-                $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, date('Y-m-d'), date('Y-m-d'), $settings);
+                $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, date('Y-m-d'), date('Y-m-d'), $account);
             }
-            $gsheetUrl2 = $settings['gsheet2'] ?? null;
+            $gsheetUrl2 = $account['gsheet2'] ?? null;
             if (!empty($campaigns) && !empty($gsheetUrl2)) {
-                $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl2, date('Y-m-d'), date('Y-m-d'), $settings);
+                $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl2, date('Y-m-d'), date('Y-m-d'), $account);
             }
 
             // $reportMessage = "====== {$account['customer_name']} =======\n";

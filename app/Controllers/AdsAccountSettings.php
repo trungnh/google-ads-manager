@@ -69,7 +69,7 @@ class AdsAccountSettings extends BaseController
 
             return view('ads_account_settings/index', $data);
 
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             log_message('error', 'Error in AdsAccountSettings::index: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Lỗi khi lấy thông tin cài đặt: ' . $e->getMessage());
         }
@@ -125,7 +125,7 @@ class AdsAccountSettings extends BaseController
                 ]);
             }
 
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             log_message('error', 'Error in AdsAccountSettings::update: ' . $e->getMessage());
             return $this->response->setJSON([
                 'success' => false,
