@@ -221,9 +221,13 @@ class OptimizeCampaigns extends BaseCommand
             $totalSheetData = [];
             foreach($sheetData as $key => &$value){
                 $totalSheetData[$key] = $value;
-                if (isset($sheetData2[$key])) {
-                    $totalSheetData[$key]['conversions'] += $sheetData2[$key]['conversions'];
-                    $totalSheetData[$key]['conversion_value'] += $sheetData2[$key]['conversion_value'];
+                foreach($sheetData2 as $key2 => &$value2){
+                    if($key == $key2){
+                        $totalSheetData[$key]['conversions'] += $value2['conversions'];
+                        $totalSheetData[$key]['conversion_value'] += $value2['conversion_value'];
+                    } else {
+                        $totalSheetData[$key2] = $value2;
+                    }
                 }
             }
             // $reportMessage = "====== {$account['customer_name']} =======\n";
