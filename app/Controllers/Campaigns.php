@@ -99,11 +99,11 @@ class Campaigns extends BaseController
 
                 $gsheetUrl = $settings['gsheet1'] ?? null;
                 if (!empty($campaigns) && !empty($gsheetUrl)) {
-                    $campaigns = $this->processRealConversions($campaigns, $gsheetUrl, $today, $today, $settings);
+                    $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, $today, $today, $settings);
                 }
                 $gsheetUrl2 = $settings['gsheet2'] ?? null;
                 if (!empty($campaigns) && !empty($gsheetUrl2)) {
-                    $campaigns = $this->processRealConversions($campaigns, $gsheetUrl2, $today, $today, $settings);
+                    $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl2, $today, $today, $settings);
                 }
 
                 $this->campaignsDataModel->saveCampaignsData($customerId, $campaigns);
