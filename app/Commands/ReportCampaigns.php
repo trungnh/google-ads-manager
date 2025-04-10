@@ -177,18 +177,14 @@ class ReportCampaigns extends BaseCommand
         }
 
         $totalSheetData = [];
-        foreach($sheetData as $key => &$value){
-            $totalSheetData[$key] = $value;
-            foreach($sheetData2 as $key2 => &$value2){
-                if($key == $key2){
-                    $totalSheetData[$key]['conversions'] += $value2['conversions'];
-                    $totalSheetData[$key]['conversion_value'] += $value2['conversion_value'];
-                } else {
-                    $totalSheetData[$key2] = $value2;
-                }
+        foreach($sheetData2 as $key2 => $value2){
+            if(isset($totalSheetData[$key2])){
+                $totalSheetData[$key2]['conversions'] += $value2['conversions'];
+                $totalSheetData[$key2]['conversion_value'] += $value2['conversion_value'];
+            } else {
+                $totalSheetData[$key2] = $value2;
             }
         }
-
         $reportMessage = "====== {$account['customer_name']} =======\n";
         $totalConversions = 0;
         $totalConversionValue = 0;
