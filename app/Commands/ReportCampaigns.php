@@ -133,63 +133,20 @@ class ReportCampaigns extends BaseCommand
         }
 
         // Lấy dữ liệu chuyển đổi thực tế từ Google Sheet
-        // Sử dụng giá trị mặc định cho cấu hình cột
-        $columnConfig = [
-            'gsheet_date_col' => 'A',
-            'gsheet_date_col' => 'B',
-            'gsheet_value_col' => 'C',
-            'gsheet_campaign_col' => 'D'
-        ];
-
-        $accountSettings = $this->adsAccountSettingsModel->where('account_id', $account['id'])->first();
-        // Nếu có cấu hình trong settings thì sử dụng
-        if (isset($accountSettings['gsheet_date_col'])) $columnConfig['gsheet_date_col'] = $accountSettings['gsheet_date_col'];
-        if (isset($accountSettings['gsheet_phone_col'])) $columnConfig['gsheet_phone_col'] = $accountSettings['gsheet_phone_col'];
-        if (isset($accountSettings['gsheet_value_col'])) $columnConfig['gsheet_value_col'] = $accountSettings['gsheet_value_col'];
-        if (isset($accountSettings['gsheet_campaign_col'])) $columnConfig['gsheet_campaign_col'] = $accountSettings['gsheet_campaign_col'];
-
-        $sheetData = [];
-        if (!empty($accountSettings['gsheet1'])) {
-            try {
-                $sheetData = $this->googleSheetService->getConversionsFromCsv(
-                    $accountSettings['gsheet1'],
-                    date('Y-m-d'),
-                    date('Y-m-d'),
-                    $columnConfig
-                );
-            } catch (\Exception $e) {
-                CLI::write("Lỗi đọc dữ liệu Google Sheet: " . $e->getMessage(), 'yellow');
-            }
+        $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($account['id']);
+        $gsheetUrl = $settings['gsheet1'] ?? null;
+        if (!empty($campaigns) && !empty($gsheetUrl)) {
+            $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, date('Y-m-d'), date('Y-m-d'), $settings);
         }
-        // Lấy dữ liệu chuyển đổi thực tế từ Google Sheet 2
-        $sheetData2 = [];
-        if (!empty($accountSettings['gsheet2'])) {
-            try {
-                $sheetData2 = $this->googleSheetService->getConversionsFromCsv(
-                    $accountSettings['gsheet2'],
-                    date('Y-m-d'),
-                    date('Y-m-d'),
-                    $columnConfig
-                );
-            } catch (\Exception $e) {
-                CLI::write("Lỗi đọc dữ liệu Google Sheet: " . $e->getMessage(), 'yellow');
-            }
+        $gsheetUrl2 = $settings['gsheet2'] ?? null;
+        if (!empty($campaigns) && !empty($gsheetUrl2)) {
+            $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl2, date('Y-m-d'), date('Y-m-d'), $settings);
         }
 
-        $totalSheetData = [];
-        foreach($sheetData2 as $key2 => $value2){
-            if(isset($totalSheetData[$key2])){
-                $totalSheetData[$key2]['conversions'] += $value2['conversions'];
-                $totalSheetData[$key2]['conversion_value'] += $value2['conversion_value'];
-            } else {
-                $totalSheetData[$key2] = $value2;
-            }
-        }
         $reportMessage = "====== {$account['customer_name']} =======\n";
         $totalConversions = 0;
         $totalConversionValue = 0;
         $totalCost = 0;
-        $campaignsData = [];
         foreach ($campaigns as $campaign) {
             if (!isset($campaign['campaign_id']) || !isset($campaign['cost']) || !isset($campaign['budget'])) {
                 CLI::write("Bỏ qua chiến dịch không hợp lệ: thiếu thông tin bắt buộc", 'yellow');
@@ -199,33 +156,16 @@ class ReportCampaigns extends BaseCommand
                 continue;
             }
             // Lấy dữ liệu chuyển đổi thực tế cho chiến dịch này
-            $campaignConversions = isset($totalSheetData[$campaign['campaign_id']]) ? $totalSheetData[$campaign['campaign_id']] : [
-                'conversions' => 0,
-                'conversion_value' => 0
-            ];
-            // Tính CPA và ROAS thực tế
-            $realCpa = $campaignConversions['conversions'] > 0 
-                ? $campaign['cost'] / $campaignConversions['conversions'] 
-                : 0;
+            $realConversions = $campaign['real_conversions']?? 0;
+            $realConversionValue = $campaign['real_conversion_value']?? 0;
 
-            $realRoas = $campaign['cost'] > 0 
-                ? $campaignConversions['conversion_value'] / $campaign['cost']
-                : 0;
-
-            $totalConversions += $campaignConversions['conversions'];
-            $totalConversionValue += $campaignConversions['conversion_value'];
+            $totalConversions += $realConversions;
+            $totalConversionValue += $realConversionValue;
             $totalCost += $campaign['cost'];
-
-            $saveCampaignData = $campaign;
-            $saveCampaignData['real_cpa'] = $realCpa;
-            $saveCampaignData['real_roas'] = $realRoas;
-            $saveCampaignData['real_conversions'] = $campaignConversions['conversions'];
-            $saveCampaignData['real_conversion_value'] = $campaignConversions['conversion_value'];
-            $campaignsData[] = $saveCampaignData;
         }
 
         // Save campaign data
-        $this->campaignsDataModel->saveCampaignsData($account['customer_id'], $campaignsData, date('Y-m-d'));
+        $this->campaignsDataModel->saveCampaignsData($account['customer_id'], $campaigns, date('Y-m-d'));
 
         $reportMessage .= "💰 Chi tiêu: " . number_format($totalCost, 0, '', '.')."đ\n";
         $reportMessage .= "🛒 Đơn: " . number_format($totalConversions, 0, '', '.')."\n";

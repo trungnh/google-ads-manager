@@ -175,63 +175,20 @@ class OptimizeCampaigns extends BaseCommand
                 }
             }
             
-            // Lấy dữ liệu chuyển đổi thực tế từ Google Sheet
-            // Sử dụng giá trị mặc định cho cấu hình cột
-            $columnConfig = [
-                'gsheet_date_col' => 'A',
-                'gsheet_phone_col' => 'B',
-                'gsheet_value_col' => 'C',
-                'gsheet_campaign_col' => 'D'
-            ];
-
-            // Nếu có cấu hình trong settings thì sử dụng
-            if (isset($account['gsheet_date_col'])) $columnConfig['gsheet_date_col'] = $account['gsheet_date_col'];
-            if (isset($account['gsheet_phone_col'])) $columnConfig['gsheet_phone_col'] = $account['gsheet_phone_col'];
-            if (isset($account['gsheet_value_col'])) $columnConfig['gsheet_value_col'] = $account['gsheet_value_col'];
-            if (isset($account['gsheet_campaign_col'])) $columnConfig['gsheet_campaign_col'] = $account['gsheet_campaign_col'];
-
-            $sheetData = [];
-            if (!empty($account['gsheet1'])) {
-                try {
-                    $sheetData = $this->googleSheetService->getConversionsFromCsv(
-                        $account['gsheet1'],
-                        date('Y-m-d'),
-                        date('Y-m-d'),
-                        $columnConfig
-                    );
-                } catch (\Exception $e) {
-                    CLI::write("Lỗi đọc dữ liệu Google Sheet: " . $e->getMessage(), 'yellow');
-                }
+            $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($account['id']);
+            $gsheetUrl = $settings['gsheet1'] ?? null;
+            if (!empty($campaigns) && !empty($gsheetUrl)) {
+                $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, date('Y-m-d'), date('Y-m-d'), $settings);
             }
-            // Lấy dữ liệu chuyển đổi thực tế từ Google Sheet 2
-            $sheetData2 = [];
-            if (!empty($account['gsheet2'])) {
-                try {
-                    $sheetData2 = $this->googleSheetService->getConversionsFromCsv(
-                        $account['gsheet2'],
-                        date('Y-m-d'),
-                        date('Y-m-d'),
-                        $columnConfig
-                    );
-                } catch (\Exception $e) {
-                    CLI::write("Lỗi đọc dữ liệu Google Sheet: " . $e->getMessage(), 'yellow');
-                }
+            $gsheetUrl2 = $settings['gsheet2'] ?? null;
+            if (!empty($campaigns) && !empty($gsheetUrl2)) {
+                $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl2, date('Y-m-d'), date('Y-m-d'), $settings);
             }
 
-            $totalSheetData = $sheetData;
-            foreach($sheetData2 as $key2 => $value2){
-                if(isset($totalSheetData[$key2])){
-                    $totalSheetData[$key2]['conversions'] += $value2['conversions'];
-                    $totalSheetData[$key2]['conversion_value'] += $value2['conversion_value'];
-                } else {
-                    $totalSheetData[$key2] = $value2;
-                }
-            }
             // $reportMessage = "====== {$account['customer_name']} =======\n";
             // $totalConversions = 0;
             // $totalConversionValue = 0;
             // $totalCost = 0;
-            $campaignsData = [];
             foreach ($campaigns as $campaign) {
                 if (!isset($campaign['campaign_id']) || !isset($campaign['cost']) || !isset($campaign['budget'])) {
                     CLI::write("Bỏ qua chiến dịch không hợp lệ: thiếu thông tin bắt buộc", 'yellow');
@@ -245,35 +202,10 @@ class OptimizeCampaigns extends BaseCommand
                 $shouldIncreaseBudget = false;
                 $action = '';
 
-                // Lấy dữ liệu chuyển đổi thực tế cho chiến dịch này
-                $campaignConversions = isset($totalSheetData[$campaign['campaign_id']]) ? $totalSheetData[$campaign['campaign_id']] : [
-                    'conversions' => 0,
-                    'conversion_value' => 0
-                ];
-                // Tính CPA và ROAS thực tế
-                $realCpa = $campaignConversions['conversions'] > 0 
-                    ? $campaign['cost'] / $campaignConversions['conversions'] 
-                    : 0;
-
-                $realRoas = $campaign['cost'] > 0 
-                    ? $campaignConversions['conversion_value'] / $campaign['cost']
-                    : 0;
-
-                $saveCampaignData = $campaign;
-                $saveCampaignData['real_cpa'] = $realCpa;
-                $saveCampaignData['real_roas'] = $realRoas;
-                $saveCampaignData['real_conversions'] = $campaignConversions['conversions'];
-                $saveCampaignData['real_conversion_value'] = $campaignConversions['conversion_value'];
-                $campaignsData[] = $saveCampaignData;
+                $realCpa = $campaign['real_cpa']?? 0;
+                $realRoas = $campaign['real_roas']?? 0;
+                $realConversions = $campaign['real_conversions']?? 0;
                 
-                // $reportMessage .= "{$campaign['name']}\n";
-                // $reportMessage .= "   💰 Chi tiêu: " . number_format($campaign['cost'], 0, '', '.')."đ\n";
-                // $reportMessage .= "   🛒 Đơn: " . number_format($campaignConversions['conversions'], 0, '', '.')."\n";
-                // $reportMessage .= "   🎯 CPA: " . number_format($realCpa, 0, '', '.')."đ\n";
-                // $reportMessage .= "   🎯 ROAS: " . number_format($realRoas, 1, ',', '.')."\n";
-                // $totalConversions += $campaignConversions['conversions'];
-                // $totalConversionValue += $campaignConversions['conversion_value'];
-                // $totalCost += $campaign['cost'];
                 // Kiểm tra chi tiêu trước
                 if(isset($account['cost_threshold']) && $account['cost_threshold'] > 0){
                     if($campaign['cost'] <= $account['cost_threshold']){
@@ -289,7 +221,7 @@ class OptimizeCampaigns extends BaseCommand
                         // Nếu ROAS bằng 0 thì kiểm tra CPA
                         if (isset($account['cpa_threshold']) && $account['cpa_threshold'] > 0) {
                             // Nếu chi tiêu vượt ngưỡng CPA và không có chuyển đổi thực tế
-                            if ($campaign['cost'] > $account['cpa_threshold'] && $campaignConversions['conversions'] == 0) {
+                            if ($campaign['cost'] > $account['cpa_threshold'] && $realConversions == 0) {
                                 $shouldPause = true;
                                 $action = "ROAS = 0 và Chi tiêu (".number_format($campaign['cost'], 0, '', '.').") vượt ngưỡng (".number_format($account['cpa_threshold'], 0, '', '.').") và không có chuyển đổi thực tế";
                             }
@@ -301,12 +233,12 @@ class OptimizeCampaigns extends BaseCommand
                 }
                 // Chỉ kiểm tra CPA nếu không có cấu hình ROAS hoặc ROAS không đạt
                 elseif (isset($account['cpa_threshold']) && $account['cpa_threshold'] > 0) {
-                    if ($realCpa > $account['cpa_threshold'] && $campaignConversions['conversions'] > 0) {
+                    if ($realCpa > $account['cpa_threshold'] && $realConversions > 0) {
                         $shouldPause = true;
                         $action = "CPA thực tế (".number_format($realCpa, 0, '', '.').") vượt ngưỡng (".number_format($account['cpa_threshold'], 0, '', '.').")";
                     }
                     // Kiểm tra chi tiêu và chuyển đổi thực tế
-                    elseif ($campaign['cost'] > $account['cpa_threshold'] && $campaignConversions['conversions'] == 0) {
+                    elseif ($campaign['cost'] > $account['cpa_threshold'] && $realConversions == 0) {
                         $shouldPause = true;
                         $action = "Chi tiêu (".number_format($campaign['cost'], 0, '', '.').") vượt ngưỡng (".number_format($account['cpa_threshold'], 0, '', '.').") và không có chuyển đổi thực tế";
                     }
@@ -328,31 +260,7 @@ class OptimizeCampaigns extends BaseCommand
             }
             
             // Save campaign data
-            $this->campaignsDataModel->saveCampaignsData($account['customer_id'], $campaignsData, date('Y-m-d'));
-
-            // $reportMessage .= PHP_EOL;
-            // $reportMessage .= "💰 Chi tiêu: " . number_format($totalCost, 0, '', '.')."đ\n";
-            // $reportMessage .= "🛒 Đơn: " . number_format($totalConversions, 0, '', '.')."\n";
-            // if($totalConversions > 0){
-            //     $reportMessage .= "🎯 CPA: " . number_format($totalCost / $totalConversions, 0, '', '.')."đ\n";
-            // } else {
-            //     $reportMessage .= "🎯 CPA: 0\n";
-            // }   
-            // if($totalCost > 0){
-            //     $reportMessage .= "🎯 ROAS: " . number_format($totalConversionValue / $totalCost, 1, ',', '.')."\n";
-            // } else {
-            //     $reportMessage .= "🎯 ROAS: 0\n";
-            // }
-            
-            // $reportMessage .= "====== END ======\n";
-            // $hour = date('H');
-            // $minute = date('i');
-            // // Chỉ gửi khi phút là 0 hoặc 30 và giờ là 7 hoặc 21
-            // if(($minute == 0 || $minute == 30) && ($hour >= 7 && $hour <= 21)){
-            //     foreach($telegramChatIds as $telegramChatId){
-            //         $this->telegramService->sendMessage($reportMessage, $telegramChatId);
-            //     }
-            // }
+            $this->campaignsDataModel->saveCampaignsData($account['customer_id'], $campaigns, date('Y-m-d'));
 
             // Cập nhật thời gian chạy cuối cùng
             $this->adsAccountSettingsModel->update($account['id'], [
