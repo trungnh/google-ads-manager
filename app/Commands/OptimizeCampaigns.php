@@ -46,11 +46,11 @@ class OptimizeCampaigns extends BaseCommand
     public function run(array $params)
     {
         try {
-            $hour = date('H');
-            if($hour < 6 || $hour > 21){
-                CLI::write("Thời gian không hợp lệ, chỉ chạy từ 7:00 đến 22:00", 'yellow');
-                return;
-            }
+            // $hour = date('H');
+            // if($hour < 6 || $hour > 21){
+            //     CLI::write("Thời gian không hợp lệ, chỉ chạy từ 7:00 đến 22:00", 'yellow');
+            //     return;
+            // }
             // Lấy danh sách tài khoản cần tối ưu
             $accounts = $this->adsAccountSettingsModel->getAccountsForOptimization();
             
@@ -211,40 +211,75 @@ class OptimizeCampaigns extends BaseCommand
                         continue;
                     }
                 }
-                // Kiểm tra ROAS thực tế trước
-                if (isset($account['roas_threshold']) && $account['roas_threshold'] > 0) {
-                    if ($realRoas > 0 && $realRoas < $account['roas_threshold']) {
+
+                /* ============ Bật/tắt camp ============ */
+                // TH: Không có đơn
+                if ($realConversions == 0) { 
+                    // Nếu chi tiêu vượt ngưỡng CPA và không có chuyển đổi thực tế
+                    if ($campaign['cost'] > $account['cpa_threshold']) {
                         $shouldPause = true;
-                        $action = "ROAS thực tế (".number_format($realRoas, 1, ',', '.').") thấp hơn ngưỡng (".number_format($account['roas_threshold'], 1, ',', '.').")";
-                    } elseif ($realRoas == 0) {
-                        // Nếu ROAS bằng 0 thì kiểm tra CPA
-                        if (isset($account['cpa_threshold']) && $account['cpa_threshold'] > 0) {
-                            // Nếu chi tiêu vượt ngưỡng CPA và không có chuyển đổi thực tế
-                            if ($campaign['cost'] > $account['cpa_threshold'] && $realConversions == 0) {
-                                $shouldPause = true;
-                                $action = "ROAS = 0 và Chi tiêu (".number_format($campaign['cost'], 0, '', '.').") vượt ngưỡng (".number_format($account['cpa_threshold'], 0, '', '.').") và không có chuyển đổi thực tế";
-                            }
+                        $action = "Chi tiêu (".number_format($campaign['cost'], 0, '', '.').") vượt ngưỡng (".number_format($account['cpa_threshold'], 0, '', '.').") và không có đơn thực tế";
+                    }
+                }
+                // TH: Chỉ có 1 đơn 
+                elseif ($realConversions == 1) {
+                    if (isset($account['use_roas_threshold']) && $account['use_roas_threshold'] == 1) {
+                        // Check theo ROAS
+                        // Nếu ROAS thực tế thấp hơn ngưỡng
+                        if ($realRoas < $account['roas_threshold']) {
+                            $shouldPause = true;
+                            $action = "ROAS thực tế (".number_format($realRoas, 1, ',', '.').") thấp hơn ngưỡng (".number_format($account['roas_threshold'], 1, ',', '.').")";  
                         }
                     } else {
-                        // Nếu ROAS đạt yêu cầu, bỏ qua kiểm tra CPA
-                        $shouldPause = false;
+                        // Check theo CPA
+                        // Nếu CPA thực tế vượt ngưỡng
+                        if ($realCpa > $account['cpa_threshold']) {
+                            $shouldPause = true;
+                            $action = "CPA thực tế (".number_format($realCpa, 0, ',', '.').") vượt ngưỡng (".number_format($account['cpa_threshold'], 1, ',', '.').")";
+                        }
+                    }
+                } 
+                // TH: Nhiều hơn 1 đơn
+                elseif ($realConversions > 1) {
+                    // Lấy campaign data từ DB
+                    $tmpCampaign = $this->campaignsDataModel->where('customer_id', $account['customer_id'])
+                        ->where('campaign_id', $campaign['campaign_id'])
+                        ->where('date', date('Y-m-d'))
+                        ->first();
+                    
+                    // Tính chi tiêu từ lần ra cuối cùng ra chuyển đổi
+                    $costExtendFromLastConversion = $campaign['cost'] - $tmpCampaign['last_cost_conversion']?? 0;
+                    $conversionsExtendFromLastConversion = $campaign['real_conversions'] - $tmpCampaign['last_count_conversion']?? 0;
+                    $conversionValueExtendFromLastConversion = $campaign['real_conversion_value'] - $tmpCampaign['last_count_conversion_value']?? 0;
+                    if ($conversionsExtendFromLastConversion == 0) {
+                        if ($costExtendFromLastConversion > $account['cpa_threshold']) {
+                            $shouldPause = true;
+                            $action = "Chi tiêu thêm (".number_format($costExtendFromLastConversion, 0, '', '.').") từ lần ra đơn cuối cùng - Không có đơn thực tế";
+                        }
+                    } else {
+                        $cpaExtendFromLastConversion = $costExtendFromLastConversion / $conversionsExtendFromLastConversion;
+                        $roasExtendFromLastConversion = $conversionValueExtendFromLastConversion / $costExtendFromLastConversion;
+                        if ($account['use_roas_threshold']) {
+                            // Check theo ROAS
+                            // Nếu ROAS thực tế thấp hơn ngưỡng
+                            if ($roasExtendFromLastConversion < $account['roas_threshold']) {
+                                $shouldPause = true;
+                                $action = "Chi tiêu thêm (".number_format($costExtendFromLastConversion, 0, '', '.').") từ lần ra đơn cuối cùng - ROAS (".number_format($roasExtendFromLastConversion, 1, ',', '.').") thấp hơn ngưỡng (".number_format($account['roas_threshold'], 1, ',', '.').")";  
+                            }  
+                        } else {
+                            // Check theo CPA
+                            // Nếu CPA thực tế vượt ngưỡng
+                            if ($cpaExtendFromLastConversion > $account['cpa_threshold']) {
+                                $shouldPause = true;
+                                $action = "Chi tiêu thêm (".number_format($costExtendFromLastConversion, 0, '', '.').") từ lần ra đơn cuối cùng - CPA (".number_format($cpaExtendFromLastConversion, 1, ',', '.').") vượt ngưỡng (".number_format($account['cpa_threshold'], 1, ',', '.').")";  
+                            } 
+                        }
                     }
                 }
-                // Chỉ kiểm tra CPA nếu không có cấu hình ROAS hoặc ROAS không đạt
-                elseif (isset($account['cpa_threshold']) && $account['cpa_threshold'] > 0) {
-                    if ($realCpa > $account['cpa_threshold'] && $realConversions > 0) {
-                        $shouldPause = true;
-                        $action = "CPA thực tế (".number_format($realCpa, 0, '', '.').") vượt ngưỡng (".number_format($account['cpa_threshold'], 0, '', '.').")";
-                    }
-                    // Kiểm tra chi tiêu và chuyển đổi thực tế
-                    elseif ($campaign['cost'] > $account['cpa_threshold'] && $realConversions == 0) {
-                        $shouldPause = true;
-                        $action = "Chi tiêu (".number_format($campaign['cost'], 0, '', '.').") vượt ngưỡng (".number_format($account['cpa_threshold'], 0, '', '.').") và không có chuyển đổi thực tế";
-                    }
-                }
+                /* ============ Bật/tắt camp ============ */
 
                 // Kiểm tra tăng ngân sách nếu chiến dịch không bị tạm dừng
-                if (!$shouldPause && isset($account['increase_budget']) && $campaign['cost'] > ($campaign['budget'] * 0.5)) {
+                if (!$shouldPause && isset($account['increase_budget']) && $account['increase_budget'] > 0 && $campaign['cost'] > ($campaign['budget'] * 0.5)) {
                     $shouldIncreaseBudget = true;
                     $action = "Chi tiêu (".number_format($campaign['cost'], 0, '', '.').") vượt 50% ngân sách (".number_format($campaign['budget'], 0, '', '.').")";
                 }
@@ -297,7 +332,7 @@ class OptimizeCampaigns extends BaseCommand
                 } else {
                     $message = "CHÚ Ý: Chiến dịch {$account['customer_name']} - {$campaign['name']}[{$campaign['campaign_id']}]: {$action}";
                     foreach($telegramChatIds as $telegramChatId){
-                        $this->telegramService->sendMessage("📢 " . $message, $telegramChatId);
+                        $this->telegramService->sendMessage("💢 " . $message, $telegramChatId);
                     }
                 }
             } elseif ($shouldIncreaseBudget && isset($account['increase_budget'])) {

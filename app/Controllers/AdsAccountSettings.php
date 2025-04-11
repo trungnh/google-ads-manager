@@ -63,7 +63,8 @@ class AdsAccountSettings extends BaseController
                     'gsheet_campaign_col' => 'L',
                     'gsheet2' => '',
                     'cost_threshold' => 0,
-                    'auto_on_off' => 0
+                    'auto_on_off' => 0,
+                    'use_roas_threshold' => 0
                 ];
                 log_message('info', 'Creating default settings for account: ' . $adsAccountId);
                 $this->adsAccountSettingsModel->insert($settings);
@@ -113,7 +114,8 @@ class AdsAccountSettings extends BaseController
                 'gsheet_campaign_col' => $this->request->getPost('gsheet_campaign_col'),
                 'gsheet2' => $this->request->getPost('gsheet2'),
                 'cost_threshold' => $this->request->getPost('cost_threshold'),
-                'auto_on_off' => $this->request->getPost('auto_on_off')
+                'auto_on_off' => $this->request->getPost('auto_on_off'),
+                'use_roas_threshold' => $this->request->getPost('use_roas_threshold')
             ];
 
             log_message('info', 'Processed settings: ' . json_encode($settings));

@@ -38,7 +38,7 @@
                             <input type="number" class="form-control" id="increase_budget" name="increase_budget" 
                                 value="<?= isset($settings['increase_budget']) ? $settings['increase_budget'] : '' ?>">
                             <small class="form-text text-muted">
-                                Số tiền tăng thêm khi chiến dịch đã chi tiêu > 50% ngân sách (Nếu chiến dịch thoả mãn điều kiện ngưỡng ROAS/CPA bên dưới)
+                                Số tiền tăng thêm khi chiến dịch đã chi tiêu > 50% ngân sách (Nếu chiến dịch thoả mãn điều kiện ngưỡng ROAS/CPA bên dưới) - Nếu không muốn tăng ngân sách thì để 0
                             </small>
                         </div>
 
@@ -46,10 +46,10 @@
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" id="auto_on_off" name="auto_on_off" 
                                     <?= isset($settings['auto_on_off']) && $settings['auto_on_off'] ? 'checked' : '' ?>>
-                                <label class="form-check-label" for="auto_on_off">Tự động bật/tắt chiến dịch</label>
+                                <label class="form-check-label" for="auto_on_off">Tự động tắt chiến dịch</label>
                             </div>
                             <small class="form-text text-muted">
-                                Khi bật, hệ thống sẽ tự động bật/tắt chiến dịch dựa trên ngưỡng chi tiêu và CPA
+                                Khi bật, hệ thống sẽ tự động tắt chiến dịch dựa trên ngưỡng chi tiêu và CPA
                             </small>
                         </div>
 
@@ -68,6 +68,17 @@
                                 value="<?= isset($settings['cpa_threshold']) ? $settings['cpa_threshold'] : '' ?>">
                             <small class="form-text text-muted">
                                 Chiến dịch sẽ bị tạm dừng nếu CPA vượt quá ngưỡng này
+                            </small>
+                        </div>
+
+                        <div class="mb-3 mt-5">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="use_roas_threshold" name="use_roas_threshold" 
+                                    <?= isset($settings['use_roas_threshold']) && $settings['use_roas_threshold'] ? 'checked' : '' ?>>
+                                <label class="form-check-label" for="use_roas_threshold">Tắt theo ROAS</label>
+                            </div>
+                            <small class="form-text text-muted">
+                                Khi bật, hệ thống sẽ tự động bật/tắt chiến dịch dựa trên ROAS thay vì CPA
                             </small>
                         </div>
 
@@ -175,7 +186,8 @@ $(document).ready(function() {
             gsheet_campaign_col: $('#gsheet_campaign_col').val().toUpperCase(),
             gsheet2: $('#gsheet2').val(),
             order: $('#order').val(),
-            auto_on_off: $('#auto_on_off').is(':checked') ? 'true' : 'false'
+            auto_on_off: $('#auto_on_off').is(':checked') ? 'true' : 'false',
+            use_roas_threshold: $('#use_roas_threshold').is(':checked')? 'true' : 'false'
         };
         
         $.ajax({

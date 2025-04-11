@@ -32,6 +32,9 @@ class CampaignsDataModel extends Model
         'real_conversion_value',
         'real_conversion_rate',
         'real_cpa',
+        'last_cost_conversion',
+        'last_count_conversion',
+        'last_count_conversion_value',
         'last_updated_at'
     ];
     protected $useTimestamps = true;
@@ -102,6 +105,16 @@ class CampaignsDataModel extends Model
                             ->countAllResults();
             
             if ($exists) {
+                // Nếu có thêm conversions mới thì cập nhật last_cost_conversion, last_count_conversion, last_count_conversion_value
+                $tmpCampaign = $this->where('customer_id', $customerId)
+                        ->where('campaign_id', $campaign['campaign_id'])
+                        ->where('date', date('Y-m-d'))
+                        ->first();
+                if ($tmpCampaign['real_conversions'] < $campaign['real_conversions']) {
+                    $data['last_cost_conversion'] = $campaign['cost'];
+                    $data['last_count_conversion'] = $campaign['real_conversions'];
+                    $data['last_count_conversion_value'] = $campaign['real_conversion_value'];
+                }
                 // Cập nhật dữ liệu nếu đã tồn tại
                 $builder->where('customer_id', $customerId)
                        ->where('campaign_id', $campaign['campaign_id'])
@@ -109,6 +122,12 @@ class CampaignsDataModel extends Model
                        ->update($data);
             } else {
                 // Thêm dữ liệu mới nếu chưa tồn tại
+                // Nếu chưa có chuyển đổi thì đặt giá trị là 0, ngược lại là giá trị hiện tại
+                if ($campaign['real_conversions'] > 0) {
+                    $data['last_cost_conversion'] = $campaign['cost'];
+                    $data['last_count_conversion'] = $campaign['real_conversions'];
+                    $data['last_count_conversion_value'] = $campaign['real_conversion_value'];
+                }
                 $builder->insert($data);
             }
         }
