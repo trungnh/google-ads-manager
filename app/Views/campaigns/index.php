@@ -372,7 +372,7 @@ $(document).ready(function() {
         const totalCTR = totals.clicks > 0 ? (totals.clicks / totals.clicks) * 100 : 0;
         const totalAverageCPC = totals.clicks > 0 ? totals.cost / totals.clicks : 0;
         const totalRealCPA = totals.real_conversions > 0 ? totals.cost / totals.real_conversions : 0;
-        const totalRealConversionRate = totals.clicks > 0 ? (totals.real_conversions / totals.clicks) * 100 : 0;
+        const totalRealConversionRate = totals.clicks > 0 ? (totals.real_conversions / totals.clicks) : 0;
         const totalROAS = totals.cost > 0 ? totals.real_conversion_value / totals.cost : 0;
 
         // Sắp xếp dữ liệu nếu có
@@ -539,7 +539,7 @@ $(document).ready(function() {
                 </td>
                 <td class="text-primary">${formatNumber(totalRealCPA)}</td>
                 <td class="text-primary">${(totals.real_conversions > 0) ? formatNumberWithoutCurrency(totals.real_conversions) + ' đơn' : '-'}</td>
-                <td>${formatPercent(totalCTR)}</td>
+                <td>-</td>
                 <td>${formatNumberWithoutCurrency(totals.clicks)}</td>
                 <td>${formatNumber(totalAverageCPC)}</td>
                 <td>${formatNumber(totals.real_conversion_value)}</td>

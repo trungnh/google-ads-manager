@@ -8,14 +8,14 @@ class UserModel extends Model
 {
     protected $table = 'users';
     protected $primaryKey = 'id';
-    protected $allowedFields = ['email', 'username', 'password_hash'];
+    protected $allowedFields = ['email', 'username', 'password_hash', 'role', 'status', 'last_login', 'created_by', 'deleted_at'];
     protected $useTimestamps = true;
     protected $createdField = 'created_at';
     protected $updatedField = 'updated_at';
 
     protected $validationRules = [
-        'email' => 'required|valid_email|is_unique[users.email]',
-        'username' => 'required|min_length[3]|max_length[30]|is_unique[users.username]',
+        'email' => 'required|valid_email|is_unique[users.email,id,{id}]',
+        'username' => 'required|min_length[3]|max_length[30]|is_unique[users.username,id,{id}]',
         'password_hash' => 'required',
     ];
 
@@ -56,6 +56,40 @@ class UserModel extends Model
         
         // Insert vào database
         return $this->insert($data);
+    }
+
+    public function updateUser($userId, $data)
+    {
+        // Temporarily disable validation
+        $this->skipValidation = true;
+        
+        // Check email uniqueness manually (excluding current user)
+        if (isset($data['email'])) {
+            $emailExists = $this->where('email', $data['email'])
+                              ->where('id !=', $userId)
+                              ->countAllResults();
+            if ($emailExists > 0) {
+                return false; // Email already exists for another user
+            }
+        }
+        
+        // Check username uniqueness manually (excluding current user)
+        if (isset($data['username'])) {
+            $usernameExists = $this->where('username', $data['username'])
+                                 ->where('id !=', $userId)
+                                 ->countAllResults();
+            if ($usernameExists > 0) {
+                return false; // Username already exists for another user
+            }
+        }
+        
+        // Nếu có password mới, hash lại
+        if (isset($data['password'])) {
+            $data['password_hash'] = password_hash($data['password'], PASSWORD_BCRYPT);
+            unset($data['password']);
+        }
+
+        return $this->update($userId, $data);
     }
 
     public function verifyPassword($password, $hash)

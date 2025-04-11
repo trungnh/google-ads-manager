@@ -122,11 +122,11 @@ class Users extends BaseController
         }
         
         // Kiểm tra dữ liệu nhập vào
-        $rules = [
-            'email' => 'required|valid_email|is_unique[users.email,id,'.$id.']',
-            'username' => 'required|min_length[3]|max_length[30]|is_unique[users.username,id,'.$id.']',
-            'role' => 'required|in_list[superadmin,admin,user]'
-        ];
+        // $rules = [
+        //     'email' => 'required|valid_email|is_unique[users.email,id,'.$id.']',
+        //     'username' => 'required|min_length[3]|max_length[30]|is_unique[users.username,id,'.$id.']',
+        //     'role' => 'required|in_list[superadmin,admin,user]'
+        // ];
         
         // Nếu có nhập mật khẩu mới
         if ($this->request->getPost('password')) {
@@ -134,16 +134,15 @@ class Users extends BaseController
             $rules['password_confirm'] = 'required|matches[password]';
         }
         
-        if (!$this->validate($rules)) {
-            $data = [
-                'title' => 'Sửa thông tin người dùng',
-                'user' => $user,
-                'validation' => $this->validator
-            ];
+        // if (!$this->validate($rules)) {
+        //     $data = [
+        //         'title' => 'Sửa thông tin người dùng',
+        //         'user' => $user,
+        //         'validation' => $this->validator
+        //     ];
             
-            return view('users/edit', $data);
-        }
-        
+        //     return view('users/edit', $data);
+        // }
         // Lấy dữ liệu từ form
         $userData = [
             'email' => $this->request->getPost('email'),
