@@ -38,10 +38,19 @@ class AdsAccountSettings extends BaseController
 
             // Lấy settings hiện tại
             $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($adsAccountId);
-            $account = $this->adsAccountModel->find($adsAccountId);
-            
+            // Check trường hợp ads account thuộc nhiều user khác nhau. Chỉ check 1 setting duy nhất
             if (!$settings) {
-                // Tạo settings mặc định nếu chưa có
+                $accounts = $this->adsAccountModel->getAccountsByCustomerId($account['customer_id']);
+                foreach ($accounts as $acc) {
+                    $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($acc['id']);
+                    if ($settings) {
+                        break;
+                    }
+                }
+            }
+            
+            // Tạo settings mặc định nếu chưa có
+            if (!$settings) {
                 $settings = [
                     'account_id' => $adsAccountId,
                     'auto_optimize' => 0,

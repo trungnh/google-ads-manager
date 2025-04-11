@@ -35,6 +35,13 @@ class AdsAccountModel extends Model
         return $this->select("user_id")->where("customer_id",$accountId)->findAll();
     }
 
+    public function getAccountsByCustomerId($customerId)
+    {
+        return $this->select("id, user_id, customer_id, customer_name")
+                    ->where("customer_id", $customerId)
+                    ->findAll();
+    }
+
     public function getAccountsForReporting()
     {
         return $this->select("id, user_id, customer_id, customer_name")
