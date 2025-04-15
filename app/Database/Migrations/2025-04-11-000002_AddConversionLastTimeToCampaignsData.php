@@ -25,7 +25,7 @@ class AddConversionLastTimeToCampaignsData extends Migration
                 'type' => 'DECIMAL',
                 'constraint' => '20,2',
                 'default' => 0,
-                'after' => 'last_cost_conversion'
+                'after' => 'last_count_conversion'
             ]
         ]);
     }

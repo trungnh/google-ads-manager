@@ -131,67 +131,85 @@ class ReportCampaigns extends BaseCommand
                 return;
             }
         }
-
-        $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($account['id']);
-        // Lấy dữ liệu chuyển đổi thực tế từ Google Sheet
-        $gsheetUrl = $settings['gsheet1'] ?? null;
-        if (!empty($campaigns) && !empty($gsheetUrl)) {
-            $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, date('Y-m-d'), date('Y-m-d'), $settings);
-        }
-        $gsheetUrl2 = $settings['gsheet2'] ?? null;
-        if (!empty($campaigns) && !empty($gsheetUrl2)) {
-            $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl2, date('Y-m-d'), date('Y-m-d'), $settings);
-        }
-
-        $reportMessage = "====== {$account['customer_name']} =======\n";
-        $totalConversions = 0;
-        $totalConversionValue = 0;
-        $totalCost = 0;
-        foreach ($campaigns as $campaign) {
-            if (!isset($campaign['campaign_id']) || !isset($campaign['cost']) || !isset($campaign['budget'])) {
-                CLI::write("Bỏ qua chiến dịch không hợp lệ: thiếu thông tin bắt buộc", 'yellow');
-                foreach($telegramChatIds as $telegramChatId){
-                    $this->telegramService->sendMessage("❌ Bỏ qua chiến dịch không hợp lệ: thiếu thông tin bắt buộc", $telegramChatId);
-                }   
-                continue;
+        try {
+            $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($account['id']);
+            // Lấy dữ liệu chuyển đổi thực tế từ Google Sheet
+            $gsheetUrl = $settings['gsheet1'] ?? null;
+            $gsheetUrl2 = $settings['gsheet2'] ?? null;
+            if (empty($gsheetUrl) && empty($gsheetUrl2)) {
+                return;
+            }   
+            if (!empty($campaigns) && !empty($gsheetUrl)) {
+                $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, date('Y-m-d'), date('Y-m-d'), $settings);
             }
-            // Lấy dữ liệu chuyển đổi thực tế cho chiến dịch này
-            if (isset($campaign['real_conversions'])) {
-                $realConversions = $campaign['real_conversions']?? 0;
+            if (!empty($campaigns) && !empty($gsheetUrl2)) {
+                $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl2, date('Y-m-d'), date('Y-m-d'), $settings);
+            }
+        } catch (\Exception $e) {
+            log_message('error', 'Lỗi tính toán real conversions: ' . $account['customer_id'] . ' - ' . $e->getMessage());
+            foreach($telegramChatIds as $telegramChatId){
+                $this->telegramService->sendMessage("❌ Lỗi tính toán real conversions - " . $account['customer_id'], $telegramChatId);
+            }
+            return;
+        }
+
+        try {
+            $reportMessage = "====== {$account['customer_name']} =======\n";
+            $totalConversions = 0;
+            $totalConversionValue = 0;
+            $totalCost = 0;
+            foreach ($campaigns as $campaign) {
+                if (!isset($campaign['campaign_id']) || !isset($campaign['cost']) || !isset($campaign['budget'])) {
+                    CLI::write("Bỏ qua chiến dịch không hợp lệ: thiếu thông tin bắt buộc", 'yellow');
+                    foreach($telegramChatIds as $telegramChatId){
+                        $this->telegramService->sendMessage("❌ Bỏ qua chiến dịch không hợp lệ: thiếu thông tin bắt buộc", $telegramChatId);
+                    }   
+                    continue;
+                }
+                // Lấy dữ liệu chuyển đổi thực tế cho chiến dịch này
+                if (isset($campaign['real_conversions'])) {
+                    $realConversions = $campaign['real_conversions']?? 0;
+                } else {
+                    $realConversions = 0; 
+                }
+                if (isset($campaign['real_conversion_value'])) {
+                    $realConversionValue = $campaign['real_conversion_value']?? 0; 
+                } else {
+                    $realConversionValue = 0;
+                }
+
+                $totalConversions += $realConversions;
+                $totalConversionValue += $realConversionValue;
+                $totalCost += $campaign['cost'];
+            }
+
+            // Save campaign data
+            $this->campaignsDataModel->saveCampaignsData($account['customer_id'], $campaigns, date('Y-m-d'));
+
+            $reportMessage .= "💰 Chi tiêu: " . number_format($totalCost, 0, '', '.')."đ\n";
+            $reportMessage .= "🛒 Đơn: " . number_format($totalConversions, 0, '', '.')."\n";
+            if($totalConversions > 0){
+                $reportMessage .= "🎯 CPA: " . number_format($totalCost / $totalConversions, 0, '', '.')."đ\n";
             } else {
-                $realConversions = 0; 
-            }
-            if (isset($campaign['real_conversion_value'])) {
-                $realConversionValue = $campaign['real_conversion_value']?? 0; 
+                $reportMessage .= "🎯 CPA: 0\n";
+            }   
+            if($totalCost > 0){
+                $reportMessage .= "🎯 ROAS: " . number_format($totalConversionValue / $totalCost, 1, ',', '.')."\n";
             } else {
-                $realConversionValue = 0;
+                $reportMessage .= "🎯 ROAS: 0\n";
             }
+            
+            $reportMessage .= "====== END ======\n";
 
-            $totalConversions += $realConversions;
-            $totalConversionValue += $realConversionValue;
-            $totalCost += $campaign['cost'];
-        }
-
-        // Save campaign data
-        $this->campaignsDataModel->saveCampaignsData($account['customer_id'], $campaigns, date('Y-m-d'));
-
-        $reportMessage .= "💰 Chi tiêu: " . number_format($totalCost, 0, '', '.')."đ\n";
-        $reportMessage .= "🛒 Đơn: " . number_format($totalConversions, 0, '', '.')."\n";
-        if($totalConversions > 0){
-            $reportMessage .= "🎯 CPA: " . number_format($totalCost / $totalConversions, 0, '', '.')."đ\n";
-        } else {
-            $reportMessage .= "🎯 CPA: 0\n";
-        }   
-        if($totalCost > 0){
-            $reportMessage .= "🎯 ROAS: " . number_format($totalConversionValue / $totalCost, 1, ',', '.')."\n";
-        } else {
-            $reportMessage .= "🎯 ROAS: 0\n";
-        }
-        
-        $reportMessage .= "====== END ======\n";
-
-        foreach($telegramChatIds as $telegramChatId){
-            $this->telegramService->sendMessage($reportMessage, $telegramChatId);
+            foreach($telegramChatIds as $telegramChatId){
+                $this->telegramService->sendMessage($reportMessage, $telegramChatId);
+            }
+        } catch (\Exception $e) {
+            log_message('error', 'Lỗi report tổng conversions: ' . $account['customer_id'] . ' - ' . $e->getMessage());
+            foreach($telegramChatIds as $telegramChatId){
+                $this->telegramService->sendMessage("❌ Lỗi report tổng conversions - " . $account['customer_id'], $telegramChatId);
+            }
+            return;
         }
     }
 

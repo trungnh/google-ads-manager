@@ -175,11 +175,14 @@ class OptimizeCampaigns extends BaseCommand
                 }
             }
             
-            $gsheetUrl = $account['gsheet1'] ?? null;
+            $gsheetUrl = $settings['gsheet1'] ?? null;
+            $gsheetUrl2 = $settings['gsheet2'] ?? null;
+            if (empty($gsheetUrl) && empty($gsheetUrl2)) {
+                return false;
+            }
             if (!empty($campaigns) && !empty($gsheetUrl)) {
                 $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, date('Y-m-d'), date('Y-m-d'), $account);
             }
-            $gsheetUrl2 = $account['gsheet2'] ?? null;
             if (!empty($campaigns) && !empty($gsheetUrl2)) {
                 $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl2, date('Y-m-d'), date('Y-m-d'), $account);
             }
