@@ -62,6 +62,9 @@
                                         <a href="<?= base_url('adsaccounts/settings/' . $account['id']) ?>" class="btn btn-sm btn-primary">
                                             <i class="fas fa-cog"></i> Settings
                                         </a>
+                                        <button onclick="deleteAccount('<?= $account['id'] ?>', '<?= $account['customer_name'] ?>')" class="btn btn-sm btn-danger">
+                                            <i class="fas fa-trash"></i> Delete
+                                        </button>
                                         <?php endif; ?>
                                     </td>
                                 </tr>
@@ -73,5 +76,56 @@
         </div>
     </div>
 </div>
+
+<!-- Delete Account Modal -->
+<div class="modal fade" id="deleteAccountModal" tabindex="-1" aria-labelledby="deleteAccountModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteAccountModalLabel">Xoá thật không?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Chắc chắn chưa? Chốt nhé: <span id="accountNameToDelete"></span>?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Thôi, đùa đấy!</button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">Xoá cực mạnh!</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function deleteAccount(accountId, accountName) {
+    document.getElementById('accountNameToDelete').textContent = accountName;
+    const modal = new bootstrap.Modal(document.getElementById('deleteAccountModal'));
+    modal.show();
+    
+    document.getElementById('confirmDelete').onclick = function() {
+        fetch(`<?= base_url('adsaccounts/delete') ?>/${accountId}`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message || 'Error deleting account');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error deleting account');
+        })
+        .finally(() => {
+            modal.hide();
+        });
+    };
+}
+</script>
 
 <?= $this->include('templates/footer') ?>

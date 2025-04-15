@@ -86,6 +86,7 @@ $routes->group('', ['filter' => 'auth'], function($routes) {
         $routes->get('optimize-logs', 'OptimizeLogs::index');
         $routes->get('adsaccounts/settings/(:num)', 'AdsAccountSettings::index/$1');
         $routes->post('adsaccounts/settings/update/(:num)', 'AdsAccountSettings::update/$1');
+        $routes->post('adsaccounts/delete/(:num)', 'AdsAccounts::delete/$1');
     });
 
     // Route chỉ dành cho role superadmin - quản lý người dùng
