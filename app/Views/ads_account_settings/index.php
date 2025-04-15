@@ -5,6 +5,9 @@
         <div class="col">
             <h2>Cài đặt tài khoản - <?= esc($account['customer_name']) ?></h2>
             <p>ID tài khoản: <?= esc($account['customer_id']) ?></p>
+            <a href="<?= base_url('campaigns/index/' . $account['customer_id']) ?>" class="btn btn-sm btn-info">
+                View Campaigns
+            </a>
         </div>
     </div>
 
@@ -29,7 +32,16 @@
                                 <label class="form-check-label" for="auto_optimize">Tự động tối ưu</label>
                             </div>
                             <small class="form-text text-muted">
-                                Khi bật, hệ thống sẽ tự động kiểm tra và tối ưu chiến dịch mỗi 5 phút
+                                <i>Khi bật, hệ thống sẽ tự động kiểm tra và tối ưu chiến dịch</i>
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="cost_threshold" class="form-label">Ngưỡng chi tiêu (VNĐ)</label>
+                            <input type="number" class="form-control" id="cost_threshold" name="cost_threshold" 
+                                value="<?= isset($settings['cost_threshold']) ? $settings['cost_threshold'] : '' ?>">
+                            <small class="form-text text-muted">
+                                <i>Khi chi tiêu vượt quá ngưỡng này, chiến dịch sẽ check các điều kiện để Tắt hoặc Tăng ngân sách</i>
                             </small>
                         </div>
 
@@ -38,7 +50,7 @@
                             <input type="number" class="form-control" id="increase_budget" name="increase_budget" 
                                 value="<?= isset($settings['increase_budget']) ? $settings['increase_budget'] : '' ?>">
                             <small class="form-text text-muted">
-                                Số tiền tăng thêm khi chiến dịch đã chi tiêu > 50% ngân sách (Nếu chiến dịch thoả mãn điều kiện ngưỡng ROAS/CPA bên dưới) - Nếu không muốn tăng ngân sách thì để 0
+                                <i>Số tiền tăng thêm khi chiến dịch đã chi tiêu > 50% ngân sách (Nếu chiến dịch thoả mãn điều kiện ngưỡng ROAS/CPA bên dưới) - Nếu không muốn tăng ngân sách thì để 0</i>
                             </small>
                         </div>
 
@@ -49,16 +61,7 @@
                                 <label class="form-check-label" for="auto_on_off">Tự động tắt chiến dịch</label>
                             </div>
                             <small class="form-text text-muted">
-                                Khi bật, hệ thống sẽ tự động tắt chiến dịch dựa trên ngưỡng chi tiêu và CPA
-                            </small>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="cost_threshold" class="form-label">Ngưỡng chi tiêu (VNĐ)</label>
-                            <input type="number" class="form-control" id="cost_threshold" name="cost_threshold" 
-                                value="<?= isset($settings['cost_threshold']) ? $settings['cost_threshold'] : '' ?>">
-                            <small class="form-text text-muted">
-                                Chiến dịch sẽ bắt đầu được xem xét nếu chi tiêu vượt quá ngưỡng này (nên để = cpa hoặc x2 cpa)
+                                <i>Khi bật, hệ thống sẽ tự động tắt chiến dịch dựa trên ngưỡng chi tiêu và CPA</i>
                             </small>
                         </div>
 
@@ -67,7 +70,7 @@
                             <input type="number" class="form-control" id="cpa_threshold" name="cpa_threshold" 
                                 value="<?= isset($settings['cpa_threshold']) ? $settings['cpa_threshold'] : '' ?>">
                             <small class="form-text text-muted">
-                                Chiến dịch sẽ bị tạm dừng nếu CPA vượt quá ngưỡng này
+                                <i>Chiến dịch sẽ bị tạm dừng nếu CPA vượt quá ngưỡng này</i>
                             </small>
                         </div>
 
@@ -78,7 +81,7 @@
                                 <label class="form-check-label" for="use_roas_threshold">Tắt theo ROAS</label>
                             </div>
                             <small class="form-text text-muted">
-                                Khi bật, hệ thống sẽ tự động bật/tắt chiến dịch dựa trên ROAS thay vì CPA
+                                <i>Khi bật, hệ thống sẽ tự động bật/tắt chiến dịch dựa trên ROAS thay vì CPA</i>
                             </small>
                         </div>
 

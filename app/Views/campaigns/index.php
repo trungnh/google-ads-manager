@@ -7,6 +7,9 @@
                 <div>
                     <h2>Chiến dịch - <?= esc($account['customer_name']) ?></h2>
                     <p>ID tài khoản: <?= esc($account['customer_id']) ?></p>
+                    <a href="<?= base_url('adsaccounts/settings/' . $account['id']) ?>" class="btn btn-sm btn-primary">
+                        <i class="fas fa-cog"></i> Settings
+                    </a>
                 </div>
                 <div class="text-end">
                     <select class="form-select" id="accountSelector" style="width: 300px;" onchange="window.location.href=this.value">

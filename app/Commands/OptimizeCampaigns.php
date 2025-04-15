@@ -217,7 +217,7 @@ class OptimizeCampaigns extends BaseCommand
                 // TH: Không có đơn
                 if ($realConversions == 0) { 
                     // Nếu chi tiêu vượt ngưỡng CPA và không có chuyển đổi thực tế
-                    if ($campaign['cost'] > $account['cpa_threshold']) {
+                    if ($account['cpa_threshold'] > 0 && $campaign['cost'] > $account['cpa_threshold']) {
                         $shouldPause = true;
                         $action = "Chi tiêu (".number_format($campaign['cost'], 0, '', '.').") vượt ngưỡng (".number_format($account['cpa_threshold'], 0, '', '.').") và không có đơn thực tế";
                     }
@@ -227,14 +227,14 @@ class OptimizeCampaigns extends BaseCommand
                     if (isset($account['use_roas_threshold']) && $account['use_roas_threshold'] == 1) {
                         // Check theo ROAS
                         // Nếu ROAS thực tế thấp hơn ngưỡng
-                        if ($realRoas < $account['roas_threshold']) {
+                        if ($account['roas_threshold'] > 0 && $realRoas < $account['roas_threshold']) {
                             $shouldPause = true;
                             $action = "ROAS thực tế (".number_format($realRoas, 1, ',', '.').") thấp hơn ngưỡng (".number_format($account['roas_threshold'], 1, ',', '.').")";  
                         }
                     } else {
                         // Check theo CPA
                         // Nếu CPA thực tế vượt ngưỡng
-                        if ($realCpa > $account['cpa_threshold']) {
+                        if ($account['cpa_threshold'] > 0 && $realCpa > $account['cpa_threshold']) {
                             $shouldPause = true;
                             $action = "CPA thực tế (".number_format($realCpa, 0, ',', '.').") vượt ngưỡng (".number_format($account['cpa_threshold'], 1, ',', '.').")";
                         }
@@ -263,14 +263,14 @@ class OptimizeCampaigns extends BaseCommand
                         if ($account['use_roas_threshold']) {
                             // Check theo ROAS
                             // Nếu ROAS thực tế thấp hơn ngưỡng
-                            if ($roasExtendFromLastConversion < $account['roas_threshold']) {
+                            if ($account['roas_threshold'] > 0 && $roasExtendFromLastConversion < $account['roas_threshold']) {
                                 $shouldPause = true;
                                 $action = "Chi tiêu thêm (".number_format($costExtendFromLastConversion, 0, '', '.').") từ lần ra đơn cuối cùng - ROAS (".number_format($roasExtendFromLastConversion, 1, ',', '.').") thấp hơn ngưỡng (".number_format($account['roas_threshold'], 1, ',', '.').")";  
                             }  
                         } else {
                             // Check theo CPA
                             // Nếu CPA thực tế vượt ngưỡng
-                            if ($cpaExtendFromLastConversion > $account['cpa_threshold']) {
+                            if ($account['cpa_threshold'] > 0 && $cpaExtendFromLastConversion > $account['cpa_threshold']) {
                                 $shouldPause = true;
                                 $action = "Chi tiêu thêm (".number_format($costExtendFromLastConversion, 0, '', '.').") từ lần ra đơn cuối cùng - CPA (".number_format($cpaExtendFromLastConversion, 1, ',', '.').") vượt ngưỡng (".number_format($account['cpa_threshold'], 1, ',', '.').")";  
                             } 
