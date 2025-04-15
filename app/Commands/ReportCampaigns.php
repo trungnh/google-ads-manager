@@ -156,8 +156,16 @@ class ReportCampaigns extends BaseCommand
                 continue;
             }
             // Lấy dữ liệu chuyển đổi thực tế cho chiến dịch này
-            $realConversions = $campaign['real_conversions']?? 0;
-            $realConversionValue = $campaign['real_conversion_value']?? 0;
+            if (isset($campaign['real_conversions'])) {
+                $realConversions = $campaign['real_conversions']?? 0;
+            } else {
+                $realConversions = 0; 
+            }
+            if (isset($campaign['real_conversion_value'])) {
+                $realConversionValue = $campaign['real_conversion_value']?? 0; 
+            } else {
+                $realConversionValue = 0;
+            }
 
             $totalConversions += $realConversions;
             $totalConversionValue += $realConversionValue;
