@@ -202,8 +202,9 @@ class OptimizeCampaigns extends BaseCommand
                 $action = '';
 
                 $realCpa = $campaign['real_cpa']?? 0;
-                $realRoas = $campaign['real_roas']?? 0;
-                $realConversions = $campaign['real_conversions']?? 0;
+				$realConversions = $campaign['real_conversions']?? 0;
+				$realConversionValue = $campaign['real_conversion_value']?? 0;
+                $realRoas = ($campaign['cost'] > 0) ? $realConversionValue / $campaign['cost'] : 0;
                 
                 // Kiểm tra chi tiêu trước
                 if(isset($account['cost_threshold']) && $account['cost_threshold'] > 0){
