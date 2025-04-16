@@ -162,7 +162,10 @@ class OptimizeCampaigns extends BaseCommand
                 $campaigns = $this->googleAdsService->getCampaigns($account['customer_id'], $accessToken, $mccId, false, date('Y-m-d'), date('Y-m-d'));
                 if (empty($campaigns)) {
                     CLI::write("Không tìm thấy chiến dịch nào cho tài khoản {$account['customer_id']}", 'yellow');
-                    return false;
+                    return [
+                        'paused_campaigns' => 0,
+                        'increased_budget_campaigns' => 0
+                    ];
                 }
             } catch (\Exception $e) {
                 if (strpos($e->getMessage(), '401') !== false) {
@@ -311,7 +314,6 @@ class OptimizeCampaigns extends BaseCommand
             foreach($telegramChatIds as $telegramChatId){
                 $this->telegramService->sendMessage("❌Lỗi tối ưu chiến dịch: " . $e->getMessage(), $telegramChatId);
             }
-            // return false;
         }
 
         return [

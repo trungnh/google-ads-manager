@@ -74,6 +74,9 @@ class CampaignsDataModel extends Model
         $builder = $db->table('campaigns_data');
         $date = $date ?? date('Y-m-d');
         foreach ($campaignsData as $campaign) {
+            $realConversions = $campaign['real_conversions']?? 0;
+            $realConversionValue = $campaign['real_conversion_value']?? 0;
+            $realConversionRate = $campaign['real_conversion_rate']?? 0;
             $data = [
                 'customer_id' => $customerId,
                 'campaign_id' => $campaign['campaign_id'],
@@ -91,9 +94,9 @@ class CampaignsDataModel extends Model
                 'ctr' => $campaign['ctr'] ?? 0,
                 'clicks' => $campaign['clicks'] ?? 0,
                 'average_cpc' => $campaign['average_cpc'] ?? 0,
-                'real_conversions' => $campaign['real_conversions'] ?? 0,
-                'real_conversion_value' => $campaign['real_conversion_value'] ?? 0,
-                'real_conversion_rate' => $campaign['real_conversion_rate'] ?? 0,
+                'real_conversions' => $realConversions,
+                'real_conversion_value' => $realConversionValue,
+                'real_conversion_rate' => $realConversionRate,
                 'real_cpa' => $campaign['real_cpa'] ?? 0,
                 'last_updated_at' => date('Y-m-d H:i:s')
             ];
@@ -110,10 +113,10 @@ class CampaignsDataModel extends Model
                         ->where('campaign_id', $campaign['campaign_id'])
                         ->where('date', date('Y-m-d'))
                         ->first();
-                if ($tmpCampaign['real_conversions'] < $campaign['real_conversions']) {
+                if (isset($tmpCampaign['real_conversions']) && $tmpCampaign['real_conversions'] < $realConversions) {
                     $data['last_cost_conversion'] = $campaign['cost'];
-                    $data['last_count_conversion'] = $campaign['real_conversions'];
-                    $data['last_count_conversion_value'] = $campaign['real_conversion_value'];
+                    $data['last_count_conversion'] = $realConversions;
+                    $data['last_count_conversion_value'] = $realConversionValue;
                 }
                 // Cập nhật dữ liệu nếu đã tồn tại
                 $builder->where('customer_id', $customerId)
@@ -123,10 +126,10 @@ class CampaignsDataModel extends Model
             } else {
                 // Thêm dữ liệu mới nếu chưa tồn tại
                 // Nếu chưa có chuyển đổi thì đặt giá trị là 0, ngược lại là giá trị hiện tại
-                if ($campaign['real_conversions'] > 0) {
+                if ($realConversions > 0) {
                     $data['last_cost_conversion'] = $campaign['cost'];
-                    $data['last_count_conversion'] = $campaign['real_conversions'];
-                    $data['last_count_conversion_value'] = $campaign['real_conversion_value'];
+                    $data['last_count_conversion'] = $realConversions;
+                    $data['last_count_conversion_value'] = $realConversionValue;
                 }
                 $builder->insert($data);
             }

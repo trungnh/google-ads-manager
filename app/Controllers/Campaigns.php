@@ -83,10 +83,14 @@ class Campaigns extends BaseController
             // Check trường hợp ads account thuộc nhiều user khác nhau. Chỉ check 1 setting duy nhất
             if (!$settings) {
                 $tmpAccounts = $this->adsAccountModel->getAccountsByCustomerId($account['customer_id']);
-                foreach ($tmpAccounts as $acc) {
-                    $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($acc['id']);
-                    if ($settings) {
-                        break;
+                if (!empty($tmpAccounts)) {
+                    foreach ($tmpAccounts as $acc) {
+                        if (!empty($acc['id'])) {
+                            $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($acc['id']);
+                            if ($settings) {
+                                break;
+                            }
+                        }
                     }
                 }
             }
@@ -169,14 +173,25 @@ class Campaigns extends BaseController
 
             // Lấy account settings để đọc URL Google Sheet và cấu hình cột
             $account = $this->adsAccountModel->where('customer_id', $customerId)->first();
+            if (!$account || empty($account['id'])) {
+                log_message('error', 'Account not found or invalid for customer ID: ' . $customerId);
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Không tìm thấy tài khoản Google Ads hoặc tài khoản không hợp lệ'
+                ]);
+            }
             $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($account['id']);
             // Check trường hợp ads account thuộc nhiều user khác nhau. Chỉ check 1 setting duy nhất
             if (!$settings) {
                 $tmpAccounts = $this->adsAccountModel->getAccountsByCustomerId($account['customer_id']);
-                foreach ($tmpAccounts as $acc) {
-                    $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($acc['id']);
-                    if ($settings) {
-                        break;
+                if (!empty($tmpAccounts)) {
+                    foreach ($tmpAccounts as $acc) {
+                        if (!empty($acc['id'])) {
+                            $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($acc['id']);
+                            if ($settings) {
+                                break;
+                            }
+                        }
                     }
                 }
             }
@@ -221,10 +236,10 @@ class Campaigns extends BaseController
             );
             // Xử lý dữ liệu chuyển đổi thực tế từ Google Sheet
             if (!empty($campaigns) && !empty($gsheetUrl)) {
-                $campaigns = $this->processRealConversions($campaigns, $gsheetUrl, $startDate, $endDate, $settings);
+                $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, $startDate, $endDate, $settings);
             }
             if (!empty($campaigns) && !empty($gsheetUrl2)) {
-                $campaigns = $this->processRealConversions($campaigns, $gsheetUrl2, $startDate, $endDate, $settings);
+                $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl2, $startDate, $endDate, $settings);
             }
             // Chỉ lưu vào database nếu ngày bắt đầu và kết thúc là cùng ngày
             if ($startDate === $endDate) {
@@ -505,4 +520,4 @@ class Campaigns extends BaseController
             return $campaigns; // Trả về dữ liệu gốc nếu có lỗi
         }
     }
-} 
+}
