@@ -133,6 +133,16 @@ class ReportCampaigns extends BaseCommand
         }
         try {
             $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($account['id']);
+            // Check trường hợp ads account thuộc nhiều user khác nhau. Chỉ check 1 setting duy nhất
+            if (!$settings) {
+                $accounts = $this->adsAccountModel->getAccountsByCustomerId($account['customer_id']);
+                foreach ($accounts as $acc) {
+                    $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($acc['id']);
+                    if ($settings) {
+                        break;
+                    }
+                }
+            }
             // Lấy dữ liệu chuyển đổi thực tế từ Google Sheet
             $gsheetUrl = $settings['gsheet1'] ?? null;
             $gsheetUrl2 = $settings['gsheet2'] ?? null;

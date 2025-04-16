@@ -76,9 +76,20 @@ class Campaigns extends BaseController
             $today = date('Y-m-d');
             $showPaused = $this->request->getGet('showPaused') === 'true';
             $campaigns = $this->campaignsDataModel->getCampaignsByDate($customerId, $today, $showPaused);
-            $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($account['id']);
             $userSettings = $this->userSettingsModel->where('user_id', $userId)->first();
             $mccId = $userSettings['mcc_id'] ?? null;
+
+            $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($account['id']);
+            // Check trường hợp ads account thuộc nhiều user khác nhau. Chỉ check 1 setting duy nhất
+            if (!$settings) {
+                $tmpAccounts = $this->adsAccountModel->getAccountsByCustomerId($account['customer_id']);
+                foreach ($tmpAccounts as $acc) {
+                    $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($acc['id']);
+                    if ($settings) {
+                        break;
+                    }
+                }
+            }
 
             // 6. Nếu không có dữ liệu trong database, lấy từ API
             if (empty($campaigns)) {
@@ -159,6 +170,16 @@ class Campaigns extends BaseController
             // Lấy account settings để đọc URL Google Sheet và cấu hình cột
             $account = $this->adsAccountModel->where('customer_id', $customerId)->first();
             $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($account['id']);
+            // Check trường hợp ads account thuộc nhiều user khác nhau. Chỉ check 1 setting duy nhất
+            if (!$settings) {
+                $accounts = $this->adsAccountModel->getAccountsByCustomerId($account['customer_id']);
+                foreach ($accounts as $acc) {
+                    $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($acc['id']);
+                    if ($settings) {
+                        break;
+                    }
+                }
+            }
             $gsheetUrl = $settings['gsheet1'] ?? null;
             $gsheetUrl2 = $settings['gsheet2'] ?? null;
             // Lấy access token
