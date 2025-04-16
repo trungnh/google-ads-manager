@@ -135,8 +135,8 @@ class ReportCampaigns extends BaseCommand
             $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($account['id']);
             // Check trường hợp ads account thuộc nhiều user khác nhau. Chỉ check 1 setting duy nhất
             if (!$settings) {
-                $accounts = $this->adsAccountModel->getAccountsByCustomerId($account['customer_id']);
-                foreach ($accounts as $acc) {
+                $tmpAccounts = $this->adsAccountModel->getAccountsByCustomerId($account['customer_id']);
+                foreach ($tmpAccounts as $acc) {
                     $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($acc['id']);
                     if ($settings) {
                         break;
