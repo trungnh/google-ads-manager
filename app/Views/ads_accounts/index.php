@@ -5,6 +5,7 @@
     <div class="row mb-3">
         <div class="col-md-12">
             <h2>Google Ads Accounts</h2>
+            <!-- <a href="<?= base_url('ads-accounts/create') ?>" class="btn btn-success me-2">Thêm Account</a> -->
             <a href="<?= base_url('syncads') ?>" class="btn btn-primary">Sync Accounts</a>
         </div>
     </div>

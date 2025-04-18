@@ -49,6 +49,11 @@ $routes->get('login', 'Auth::login');
 $routes->post('login', 'Auth::attemptLogin');
 $routes->get('logout', 'Auth::logout');
 
+// Ads Accounts routes
+$routes->get('ads-accounts', 'AdsAccounts::index');
+$routes->get('ads-accounts/create', 'AdsAccounts::create');
+$routes->post('ads-accounts/store', 'AdsAccounts::store');
+
 // Protected routes (with auth filter)
 $routes->group('', ['filter' => 'auth'], function($routes) {
     // Dashboard route
