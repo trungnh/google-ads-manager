@@ -206,6 +206,7 @@ $(document).ready(function() {
     let accountSettings = <?= json_encode($accountSettings) ?>;
     let mccId = '<?= $mccId ?>';
     let currentCustomerId = '<?= $account['customer_id'] ?>';
+    let account = <?= json_encode($account) ?>;
     let currentSort = {
         column: 'cost',
         direction: 'desc'
@@ -467,7 +468,7 @@ $(document).ready(function() {
                               data-customer-id="${campaign.customer_id}"
                               data-mcc-id="${mccId}"
                               data-original="${campaign.budget}">
-                            ${number_format(parseFloat(campaign.budget), 0, ',', '.')} VND
+                            ${formatNumber(campaign.budget)}
                         </span>
                         <div class="button-group" style="display: none;">
                             <button class="btn btn-sm btn-success save-budget">✓</button>
@@ -488,13 +489,13 @@ $(document).ready(function() {
                         </span>
                     </td>
                     <td class="text-${(campaign.real_cpa > accountSettings.cpa_threshold) || campaign.real_cpa == 0 ? 'danger' : 'primary'}">
-                        ${(campaign.real_cpa > 0) ? formatNumber(campaign.real_cpa) : '-'}
+                        ${(campaign.real_cpa > 0) ? formatNumber(campaign.real_cpa): '-'}
                     </td>
                     <td class="text-primary">${(campaign.real_conversions > 0) ? formatNumberWithoutCurrency(campaign.real_conversions) + ' đơn' : '-'}</td>
                     <td>${formatPercent(campaign.ctr)}</td>
                     <td>${formatNumberWithoutCurrency(campaign.clicks)}</td>
                     <td>${formatNumber(campaign.average_cpc)}</td>
-                    <td>${(campaign.real_conversion_value > 0) ? formatNumber(campaign.real_conversion_value) : '-'}</td>
+                    <td>${(campaign.real_conversion_value > 0) ? formatNumber(campaign.real_conversion_value): '-'}</td>
                     <td>${(campaign.real_conversion_rate > 0) ? formatPercent(campaign.real_conversion_rate) : '-'}</td>
                     <td class="small text-muted">
                         ${campaign.bidding_strategy || '-'}
@@ -824,33 +825,24 @@ $(document).ready(function() {
     }
 
     function formatNumber(number) {
-        return new Intl.NumberFormat('vi-VN', { 
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-            style: 'currency',
-            currency: 'VND'
-        }).format(number);
+        if (!number || isNaN(number)) return '0';
+        const formattedNumber = number_format(parseFloat(number), 0, ',', '.');
+        return account.currency_code === 'USD' ? '$ ' + formattedNumber : formattedNumber + ' ₫';
     }
 
     function formatNumberWithoutCurrency(number) {
-        return new Intl.NumberFormat('vi-VN', { 
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
-        }).format(number);
+        if (!number || isNaN(number)) return '0';
+        return number_format(parseFloat(number), 0, ',', '.');
     }
 
     function formatNumberWithoutCurrency2(number) {
-        return new Intl.NumberFormat('vi-VN', { 
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        }).format(number);
+        if (!number || isNaN(number)) return '0';
+        return number_format(parseFloat(number), 2, ',', '.');
     }
 
     function formatPercent(number) {
-        return new Intl.NumberFormat('vi-VN', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        }).format(number * 100) + '%';
+        if (!number || isNaN(number)) return '0%';
+        return number_format(parseFloat(number), 2, ',', '.') + '%';
     }
 
     function formatDateTime(dateTimeStr) {
@@ -865,54 +857,116 @@ $(document).ready(function() {
         });
     }
 
-    // Gestion de l'édition du budget
-    $(document).on('click', '.editable-budget', function() {
-        const $this = $(this);
-        const currentValue = $this.data('original');
-        const $input = $('<input type="number" class="form-control form-control-sm" value="' + currentValue + '">');
-        const $buttonGroup = $this.siblings('.button-group');
+    // Xử lý chỉnh sửa ngân sách
+    $(document).on('click', '.editable-budget', function(e) {
+        const span = $(this);
+        if (span.hasClass('editing')) return;
         
-        $this.html($input);
-        $buttonGroup.show();
+        // Đóng các editor khác nếu đang mở
+        $('.editable-budget.editing').each(function() {
+            cancelBudgetEdit($(this));
+        });
         
-        // Focus the input and select all text
-        $input.focus();
+        const currentValue = span.data('original');
+        const campaignId = span.data('campaign-id');
         
-        // Use setTimeout to ensure select() works after the input is fully rendered
-        // $input.select();
-        // setTimeout(function() {
-        //     $input.select();
-        // }, 0);
+        // Lưu nội dung gốc để khôi phục nếu hủy
+        span.data('original-text', span.html());
+        
+        // Tạo input và thêm vào span
+        span.html(`<input type="number" value="${currentValue}" class="form-control form-control-sm">`);
+        span.addClass('editing');
+        
+        // Thêm nút save/cancel
+        const buttonGroup = $(`
+            <span class="target-btn-group ml-2">
+                <button class="btn btn-sm btn-success save-budget" data-campaign-id="${campaignId}">
+                    <i class="fas fa-check"></i>
+                </button>
+                <button class="btn btn-sm btn-danger cancel-budget" data-campaign-id="${campaignId}">
+                    <i class="fas fa-times"></i>
+                </button>
+            </span>
+        `);
+        span.after(buttonGroup);
+        
+        // Focus vào input
+        const input = span.find('input');
+        input.focus();
+        input.select();
+    });
+    
+    // Xử lý phím tắt khi nhập
+    $(document).on('keydown', '.editable-budget.editing input', function(e) {
+        const span = $(this).closest('.editable-budget');
+        
+        // Enter - lưu
+        if (e.which === 13) {
+            e.preventDefault();
+            saveBudgetEdit(span);
+            return false;
+        }
+        
+        // Escape - hủy
+        if (e.which === 27) {
+            e.preventDefault();
+            cancelBudgetEdit(span);
+            return false;
+        }
+        
+        // Chỉ cho phép số và các phím điều hướng
+        const allowedKeys = [8, 9, 37, 38, 39, 40, 46]; // Backspace, Tab, arrow keys, delete
+        const isAllowedKey = allowedKeys.indexOf(e.which) !== -1;
+        const isNumber = (e.which >= 48 && e.which <= 57) || (e.which >= 96 && e.which <= 105);
+        
+        if (!isNumber && !isAllowedKey) {
+            e.preventDefault();
+            return false;
+        }
+    });
+    
+    // Xử lý nút lưu
+    $(document).on('click', '.save-budget', function(e) {
+        e.preventDefault();
+        const span = $(this).closest('td').find('.editable-budget');
+        saveBudgetEdit(span);
+    });
+    
+    // Xử lý nút hủy
+    $(document).on('click', '.cancel-budget', function(e) {
+        e.preventDefault();
+        const span = $(this).closest('td').find('.editable-budget');
+        cancelBudgetEdit(span);
+    });
+    
+    // Hủy chỉnh sửa khi click ra ngoài
+    $(document).on('click', function(e) {
+        if ($(e.target).closest('.editable-budget, .target-btn-group').length === 0) {
+            $('.editable-budget.editing').each(function() {
+                cancelBudgetEdit($(this));
+            });
+        }
     });
 
-    // Add a click handler for the input field to ensure it selects all text when clicked
-    $(document).on('click', '.editable-budget input', function(e) {
-        // Prevent event propagation to avoid toggling edit mode repeatedly
-        e.stopPropagation();
-        // Select all text in the input
-        // $(this).select();
-    });
-    
-    // Fix cursor position issue by preventing the default mouseup behavior
-    $(document).on('mouseup', '.editable-budget input', function(e) {
-        // Prevent the default behavior that would deselect the text
-        e.preventDefault();
-    });
-    
-    $(document).on('click', '.save-budget', function() {
-        const $this = $(this);
-        const $editable = $this.closest('td').find('.editable-budget');
-        const $input = $editable.find('input');
-        const newValue = $input.val();
-        const originalValue = $editable.data('original');
+    function saveBudgetEdit(span) {
+        const input = span.find('input');
+        const newValue = parseInt(input.val());
+        const originalValue = span.data('original');
+        const campaignId = span.data('campaign-id');
+        const customerId = span.data('customer-id');
         
-        if (newValue === originalValue) {
-            cancelBudgetEdit($editable);
+        // Validate
+        if (isNaN(newValue) || newValue <= 0) {
+            cancelBudgetEdit(span);
+            showNotification('Giá trị không hợp lệ! Vui lòng nhập số lớn hơn 0.', 'error');
             return;
         }
         
-        const campaignId = $editable.data('campaign-id');
-        const customerId = $editable.data('customer-id');
+        // Nếu giá trị không thay đổi
+        if (newValue === originalValue) {
+            cancelBudgetEdit(span);
+            return;
+        }
         
         $.ajax({
             url: `/campaigns/updateBudget/${customerId}/${campaignId}`,
@@ -922,51 +976,34 @@ $(document).ready(function() {
             },
             success: function(response) {
                 if (response.success) {
-                    $editable.data('original', newValue);
-                    $editable.html(number_format(newValue, 0, ',', '.') + ' VND');
-                    showNotification('Cập nhật ngân sách thành công', 'success');
+                    span.data('original', newValue);
+                    span.html(formatNumber(newValue));
+                    showNotification('Cập nhật ngân sách thành công');
                 } else {
+                    span.html(span.data('original-text'));
                     showNotification(response.message, 'error');
-                    $editable.html(number_format(originalValue, 0, ',', '.') + ' VND');
                 }
             },
             error: function() {
+                span.html(span.data('original-text'));
                 showNotification('Có lỗi xảy ra khi cập nhật ngân sách', 'error');
-                $editable.html(number_format(originalValue, 0, ',', '.') + ' VND');
             },
             complete: function() {
-                cancelBudgetEdit($editable);
+                span.removeClass('editing');
+                span.next('.target-btn-group').remove();
             }
         });
-    });
-
-    $(document).on('click', '.cancel-budget', function() {
-        const $editable = $(this).closest('td').find('.editable-budget');
-        cancelBudgetEdit($editable);
-    });
-    // $(document).on('blur', '.editable-budget input', function() {
-    //     const $editable = $(this).closest('td').find('.editable-budget');
-    //     cancelBudgetEdit($editable);
-    // });
-
-    function cancelBudgetEdit($editable) {
-        const originalValue = $editable.data('original');
-        $editable.html(number_format(originalValue, 0, ',', '.') + ' VND');
-        $editable.siblings('.button-group').hide();
     }
 
-    // Gestion des événements clavier pour l'édition du budget
-    $(document).on('keydown', '.editable-budget input', function(e) {
-        if (e.key === 'Enter') {
-            $(this).closest('td').find('.save-budget').click();
-        } else if (e.key === 'Escape') {
-            $(this).closest('td').find('.cancel-budget').click();
-        }
-    });
+    function cancelBudgetEdit(span) {
+        span.html(span.data('original-text'));
+        span.removeClass('editing');
+        span.next('.target-btn-group').remove();
+    }
 
     // Trigger initial load
     $('#loadCampaigns').click();
 });
 </script>
 
-<?= $this->include('templates/footer') ?> 
+<?= $this->include('templates/footer') ?>
