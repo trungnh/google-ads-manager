@@ -286,7 +286,12 @@ class OptimizeCampaigns extends BaseCommand
                 /* ============ Bật/tắt camp ============ */
 
                 // Kiểm tra tăng ngân sách nếu chiến dịch không bị tạm dừng
-                if (!$shouldPause && isset($account['increase_budget']) && $account['increase_budget'] > 0 && $campaign['cost'] > ($campaign['budget'] * 0.5)) {
+                if (!$shouldPause && 
+                    $realConversions > 0 && 
+                    isset($account['increase_budget']) && 
+                    $account['increase_budget'] > 0 && 
+                    $campaign['cost'] > ($campaign['budget'] * 0.5)
+                    ) {
                     $shouldIncreaseBudget = true;
                     $action = "Chi tiêu (".number_format($campaign['cost'], 0, '', '.').") vượt 50% ngân sách (".number_format($campaign['budget'], 0, '', '.').")";
                 }

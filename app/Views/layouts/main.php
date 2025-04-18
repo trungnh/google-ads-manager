@@ -59,6 +59,9 @@
                             <span class="nav-link text-muted"><?= session()->get('username') ?> (<?= ucfirst(session()->get('role')) ?>)</span>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link" href="/profile">Thông tin cá nhân</a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" href="/logout">Đăng xuất</a>
                         </li>
                     <?php else: ?>
@@ -105,4 +108,4 @@
     <script src="/js/main.js"></script>
     <?= $this->renderSection('scripts') ?>
 </body>
-</html> 
+</html>

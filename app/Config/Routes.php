@@ -56,6 +56,10 @@ $routes->group('', ['filter' => 'auth'], function($routes) {
     
     // Các route cho role user, admin, superadmin
     
+    // Profile routes
+    $routes->get('profile', 'UserProfile::index');
+    $routes->post('profile/update', 'UserProfile::update');
+
     // Settings routes
     $routes->get('settings', 'Settings::index');
     $routes->post('settings/update', 'Settings::update');

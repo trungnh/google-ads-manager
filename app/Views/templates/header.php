@@ -94,10 +94,6 @@
                             <a class="nav-link" href="<?= base_url('optimize-logs') ?>">Lịch sử tối ưu</a>
                         </li>
                         <?php endif; ?>
-                        
-                        <li class="nav-item">
-                            <a class="nav-link" href="<?= base_url('settings') ?>">Cài đặt</a>
-                        </li>
                         <li class="nav-item">
                             <a class="nav-link" href="<?= base_url('google/oauth') ?>">Kết nối Google Ads</a>
                         </li>
@@ -113,6 +109,8 @@
                                 <?php if (session()->get('role') === 'superadmin'): ?>
                                     <li><a class="dropdown-item" href="<?= base_url('users') ?>">Quản lý Users</a></li>
                                 <?php endif; ?>
+                                <li><a class="dropdown-item" href="<?= base_url('profile') ?>">User Profile</a></li>
+                                <li><a class="dropdown-item" href="<?= base_url('settings') ?>">User Settings</a></li>
                                 <li><a class="dropdown-item" href="<?= base_url('logout') ?>">Đăng xuất</a></li>
                             </ul>
                         </li>
