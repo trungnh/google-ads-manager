@@ -196,7 +196,7 @@ class ReportCampaigns extends BaseCommand
             $this->campaignsDataModel->saveCampaignsData($account['customer_id'], $campaigns, date('Y-m-d'));
 
             $reportMessage .= "💰 <b>Chi tiêu:</b> " . number_format($totalCost, 0, '', '.')."đ\n";
-            $reportMessage .= "🛒 <b>Đơn: " . number_format($totalConversions, 0, '', '.')."\n";
+            $reportMessage .= "🛒 <b>Đơn:</b> " . number_format($totalConversions, 0, '', '.')."\n";
             if($totalConversions > 0){
                 $reportMessage .= "🎯 <b>CPA:</b> " . number_format($totalCost / $totalConversions, 0, '', '.')."đ\n";
             } else {
