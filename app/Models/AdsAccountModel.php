@@ -44,7 +44,7 @@ class AdsAccountModel extends Model
 
     public function getAccountsForReporting()
     {
-        return $this->select("id, user_id, customer_id, customer_name")
+        return $this->select("id, user_id, customer_id, customer_name, currency_code")
                     ->where("status", "ACTIVE")
                     ->findAll();
     }

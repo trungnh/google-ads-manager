@@ -194,11 +194,12 @@ class ReportCampaigns extends BaseCommand
 
             // Save campaign data
             $this->campaignsDataModel->saveCampaignsData($account['customer_id'], $campaigns, date('Y-m-d'));
+            $currencySymbol = $account['currency_code'] == 'VND' ? '₫' : '$';
 
-            $reportMessage .= "💰 <b>Chi tiêu:</b> " . number_format($totalCost, 0, '', '.')."đ\n";
+            $reportMessage .= "💰 <b>Chi tiêu:</b> " . number_format($totalCost, 0, '', '.') . " " . $currencySymbol . "\n";
             $reportMessage .= "🛒 <b>Đơn:</b> " . number_format($totalConversions, 0, '', '.')."\n";
             if($totalConversions > 0){
-                $reportMessage .= "🎯 <b>CPA:</b> " . number_format($totalCost / $totalConversions, 0, '', '.')."đ\n";
+                $reportMessage .= "🎯 <b>CPA:</b> " . number_format($totalCost / $totalConversions, 0, '', '.') . " " . $currencySymbol ."\n";
             } else {
                 $reportMessage .= "🎯 <b>CPA:</b> 0\n";
             }   
