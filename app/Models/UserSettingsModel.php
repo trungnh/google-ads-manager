@@ -10,7 +10,7 @@ class UserSettingsModel extends Model
     protected $primaryKey = 'id';
     protected $useAutoIncrement = true;
     protected $returnType = 'array';
-    protected $allowedFields = ['user_id', 'mcc_id', 'telegram_chat_id', 'created_at', 'updated_at'];
+    protected $allowedFields = ['user_id', 'mcc_id', 'telegram_chat_id', 'report_telegram_chat_id', 'created_at', 'updated_at'];
     protected $useTimestamps = true;
     protected $createdField = 'created_at';
     protected $updatedField = 'updated_at';
@@ -18,7 +18,8 @@ class UserSettingsModel extends Model
     protected $validationRules = [
         'user_id' => 'required|integer',
         'mcc_id' => 'permit_empty|numeric',
-        'telegram_chat_id' => 'permit_empty|integer'
+        'telegram_chat_id' => 'permit_empty|integer',
+        'report_telegram_chat_id' => 'permit_empty|integer'
     ];
 
     protected $validationMessages = [
@@ -31,6 +32,9 @@ class UserSettingsModel extends Model
         ],
         'telegram_chat_id' => [
             'integer' => 'Telegram Chat ID must be an integer'
+        ],
+       'report_telegram_chat_id' => [
+            'integer' => 'Report Telegram Chat ID must be an integer'
         ]
     ];
 

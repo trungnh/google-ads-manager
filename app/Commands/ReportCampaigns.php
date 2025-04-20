@@ -60,7 +60,6 @@ class ReportCampaigns extends BaseCommand
                 return;
             }
 
-            $accounts = $this->adsAccountsModel->getAccountsForReporting();
             $processedAccounts = [];
             foreach($accounts as $account){
                 if(in_array($account['customer_id'], $processedAccounts)){
@@ -78,7 +77,7 @@ class ReportCampaigns extends BaseCommand
                 $telegramChatIds = [];
                 foreach($linkedUsers as $linkedUser){
                     $userSettings = $this->userSettingsModel->where('user_id', $linkedUser['user_id'])->first();
-                    $telegramChatId = $userSettings['telegram_chat_id'] ?? null;
+                    $telegramChatId = $userSettings['report_telegram_chat_id'] ?? null;
                     if($telegramChatId){
                         $telegramChatIds[] = $telegramChatId;
                     }
@@ -164,7 +163,7 @@ class ReportCampaigns extends BaseCommand
         }
 
         try {
-            $reportMessage = "====== {$account['customer_name']} =======\n";
+            $reportMessage = "====== <b>{$account['customer_name']}</b> =======\n";
             $totalConversions = 0;
             $totalConversionValue = 0;
             $totalCost = 0;
@@ -196,17 +195,17 @@ class ReportCampaigns extends BaseCommand
             // Save campaign data
             $this->campaignsDataModel->saveCampaignsData($account['customer_id'], $campaigns, date('Y-m-d'));
 
-            $reportMessage .= "💰 Chi tiêu: " . number_format($totalCost, 0, '', '.')."đ\n";
-            $reportMessage .= "🛒 Đơn: " . number_format($totalConversions, 0, '', '.')."\n";
+            $reportMessage .= "💰 <b>Chi tiêu:</b> " . number_format($totalCost, 0, '', '.')."đ\n";
+            $reportMessage .= "🛒 <b>Đơn: " . number_format($totalConversions, 0, '', '.')."\n";
             if($totalConversions > 0){
-                $reportMessage .= "🎯 CPA: " . number_format($totalCost / $totalConversions, 0, '', '.')."đ\n";
+                $reportMessage .= "🎯 <b>CPA:</b> " . number_format($totalCost / $totalConversions, 0, '', '.')."đ\n";
             } else {
-                $reportMessage .= "🎯 CPA: 0\n";
+                $reportMessage .= "🎯 <b>CPA:</b> 0\n";
             }   
             if($totalCost > 0){
-                $reportMessage .= "🎯 ROAS: " . number_format($totalConversionValue / $totalCost, 1, ',', '.')."\n";
+                $reportMessage .= "🎯 <b>ROAS:</b> " . number_format($totalConversionValue / $totalCost, 1, ',', '.')."\n";
             } else {
-                $reportMessage .= "🎯 ROAS: 0\n";
+                $reportMessage .= "🎯 <b>ROAS:</b> 0\n";
             }
             
             $reportMessage .= "====== END ======\n";

@@ -341,7 +341,7 @@ class OptimizeCampaigns extends BaseCommand
                 if(isset($account['auto_on_off']) && $account['auto_on_off'] == 1){
                     $this->pauseCampaign($account, $campaign, $action, $accessToken, $mccId, $telegramChatIds);
                 } else {
-                    $message = "CHÚ Ý: Chiến dịch {$account['customer_name']} - {$campaign['name']}[{$campaign['campaign_id']}]: {$action}";
+                    $message = "CHÚ Ý: Chiến dịch <b>{$account['customer_name']}</b> - {$campaign['name']}[{$campaign['campaign_id']}]: {$action}";
                     foreach($telegramChatIds as $telegramChatId){
                         $this->telegramService->sendMessage("💢 " . $message, $telegramChatId);
                     }
@@ -374,7 +374,7 @@ class OptimizeCampaigns extends BaseCommand
             );
             
             if ($result === true) {
-                $message = "Tạm dừng chiến dịch {$account['customer_name']} - {$campaign['name']}[{$campaign['campaign_id']}]: {$action}";
+                $message = "Tạm dừng chiến dịch <b>{$account['customer_name']}</b> - {$campaign['name']}[{$campaign['campaign_id']}]: {$action}";
                 CLI::write($message, 'green');
                 log_message('info', $message);
                 foreach($telegramChatIds as $telegramChatId){
@@ -408,7 +408,7 @@ class OptimizeCampaigns extends BaseCommand
                 );
                 
                 if ($result === true) {
-                    $message = "Refresh token + Tạm dừng chiến dịch {$account['customer_name']} - {$campaign['name']}[{$campaign['campaign_id']}]: {$action}";
+                    $message = "Refresh token + Tạm dừng chiến dịch <b>{$account['customer_name']}</b> - {$campaign['name']}[{$campaign['campaign_id']}]: {$action}";
                     CLI::write($message, 'green');
                     log_message('info', $message);
                     foreach($telegramChatIds as $telegramChatId){
@@ -450,7 +450,7 @@ class OptimizeCampaigns extends BaseCommand
             );
             
             if ($result === true) {
-                $message = "Tăng ngân sách chiến dịch {$account['customer_name']} - {$campaign['name']}[{$campaign['campaign_id']}] lên ".number_format($newBudget, 0, '', '.').": {$action}";
+                $message = "Tăng ngân sách chiến dịch <b>{$account['customer_name']}</b> - {$campaign['name']}[{$campaign['campaign_id']}] lên ".number_format($newBudget, 0, '', '.').": {$action}";
                 CLI::write($message, 'green');
                 log_message('info', $message);
                 foreach($telegramChatIds as $telegramChatId){
@@ -485,7 +485,7 @@ class OptimizeCampaigns extends BaseCommand
                 );
                 
                 if ($result === true) {
-                    $message = "Refresh token + Tăng ngân sách chiến dịch {$account['customer_name']} - {$campaign['name']}[{$campaign['campaign_id']}] lên ".number_format($newBudget, 0, '', '.').": {$action}";
+                    $message = "Refresh token + Tăng ngân sách chiến dịch <b>{$account['customer_name']}</b> - {$campaign['name']}[{$campaign['campaign_id']}] lên ".number_format($newBudget, 0, '', '.').": {$action}";
                     CLI::write($message, 'green');
                     log_message('info', $message);
                     foreach($telegramChatIds as $telegramChatId){

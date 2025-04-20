@@ -46,7 +46,8 @@ class Settings extends BaseController
         // Validate input
         $rules = [
             'mcc_id' => 'permit_empty|numeric',
-            'telegram_chat_id' => 'permit_empty|integer'
+            'telegram_chat_id' => 'permit_empty|integer',
+            'report_telegram_chat_id' => 'permit_empty|integer'
         ];
         
         if (!$this->validate($rules)) {
@@ -55,6 +56,7 @@ class Settings extends BaseController
         
         $mccId = $this->request->getPost('mcc_id');
         $telegramChatId = $this->request->getPost('telegram_chat_id');
+        $reportTelegramChatId = $this->request->getPost('report_telegram_chat_id'); 
         // Kiểm tra xem có settings cho user này chưa
         $existingSettings = $this->userSettingsModel->where('user_id', $userId)->first();
         
@@ -63,6 +65,7 @@ class Settings extends BaseController
             $this->userSettingsModel->update($existingSettings['id'], [
                 'mcc_id' => $mccId,
                 'telegram_chat_id' => $telegramChatId,
+                'report_telegram_chat_id' => $reportTelegramChatId,
                 'updated_at' => date('Y-m-d H:i:s')
             ]);
         } else {
@@ -71,6 +74,7 @@ class Settings extends BaseController
                 'user_id' => $userId,
                 'mcc_id' => $mccId,
                 'telegram_chat_id' => $telegramChatId,
+                'report_telegram_chat_id' => $reportTelegramChatId,
                 'created_at' => date('Y-m-d H:i:s'),
                 'updated_at' => date('Y-m-d H:i:s')
             ]);

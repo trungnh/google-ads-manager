@@ -34,12 +34,29 @@
                             <small class="form-text text-muted">Nhập MCC ID dưới dạng số (không có dấu -) hoặc để trống</small>
                         </div>
                         
-                        <div class="form-group mb-3">
-                            <label for="telegram_chat_id">Telegram Chat ID (Optional)</label>
+                        <h5 class="card-title mt-4">Cài đặt Thông báo Telegram</h5>
+                        <small class="form-text text-muted">
+                                <i>Nhập Telegram Chat ID để nhận thông báo. Để lấy Chat ID, thêm bot <strong>@check_don_bot</strong> vào group chat và lấy Chat ID</i>
+                        </small>
+
+                        <div class="form-group mb-3 mt-4">
+                            <label for="telegram_chat_id">Chat ID Optimize (Optional)</label>
                             <input type="text" class="form-control" id="telegram_chat_id" name="telegram_chat_id" 
                                    placeholder="Example: -1001234567890" 
                                    value="<?= isset($settings['telegram_chat_id']) ? $settings['telegram_chat_id'] : '' ?>">
-                            <small class="form-text text-muted">Nhập Telegram Chat ID để nhận thông báo. Để lấy Chat ID, thêm bot <strong>@check_don_bot</strong> vào group chat và gửi tin nhắn <strong>/chat_id</strong></small>
+                            <small class="form-text text-muted">
+                                <i>Các thông báo bật/tắt, tăng ngân sách chiến dịch</i>
+                            </small>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="report_telegram_chat_id">Chat ID Report Campaigns (Optional)</label>
+                            <input type="text" class="form-control" id="report_telegram_chat_id" name="report_telegram_chat_id" 
+                                   placeholder="Example: -1001234567890" 
+                                   value="<?= isset($settings['report_telegram_chat_id']) ? $settings['report_telegram_chat_id'] : '' ?>">
+                            <small class="form-text text-muted">
+                                <i>Các thông báo về chỉ số chiến dịch</i>
+                            </small>
                         </div>
                         
                         <button type="submit" class="btn btn-primary">Save Settings</button>
