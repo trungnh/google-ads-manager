@@ -276,9 +276,11 @@ class OptimizeCampaigns extends BaseCommand
                         } else {
                             // Check theo CPA
                             // Nếu CPA thực tế vượt ngưỡng
-                            if ($account['cpa_threshold'] > 0 && $cpaExtendFromLastConversion > $account['cpa_threshold']) {
+                            $extendedCpaThreshold = $account['extended_cpa_threshold'] ?? 0;
+                            $extendedCpaThreshold = ($extendedCpaThreshold > 0)? $extendedCpaThreshold : $account['cpa_threshold'];
+                            if ($extendedCpaThreshold > 0 && $cpaExtendFromLastConversion > $extendedCpaThreshold) {
                                 $shouldPause = true;
-                                $action = "Chi tiêu thêm (".number_format($costExtendFromLastConversion, 0, '', '.').") từ lần ra đơn cuối cùng - CPA (".number_format($cpaExtendFromLastConversion, 1, ',', '.').") vượt ngưỡng (".number_format($account['cpa_threshold'], 1, ',', '.').")";  
+                                $action = "Chi tiêu thêm (".number_format($costExtendFromLastConversion, 0, '', '.').") từ lần ra đơn cuối cùng - CPA (".number_format($cpaExtendFromLastConversion, 1, ',', '.').") vượt ngưỡng (".number_format($extendedCpaThreshold, 1, ',', '.').")";  
                             } 
                         }
                     }

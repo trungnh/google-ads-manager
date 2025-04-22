@@ -26,7 +26,8 @@ class AdsAccountSettingsModel extends Model
         'last_optimize_run',
         'cost_threshold',
         'auto_on_off',
-        'use_roas_threshold'
+        'use_roas_threshold',
+        'extended_cpa_threshold'
     ];
     protected $useTimestamps = true;
     protected $createdField = 'created_at';
@@ -46,7 +47,8 @@ class AdsAccountSettingsModel extends Model
         'gsheet2' => 'permit_empty|valid_url',
         'cost_threshold' => 'permit_empty|decimal',
         'auto_on_off' => 'permit_empty|in_list[0,1]',
-        'use_roas_threshold' => 'permit_empty|in_list[0,1]'
+        'use_roas_threshold' => 'permit_empty|in_list[0,1]',
+        'extended_cpa_threshold' => 'permit_empty|decimal'
     ];
 
     public function getSettingsByAccountId($accountId)
@@ -75,7 +77,8 @@ class AdsAccountSettingsModel extends Model
             'gsheet2' => $data['gsheet2'] ?? null,
             'cost_threshold' => $data['cost_threshold'] ?? 0,
             'auto_on_off' => ($data['auto_on_off'] === 'true' || $data['auto_on_off'] === true || $data['auto_on_off'] === 1) ? 1 : 0,
-            'use_roas_threshold' => ($data['use_roas_threshold'] === 'true' || $data['use_roas_threshold'] === true || $data['use_roas_threshold'] === 1) ? 1 : 0
+            'use_roas_threshold' => ($data['use_roas_threshold'] === 'true' || $data['use_roas_threshold'] === true || $data['use_roas_threshold'] === 1) ? 1 : 0,
+            'extended_cpa_threshold' => $data['extended_cpa_threshold']?? 0
         ];
 
         // Debug log
