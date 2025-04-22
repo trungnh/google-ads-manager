@@ -92,6 +92,11 @@ class UserModel extends Model
         return $this->update($userId, $data);
     }
 
+    public function getAllActiveUsers()
+    {
+        return $this->where('status', 'active')->findAll();
+    }
+
     public function verifyPassword($password, $hash)
     {
         return password_verify($password, $hash);

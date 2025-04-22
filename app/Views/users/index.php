@@ -20,6 +20,7 @@
                                     <th>Trạng thái</th>
                                     <th>Đăng nhập lần cuối</th>
                                     <th>Ngày tạo</th>
+                                    <th>logs</th>
                                     <th>Thao tác</th>
                                 </tr>
                             </thead>
@@ -42,6 +43,11 @@
                                             </td>
                                             <td><?= $user['last_login'] ? date('d/m/Y H:i', strtotime($user['last_login'])) : 'Chưa đăng nhập' ?></td>
                                             <td><?= date('d/m/Y', strtotime($user['created_at'])) ?></td>
+                                            <td>
+                                            <a href="<?= base_url('optimize-logs/view/' . $user['id']) ?>" class="btn btn-sm btn-info">
+                                                Logs
+                                            </a>
+                                            </td>
                                             <td>
                                                 <a href="<?= site_url('users/edit/'.$user['id']) ?>" class="btn btn-sm btn-info">Sửa</a>
                                                 <?php if (session()->get('id') != $user['id']): ?>
