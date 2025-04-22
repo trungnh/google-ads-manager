@@ -245,6 +245,16 @@ class Campaigns extends BaseController
             if ($startDate === $endDate) {
                 $this->campaignsDataModel->saveCampaignsData($customerId, $campaigns, $startDate);
                 $lastUpdateTime = date('Y-m-d H:i:s');
+                $responseCampaigns = $this->campaignsDataModel->getCampaignsByDate($customerId, $startDate, $showPaused);
+                if (!empty($campaigns)) {
+                    return $this->response->setJSON([
+                        'success' => true,
+                        'campaigns' => $responseCampaigns,
+                        'lastUpdateTime' => $lastUpdateTime,
+                        'isFromCache' => true
+                    ]);
+                }
+
             } else {
                 $lastUpdateTime = null;
             }

@@ -80,6 +80,7 @@
                     <th class="sortable" data-sort="average_cpc">CPC</th>
                     <th class="sortable" data-sort="conversion_value">Conv value</th>
                     <th class="sortable" data-sort="conversion_rate">Conv rate</th>
+                    <th class="sortable" data-toggle="tooltip" data-placement="top" title="Cost From Last Conv">CFLC</th>
                     <th class="" data-sort="bidding_strategy">Chiến lược</th>
                     <th>Thao tác</th>
                 </tr>
@@ -201,6 +202,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-notify/0.2.0/js/bootstrap-notify.min.js"></script>
 
 <script>
+$(function () {
+    $('[data-toggle="tooltip"]').tooltip()
+});
 $(document).ready(function() {
     let campaignsData = [];
     let accountSettings = <?= json_encode($accountSettings) ?>;
@@ -497,6 +501,7 @@ $(document).ready(function() {
                     <td>${formatNumber(campaign.average_cpc)}</td>
                     <td>${(campaign.real_conversion_value > 0) ? formatNumber(campaign.real_conversion_value): '-'}</td>
                     <td>${(campaign.real_conversion_rate > 0) ? formatPercent(campaign.real_conversion_rate) : '-'}</td>
+                    <td>${(campaign.last_cost_conversion > 0) ? formatNumber(campaign.cost - campaign.last_cost_conversion) : '-'}</td>
                     <td class="small text-muted">
                         ${campaign.bidding_strategy || '-'}
                         ${campaign.target_cpa ? 
@@ -548,6 +553,7 @@ $(document).ready(function() {
                 <td>${formatNumber(totalAverageCPC)}</td>
                 <td>${formatNumber(totals.real_conversion_value)}</td>
                 <td>${formatPercent(totalRealConversionRate)}</td>
+                <td>-</td>
                 <td>-</td>
                 <td>-</td>
             </tr>
