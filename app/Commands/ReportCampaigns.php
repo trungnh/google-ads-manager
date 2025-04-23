@@ -224,6 +224,11 @@ class ReportCampaigns extends BaseCommand
                 }
             }
 
+            // Bỏ qua tài khoản không có chi tiêu
+            if ($totalCost == 0) {
+                continue;
+            }
+
             // Save campaign data
             $this->campaignsDataModel->saveCampaignsData($account['customer_id'], $campaigns, date('Y-m-d'));
             // Save campaign reports
