@@ -226,7 +226,7 @@ class ReportCampaigns extends BaseCommand
 
             // Bỏ qua tài khoản không có chi tiêu
             if ($totalCost == 0) {
-                continue;
+                return;
             }
 
             // Save campaign data
