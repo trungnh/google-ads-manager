@@ -137,7 +137,7 @@ class ReportCampaigns extends BaseCommand
             $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($account['id']);
             // Check trường hợp ads account thuộc nhiều user khác nhau. Chỉ check 1 setting duy nhất
             if (!$settings) {
-                $tmpAccounts = $this->adsAccountModel->getAccountsByCustomerId($account['customer_id']);
+                $tmpAccounts = $this->adsAccountsModel->getAccountsByCustomerId($account['customer_id']);
                 foreach ($tmpAccounts as $acc) {
                     $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($acc['id']);
                     if ($settings) {
@@ -239,12 +239,12 @@ class ReportCampaigns extends BaseCommand
             $reportMessage .= "☀️ <b>Camp hoạt động:</b> " . number_format($runningCampaigns, 0, '', '.')."\n";
             $reportMessage .= "💰 <b>Chi tiêu:</b> " . number_format($runningCost, 0, '', '.') . " " . $currencySymbol . "\n";
             $reportMessage .= "🛒 <b>Đơn:</b> " . number_format($runningConversions, 0, '', '.')."\n";
-            if($totalConversions > 0){
+            if($runningConversions > 0){
                 $reportMessage .= "🎯 <b>CPA:</b> " . number_format($runningCost / $runningConversions, 0, '', '.') . " " . $currencySymbol ."\n";
             } else {
                 $reportMessage .= "🎯 <b>CPA:</b> 0\n";
             }   
-            if($totalCost > 0){
+            if($runningCost > 0){
                 $reportMessage .= "🎯 <b>ROAS:</b> " . number_format($runningConversionValue / $runningCost, 1, ',', '.')."\n";
             } else {
                 $reportMessage .= "🎯 <b>ROAS:</b> 0\n";
