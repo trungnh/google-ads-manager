@@ -244,19 +244,21 @@ class ReportCampaigns extends BaseCommand
             } else {
                 $reportMessage .= "🎯 <b>ROAS:</b> 0\n";
             }
-            $reportMessage .= "====== <b>Tổng số</b> ======\n";
-            $reportMessage .= "☀️ <b>Camp:</b> " . number_format($totalCampaigns, 0, '', '.')."\n";
-            $reportMessage .= "💰 <b>Chi tiêu:</b> " . number_format($totalCost, 0, '', '.') . " " . $currencySymbol . "\n";
-            $reportMessage .= "🛒 <b>Đơn:</b> " . number_format($totalConversions, 0, '', '.')."\n";
-            if($totalConversions > 0){
-                $reportMessage .= "🎯 <b>CPA:</b> " . number_format($totalCost / $totalConversions, 0, '', '.') . " " . $currencySymbol ."\n";
-            } else {
-                $reportMessage .= "🎯 <b>CPA:</b> 0\n";
-            }   
-            if($totalCost > 0){
-                $reportMessage .= "🎯 <b>ROAS:</b> " . number_format($totalConversionValue / $totalCost, 1, ',', '.')."\n";
-            } else {
-                $reportMessage .= "🎯 <b>ROAS:</b> 0\n";
+            if ($totalCampaigns > $runningCampaigns) {
+                $reportMessage .= "====== <b>Tổng số</b> ======\n";
+                $reportMessage .= "☀️ <b>Camp:</b> " . number_format($totalCampaigns, 0, '', '.')."\n";
+                $reportMessage .= "💰 <b>Chi tiêu:</b> " . number_format($totalCost, 0, '', '.') . " " . $currencySymbol . "\n";
+                $reportMessage .= "🛒 <b>Đơn:</b> " . number_format($totalConversions, 0, '', '.')."\n";
+                if($totalConversions > 0){
+                    $reportMessage .= "🎯 <b>CPA:</b> " . number_format($totalCost / $totalConversions, 0, '', '.') . " " . $currencySymbol ."\n";
+                } else {
+                    $reportMessage .= "🎯 <b>CPA:</b> 0\n";
+                }   
+                if($totalCost > 0){
+                    $reportMessage .= "🎯 <b>ROAS:</b> " . number_format($totalConversionValue / $totalCost, 1, ',', '.')."\n";
+                } else {
+                    $reportMessage .= "🎯 <b>ROAS:</b> 0\n";
+                }
             }
             
             $reportMessage .= "========== END ==========\n";
