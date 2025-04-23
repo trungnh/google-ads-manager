@@ -46,11 +46,6 @@ class OptimizeCampaigns extends BaseCommand
     public function run(array $params)
     {
         try {
-            // $hour = date('H');
-            // if($hour < 6 || $hour > 21){
-            //     CLI::write("Thời gian không hợp lệ, chỉ chạy từ 7:00 đến 22:00", 'yellow');
-            //     return;
-            // }
             // Lấy danh sách tài khoản cần tối ưu
             $accounts = $this->adsAccountSettingsModel->getAccountsForOptimization();
             
@@ -116,9 +111,7 @@ class OptimizeCampaigns extends BaseCommand
                     $message = "Lỗi khi tối ưu tài khoản {$accountName}: " . $e->getMessage();
                     CLI::write($message, 'red');
                     log_message('error', $message);
-                    foreach($telegramChatIds as $telegramChatId){
-                        $this->telegramService->sendMessage("❌ " . $message, $telegramChatId);
-                    }
+                    $this->sendTelegramMessage("❌ " . $message, $telegramChatIds);
                     $totalErrors++;
                 }
             }
@@ -133,17 +126,13 @@ class OptimizeCampaigns extends BaseCommand
             CLI::write($message, 'green');
             // Chỉ gửi khi có  chiến dịch tạm dừng hoặc tăng ngân sách
             if($optimizeCampaignsResult['paused_campaigns'] > 0 || $optimizeCampaignsResult['increased_budget_campaigns'] > 0){
-                foreach($telegramChatIds as $telegramChatId){
-                    $this->telegramService->sendMessage($message, $telegramChatId);
-                }
+                $this->sendTelegramMessage($message, $telegramChatIds);
             }
         } catch (\Exception $e) {
             $message = 'Lỗi: ' . $e->getMessage();
             CLI::write($message, 'red');
             log_message('error', $message);
-            foreach($telegramChatIds as $telegramChatId){
-                $this->telegramService->sendMessage("❌ " . $message, $telegramChatId);
-            }
+            $this->sendTelegramMessage("❌ " . $message, $telegramChatIds);
         }
     }
 
@@ -177,29 +166,30 @@ class OptimizeCampaigns extends BaseCommand
                     throw $e;
                 }
             }
-            
-            $gsheetUrl = $account['gsheet1'] ?? null;
-            $gsheetUrl2 = $account['gsheet2'] ?? null;
-            if (empty($gsheetUrl) && empty($gsheetUrl2)) {
-                return;
-            }
-            if (!empty($campaigns) && !empty($gsheetUrl)) {
-                $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, date('Y-m-d'), date('Y-m-d'), $account);
-            }
-            if (!empty($campaigns) && !empty($gsheetUrl2)) {
-                $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl2, date('Y-m-d'), date('Y-m-d'), $account);
+
+            try {
+                $gsheetUrl = $account['gsheet1'] ?? null;
+                $gsheetUrl2 = $account['gsheet2'] ?? null;
+                if (empty($gsheetUrl) && empty($gsheetUrl2)) {
+                    return;
+                }
+                if (!empty($campaigns) && !empty($gsheetUrl)) {
+                    $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, date('Y-m-d'), date('Y-m-d'), $account);
+                }
+                if (!empty($campaigns) && !empty($gsheetUrl2)) {
+                    $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl2, date('Y-m-d'), date('Y-m-d'), $account);
+                }
+            } catch (\Exception $e) {
+                log_message('error', 'Lỗi tối ưu chiến dịch - xử lý đơn thực tế - ' . $account['customer_id'] . ': ' . $e->getMessage());
+                $this->sendTelegramMessage("❌Lỗi tối ưu chiến dịch - xử lý đơn thực tế - {$account['customer_id']}: " . $e->getMessage(), $telegramChatIds);
             }
 
-            // $reportMessage = "====== {$account['customer_name']} =======\n";
-            // $totalConversions = 0;
-            // $totalConversionValue = 0;
-            // $totalCost = 0;
             foreach ($campaigns as $campaign) {
                 if (!isset($campaign['campaign_id']) || !isset($campaign['cost']) || !isset($campaign['budget'])) {
                     CLI::write("Bỏ qua chiến dịch không hợp lệ: thiếu thông tin bắt buộc", 'yellow');
-                    foreach($telegramChatIds as $telegramChatId){
-                        $this->telegramService->sendMessage("❌ Bỏ qua chiến dịch không hợp lệ: thiếu thông tin bắt buộc", $telegramChatId);
-                    }
+                    // foreach($telegramChatIds as $telegramChatId){
+                    //     $this->telegramService->sendMessage("❌ Bỏ qua chiến dịch không hợp lệ: thiếu thông tin bắt buộc", $telegramChatId);
+                    // }
                     continue;
                 }
 
@@ -219,73 +209,85 @@ class OptimizeCampaigns extends BaseCommand
                     }
                 }
 
-                /* ============ Bật/tắt camp ============ */
-                // TH: Không có đơn
-                if ($realConversions == 0) { 
-                    // Nếu chi tiêu vượt ngưỡng CPA và không có chuyển đổi thực tế
-                    if ($account['cpa_threshold'] > 0 && $campaign['cost'] > $account['cpa_threshold']) {
-                        $shouldPause = true;
-                        $action = "Chi tiêu (".number_format($campaign['cost'], 0, '', '.').") vượt ngưỡng (".number_format($account['cpa_threshold'], 0, '', '.').") và không có đơn thực tế";
-                    }
-                }
-                // TH: Chỉ có 1 đơn 
-                elseif ($realConversions == 1) {
-                    if (isset($account['use_roas_threshold']) && $account['use_roas_threshold'] == 1) {
-                        // Check theo ROAS
-                        // Nếu ROAS thực tế thấp hơn ngưỡng
-                        if ($account['roas_threshold'] > 0 && $realRoas < $account['roas_threshold']) {
+                try {
+                    /* ============ Bật/tắt camp ============ */
+                    // TH: Không có đơn
+                    if ($realConversions == 0) { 
+                        // Nếu chi tiêu vượt ngưỡng CPA và không có chuyển đổi thực tế
+                        if ($account['cpa_threshold'] > 0 && $campaign['cost'] > $account['cpa_threshold']) {
                             $shouldPause = true;
-                            $action = "ROAS thực tế (".number_format($realRoas, 1, ',', '.').") thấp hơn ngưỡng (".number_format($account['roas_threshold'], 1, ',', '.').")";  
-                        }
-                    } else {
-                        // Check theo CPA
-                        // Nếu CPA thực tế vượt ngưỡng
-                        if ($account['cpa_threshold'] > 0 && $realCpa > $account['cpa_threshold']) {
-                            $shouldPause = true;
-                            $action = "CPA thực tế (".number_format($realCpa, 0, ',', '.').") vượt ngưỡng (".number_format($account['cpa_threshold'], 1, ',', '.').")";
+                            $action = "Chi tiêu (".number_format($campaign['cost'], 0, '', '.').") vượt ngưỡng (".number_format($account['cpa_threshold'], 0, '', '.').") và không có đơn thực tế";
                         }
                     }
-                } 
-                // TH: Nhiều hơn 1 đơn
-                elseif ($realConversions > 1) {
-                    // Lấy campaign data từ DB
-                    $tmpCampaign = $this->campaignsDataModel->where('customer_id', $account['customer_id'])
-                        ->where('campaign_id', $campaign['campaign_id'])
-                        ->where('date', date('Y-m-d'))
-                        ->first();
-                    
-                    // Tính chi tiêu từ lần ra cuối cùng ra chuyển đổi
-                    $costExtendFromLastConversion = $campaign['cost'] - $tmpCampaign['last_cost_conversion']?? 0;
-                    $conversionsExtendFromLastConversion = $campaign['real_conversions'] - $tmpCampaign['last_count_conversion']?? 0;
-                    $conversionValueExtendFromLastConversion = $campaign['real_conversion_value'] - $tmpCampaign['last_count_conversion_value']?? 0;
-                    if ($conversionsExtendFromLastConversion == 0) {
-                        if ($costExtendFromLastConversion > $account['cpa_threshold']) {
-                            $shouldPause = true;
-                            $action = "Chi tiêu thêm (".number_format($costExtendFromLastConversion, 0, '', '.').") từ lần ra đơn cuối cùng - Không có đơn thực tế";
-                        }
-                    } else {
-                        $cpaExtendFromLastConversion = $costExtendFromLastConversion / $conversionsExtendFromLastConversion;
-                        $roasExtendFromLastConversion = $conversionValueExtendFromLastConversion / $costExtendFromLastConversion;
-                        if ($account['use_roas_threshold']) {
+                    // TH: Chỉ có 1 đơn 
+                    elseif ($realConversions == 1) {
+                        if (isset($account['use_roas_threshold']) && $account['use_roas_threshold'] == 1) {
                             // Check theo ROAS
                             // Nếu ROAS thực tế thấp hơn ngưỡng
-                            if ($account['roas_threshold'] > 0 && $roasExtendFromLastConversion < $account['roas_threshold']) {
+                            if ($account['roas_threshold'] > 0 && $realRoas < $account['roas_threshold']) {
                                 $shouldPause = true;
-                                $action = "Chi tiêu thêm (".number_format($costExtendFromLastConversion, 0, '', '.').") từ lần ra đơn cuối cùng - ROAS (".number_format($roasExtendFromLastConversion, 1, ',', '.').") thấp hơn ngưỡng (".number_format($account['roas_threshold'], 1, ',', '.').")";  
-                            }  
+                                $action = "ROAS thực tế (".number_format($realRoas, 1, ',', '.').") thấp hơn ngưỡng (".number_format($account['roas_threshold'], 1, ',', '.').")";  
+                            }
                         } else {
                             // Check theo CPA
                             // Nếu CPA thực tế vượt ngưỡng
-                            $extendedCpaThreshold = $account['extended_cpa_threshold'] ?? 0;
-                            $extendedCpaThreshold = ($extendedCpaThreshold > 0)? $extendedCpaThreshold : $account['cpa_threshold'];
-                            if ($extendedCpaThreshold > 0 && $cpaExtendFromLastConversion > $extendedCpaThreshold) {
+                            if ($account['cpa_threshold'] > 0 && $realCpa > $account['cpa_threshold']) {
                                 $shouldPause = true;
-                                $action = "Chi tiêu thêm (".number_format($costExtendFromLastConversion, 0, '', '.').") từ lần ra đơn cuối cùng - CPA (".number_format($cpaExtendFromLastConversion, 1, ',', '.').") vượt ngưỡng (".number_format($extendedCpaThreshold, 1, ',', '.').")";  
-                            } 
+                                $action = "CPA thực tế (".number_format($realCpa, 0, ',', '.').") vượt ngưỡng (".number_format($account['cpa_threshold'], 1, ',', '.').")";
+                            }
+                        }
+                    } 
+                    // TH: Nhiều hơn 1 đơn
+                    elseif ($realConversions > 1) {
+                        // Lấy campaign data từ DB
+                        $tmpCampaign = $this->campaignsDataModel->where('customer_id', $account['customer_id'])
+                            ->where('campaign_id', $campaign['campaign_id'])
+                            ->where('date', date('Y-m-d'))
+                            ->first();
+
+                        // Check tồn tại
+                        $tmpLastCostConversion = $tmpCampaign['last_cost_conversion']?? 0;
+                        $tmpLastCountConversion = $tmpCampaign['last_count_conversion']?? 0;
+                        $tmpLastCountConversionValue = $tmpCampaign['last_count_conversion_value']?? 0;
+                        $tmpLastCostConversion = $tmpCampaign['last_cost_conversion']?? 0;
+                        
+                        // Tính chi tiêu từ lần ra cuối cùng ra chuyển đổi
+                        $costExtendFromLastConversion = $campaign['cost'] - $tmpLastCostConversion;
+                        $conversionsExtendFromLastConversion = $realConversions - $tmpLastCountConversion;
+                        $conversionValueExtendFromLastConversion = $realConversionValue - $tmpLastCountConversionValue;
+                        if ($conversionsExtendFromLastConversion == 0) {
+                            if ($costExtendFromLastConversion > $account['cpa_threshold']) {
+                                $shouldPause = true;
+                                $action = "Chi tiêu thêm (".number_format($costExtendFromLastConversion, 0, '', '.').") từ lần ra đơn cuối cùng - Không có đơn thực tế";
+                            }
+                        } else {
+                            $cpaExtendFromLastConversion = $costExtendFromLastConversion / $conversionsExtendFromLastConversion;
+                            $roasExtendFromLastConversion = $conversionValueExtendFromLastConversion / $costExtendFromLastConversion;
+                            if ($account['use_roas_threshold']) {
+                                // Check theo ROAS
+                                // Nếu ROAS thực tế thấp hơn ngưỡng
+                                if ($account['roas_threshold'] > 0 && $roasExtendFromLastConversion < $account['roas_threshold']) {
+                                    $shouldPause = true;
+                                    $action = "Chi tiêu thêm (".number_format($costExtendFromLastConversion, 0, '', '.').") từ lần ra đơn cuối cùng - ROAS (".number_format($roasExtendFromLastConversion, 1, ',', '.').") thấp hơn ngưỡng (".number_format($account['roas_threshold'], 1, ',', '.').")";  
+                                }  
+                            } else {
+                                // Check theo CPA
+                                // Nếu CPA thực tế vượt ngưỡng
+                                $extendedCpaThreshold = $account['extended_cpa_threshold'] ?? 0;
+                                $extendedCpaThreshold = ($extendedCpaThreshold > 0)? $extendedCpaThreshold : $account['cpa_threshold'];
+                                if ($extendedCpaThreshold > 0 && $cpaExtendFromLastConversion > $extendedCpaThreshold) {
+                                    $shouldPause = true;
+                                    $action = "Chi tiêu thêm (".number_format($costExtendFromLastConversion, 0, '', '.').") từ lần ra đơn cuối cùng - CPA (".number_format($cpaExtendFromLastConversion, 1, ',', '.').") vượt ngưỡng (".number_format($extendedCpaThreshold, 1, ',', '.').")";  
+                                } 
+                            }
                         }
                     }
+                    /* ============ Bật/tắt camp ============ */
+
+                } catch (\Exception $e) {
+                    log_message('error', 'Lỗi tối ưu chiến dịch - Rule bật/tắt - '. $account['customer_id']. ': '. $e->getMessage());
+                    $this->sendTelegramMessage("❌Lỗi tối ưu chiến dịch - Rule bật/tắt - {$account['customer_id']}: ". $e->getMessage(), $telegramChatIds);
                 }
-                /* ============ Bật/tắt camp ============ */
 
                 // Kiểm tra tăng ngân sách nếu chiến dịch không bị tạm dừng
                 if (!$shouldPause && 
@@ -307,20 +309,23 @@ class OptimizeCampaigns extends BaseCommand
                 $increasedBudgetCampaigns += $shouldIncreaseBudget ? 1 : 0;
             }
             
-            // Save campaign data
-            $this->campaignsDataModel->saveCampaignsData($account['customer_id'], $campaigns, date('Y-m-d'));
+            try {
+                // Save campaign data
+                $this->campaignsDataModel->saveCampaignsData($account['customer_id'], $campaigns, date('Y-m-d'));
 
-            // Cập nhật thời gian chạy cuối cùng
-            $this->adsAccountSettingsModel->update($account['id'], [
-                'last_optimize_run' => date('Y-m-d H:i:s')
-            ]);
+                // Cập nhật thời gian chạy cuối cùng
+                $this->adsAccountSettingsModel->update($account['id'], [
+                    'last_optimize_run' => date('Y-m-d H:i:s')
+                ]);
+            } catch (\Exception $e) {
+                log_message('error', 'Lỗi tối ưu chiến dịch - Save Campaigns - '. $account['customer_id']. ': '. $e->getMessage());
+                $this->sendTelegramMessage("❌Lỗi tối ưu chiến dịch - Save Campaigns - {$account['customer_id']}: ". $e->getMessage(), $telegramChatIds);
+            }
 
             // return true;
         } catch (\Exception $e) {
-            log_message('error', 'Lỗi tối ưu chiến dịch: ' . $e->getMessage());
-            foreach($telegramChatIds as $telegramChatId){
-                $this->telegramService->sendMessage("❌Lỗi tối ưu chiến dịch: " . $e->getMessage(), $telegramChatId);
-            }
+            log_message('error', 'Lỗi tối ưu chiến dịch ' . $account['customer_id'] . ': ' . $e->getMessage());
+            $this->sendTelegramMessage("❌Lỗi tối ưu chiến dịch {$account['customer_id']}: " . $e->getMessage(), $telegramChatIds);
         }
 
         return [
@@ -344,9 +349,7 @@ class OptimizeCampaigns extends BaseCommand
                     $this->pauseCampaign($account, $campaign, $action, $accessToken, $mccId, $telegramChatIds);
                 } else {
                     $message = "CHÚ Ý: Chiến dịch <b>{$account['customer_name']}</b> - {$campaign['name']}[{$campaign['campaign_id']}]: {$action}";
-                    foreach($telegramChatIds as $telegramChatId){
-                        $this->telegramService->sendMessage("💢 " . $message, $telegramChatId);
-                    }
+                    $this->sendTelegramMessage("💢 " . $message, $telegramChatIds);
                 }
             } elseif ($shouldIncreaseBudget && isset($account['increase_budget'])) {
                 $this->increaseBudgetCampaign($account, $campaign, $action, $accessToken, $mccId, $telegramChatIds);
@@ -355,9 +358,7 @@ class OptimizeCampaigns extends BaseCommand
             $message = "Lỗi thực hiện hành động cho chiến dịch {$accountName} - {$campaignName} | {$campaign['campaign_id']}: " . $e->getMessage();
             CLI::write($message, 'red');
             log_message('error', $message);
-            foreach($telegramChatIds as $telegramChatId){
-                $this->telegramService->sendMessage("❌ " . $message, $telegramChatId);
-            }
+            $this->sendTelegramMessage("❌ " . $message, $telegramChatIds);
         }
     }
 
@@ -379,9 +380,7 @@ class OptimizeCampaigns extends BaseCommand
                 $message = "Tạm dừng chiến dịch <b>{$account['customer_name']}</b> - {$campaign['name']}[{$campaign['campaign_id']}]: {$action}";
                 CLI::write($message, 'green');
                 log_message('info', $message);
-                foreach($telegramChatIds as $telegramChatId){
-                    $this->telegramService->sendMessage("⏸️ " . $message, $telegramChatId);
-                }
+                $this->sendTelegramMessage("⏸️ " . $message, $telegramChatIds);
 
                 // Lưu log
                 $this->optimizeLogsModel->insert([
@@ -413,9 +412,7 @@ class OptimizeCampaigns extends BaseCommand
                     $message = "Refresh token + Tạm dừng chiến dịch <b>{$account['customer_name']}</b> - {$campaign['name']}[{$campaign['campaign_id']}]: {$action}";
                     CLI::write($message, 'green');
                     log_message('info', $message);
-                    foreach($telegramChatIds as $telegramChatId){
-                        $this->telegramService->sendMessage("⏸️ " . $message, $telegramChatId);
-                    }
+                    $this->sendTelegramMessage("⏸️ " . $message, $telegramChatIds);
 
                     // Lưu log
                     $this->optimizeLogsModel->insert([
@@ -455,9 +452,7 @@ class OptimizeCampaigns extends BaseCommand
                 $message = "Tăng ngân sách chiến dịch <b>{$account['customer_name']}</b> - {$campaign['name']}[{$campaign['campaign_id']}] lên ".number_format($newBudget, 0, '', '.').": {$action}";
                 CLI::write($message, 'green');
                 log_message('info', $message);
-                foreach($telegramChatIds as $telegramChatId){
-                    $this->telegramService->sendMessage("💰 " . $message, $telegramChatId);
-                }
+                $this->sendTelegramMessage("💰 " . $message, $telegramChatIds);
 
                 // Lưu log
                 $this->optimizeLogsModel->insert([
@@ -490,9 +485,7 @@ class OptimizeCampaigns extends BaseCommand
                     $message = "Refresh token + Tăng ngân sách chiến dịch <b>{$account['customer_name']}</b> - {$campaign['name']}[{$campaign['campaign_id']}] lên ".number_format($newBudget, 0, '', '.').": {$action}";
                     CLI::write($message, 'green');
                     log_message('info', $message);
-                    foreach($telegramChatIds as $telegramChatId){
-                        $this->telegramService->sendMessage("💰 " . $message, $telegramChatId);
-                    }
+                    $this->sendTelegramMessage("💰 " . $message, $telegramChatIds);
 
                     // Lưu log
                     $this->optimizeLogsModel->insert([
@@ -560,6 +553,17 @@ class OptimizeCampaigns extends BaseCommand
         } catch (\Exception $e) {
             log_message('error', "Lỗi refresh token cho user {$userId}: " . $e->getMessage());
             throw $e;
+        }
+    }
+
+    protected function sendTelegramMessage($message, $telegramChatIds = [])
+    {
+        $hour = date('H');
+        if($hour < 6 || $hour > 21){
+            return;
+        }
+        foreach($telegramChatIds as $telegramChatId){
+            $this->telegramService->sendMessage($message, $telegramChatId);
         }
     }
 } 
