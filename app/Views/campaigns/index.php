@@ -832,8 +832,13 @@ $(document).ready(function() {
 
     function formatNumber(number) {
         if (!number || isNaN(number)) return '0';
+        if (account.currency_code === 'USD') {
+            const formattedNumber = number_format(parseFloat(number), 2, ',', '.');
+            return '$ ' + formattedNumber;
+        }
+        
         const formattedNumber = number_format(parseFloat(number), 0, ',', '.');
-        return account.currency_code === 'USD' ? '$ ' + formattedNumber : formattedNumber + ' ₫';
+        return formattedNumber + ' ₫';
     }
 
     function formatNumberWithoutCurrency(number) {

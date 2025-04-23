@@ -38,7 +38,7 @@
 
                         <div class="mb-3">
                             <label for="cost_threshold" class="form-label">Ngưỡng chi tiêu</label>
-                            <input type="number" class="form-control" id="cost_threshold" name="cost_threshold" 
+                            <input type="number" step="0.01" class="form-control" id="cost_threshold" name="cost_threshold" 
                                 value="<?= isset($settings['cost_threshold']) ? $settings['cost_threshold'] : '' ?>">
                             <small class="form-text text-muted">
                                 <i>Khi chi tiêu vượt quá ngưỡng này, chiến dịch sẽ check các điều kiện để Tắt hoặc Tăng ngân sách</i>
@@ -47,7 +47,7 @@
 
                         <div class="mb-3">
                             <label for="increase_budget" class="form-label">Tăng ngân sách</label>
-                            <input type="number" class="form-control" id="increase_budget" name="increase_budget" 
+                            <input type="number" step="0.01" class="form-control" id="increase_budget" name="increase_budget" 
                                 value="<?= isset($settings['increase_budget']) ? $settings['increase_budget'] : '' ?>">
                             <small class="form-text text-muted">
                                 <i>
@@ -73,7 +73,7 @@
 
                         <div class="mb-3">
                             <label for="cpa_threshold" class="form-label">Ngưỡng CPA</label>
-                            <input type="number" class="form-control" id="cpa_threshold" name="cpa_threshold" 
+                            <input type="number" step="0.01" class="form-control" id="cpa_threshold" name="cpa_threshold" 
                                 value="<?= isset($settings['cpa_threshold']) ? $settings['cpa_threshold'] : '' ?>">
                             <small class="form-text text-muted">
                                 <i>Chiến dịch sẽ bị tạm dừng nếu CPA vượt quá ngưỡng này</i>
@@ -82,7 +82,7 @@
 
                         <div class="mb-3">
                             <label for="extended_cpa_threshold" class="form-label">Ngưỡng CPA giữa 2 lần chuyển đổi</label>
-                            <input type="number" class="form-control" id="extended_cpa_threshold" name="extended_cpa_threshold" 
+                            <input type="number" step="0.01" class="form-control" id="extended_cpa_threshold" name="extended_cpa_threshold" 
                                 value="<?= isset($settings['extended_cpa_threshold']) ? $settings['extended_cpa_threshold'] : '' ?>">
                             <small class="form-text text-muted">
                                 <i>Nếu chi tiêu thêm hoặc CPA từ lần ra đơn gần nhất > ngưỡng này thì tạm dừng chiến dịch 
@@ -104,7 +104,7 @@
 
                         <div class="mb-3">
                             <label for="roas_threshold" class="form-label">Ngưỡng ROAS</label>
-                            <input type="number" class="form-control" id="roas_threshold" name="roas_threshold" step="0.01" 
+                            <input type="number" step="0.01" class="form-control" id="roas_threshold" name="roas_threshold"
                                 value="<?= isset($settings['roas_threshold']) ? $settings['roas_threshold'] : '' ?>">
                             <small class="form-text text-muted">
                                 <i>Nhập ngưỡng ROAS để tự động tắt chiến dịch khi ROAS thực tế thấp hơn ngưỡng này</i>
