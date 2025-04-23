@@ -36,6 +36,12 @@ class AdsAccountSettings extends BaseController
                 return redirect()->to('/adsaccounts')->with('error', 'Không có quyền truy cập tài khoản này');
             }
 
+            // Lấy danh sách tất cả tài khoản của user để hiển thị trong dropdown
+            $accounts = $this->adsAccountModel
+            ->where('user_id', $userId)
+            ->orderBy('order', 'ASC')
+            ->findAll();
+
             // Lấy settings hiện tại
             $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($adsAccountId);
             // Check trường hợp ads account thuộc nhiều user khác nhau. Chỉ check 1 setting duy nhất
@@ -75,6 +81,7 @@ class AdsAccountSettings extends BaseController
             $data = [
                 'title' => 'Cài đặt tài khoản - ' . $account['customer_name'],
                 'account' => $account,
+                'accounts' => $accounts,
                 'settings' => $settings
             ];
 
