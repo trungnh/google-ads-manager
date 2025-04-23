@@ -101,7 +101,7 @@ class ReportsModel extends Model
             $totalConversions += $campaign['real_conversions'];
             $totalConversionValue += $campaign['real_conversion_value'];
             
-            if ($campaign['status'] == 'RUNNING') {
+            if ($campaign['status'] == 'ENABLED') {
                 $running++; 
             } else {
                 $paused++; 
