@@ -13,6 +13,7 @@ use App\Models\UserSettingsModel;
 use App\Models\AdsAccountModel;
 use App\Models\OptimizeLogsModel;
 use App\Models\CampaignsDataModel;
+use App\Models\ReportsModel;
 
 class ReportCampaigns extends BaseCommand
 {
@@ -29,6 +30,7 @@ class ReportCampaigns extends BaseCommand
     protected $adsAccountsModel;
     protected $optimizeLogsModel;
     protected $campaignsDataModel;
+    protected $reportsModel;
 
     public function __construct()
     {
@@ -41,6 +43,7 @@ class ReportCampaigns extends BaseCommand
         $this->adsAccountsModel = new AdsAccountModel();
         $this->optimizeLogsModel = new OptimizeLogsModel();
         $this->campaignsDataModel = new CampaignsDataModel();
+        $this->reportsModel = new ReportsModel();
     }
 
     public function run(array $params)
@@ -111,7 +114,7 @@ class ReportCampaigns extends BaseCommand
 
         // Lấy dữ liệu chiến dịch realtime từ Google Ads
         try {
-            $campaigns = $this->googleAdsService->getCampaigns($account['customer_id'], $accessToken, $mccId, false, date('Y-m-d'), date('Y-m-d'));
+            $campaigns = $this->googleAdsService->getCampaigns($account['customer_id'], $accessToken, $mccId, true, date('Y-m-d'), date('Y-m-d'));
             if (empty($campaigns)) {
                 CLI::write("Không tìm thấy chiến dịch nào cho tài khoản {$account['customer_id']}", 'yellow');
                 return false;
@@ -121,7 +124,7 @@ class ReportCampaigns extends BaseCommand
                 CLI::write("Token không hợp lệ, đang thử refresh...", 'yellow');
                 // Thử refresh token và gọi lại API
                 $newToken = $this->ensureValidToken($account['user_id']);
-                $campaigns = $this->googleAdsService->getCampaigns($account['customer_id'], $newToken['access_token'], $mccId, false, date('Y-m-d'), date('Y-m-d'));
+                $campaigns = $this->googleAdsService->getCampaigns($account['customer_id'], $newToken['access_token'], $mccId, true, date('Y-m-d'), date('Y-m-d'));
             } else {
                 log_message('error', 'Lỗi tài khoản: ' . $account['customer_id'] . ' - ' . $e->getMessage());
                 foreach($telegramChatIds as $telegramChatId){
@@ -167,6 +170,14 @@ class ReportCampaigns extends BaseCommand
             $totalConversions = 0;
             $totalConversionValue = 0;
             $totalCost = 0;
+            $totalCampaigns = 0;
+            $runningCampaigns = 0;
+            $runningCost = 0;
+            $runningConversions = 0;
+            $runningConversionValue = 0;
+            $pausedCampaigns = 0;
+            $pausedConversion = 0;
+            $pausedConversionValue = 0;
             foreach ($campaigns as $campaign) {
                 if (!isset($campaign['campaign_id']) || !isset($campaign['cost']) || !isset($campaign['budget'])) {
                     CLI::write("Bỏ qua chiến dịch không hợp lệ: thiếu thông tin bắt buộc", 'yellow');
@@ -175,6 +186,12 @@ class ReportCampaigns extends BaseCommand
                     }   
                     continue;
                 }
+
+                // Bỏ qua chiến dịch không hoạt động và không chi tiêu
+                if ($campaign['status'] == 'PAUSED' && $campaign['cost'] == 0) {
+                    continue;
+                }
+
                 // Lấy dữ liệu chuyển đổi thực tế cho chiến dịch này
                 if (isset($campaign['real_conversions'])) {
                     $realConversions = $campaign['real_conversions']?? 0;
@@ -190,12 +207,45 @@ class ReportCampaigns extends BaseCommand
                 $totalConversions += $realConversions;
                 $totalConversionValue += $realConversionValue;
                 $totalCost += $campaign['cost'];
+                if ($campaign['cost'] > 0) {
+                    $totalCampaigns++;
+                }
+
+                // Đếm loại chiến dịch
+                if ($campaign['status'] == 'ENABLED') {
+                    $runningCampaigns++;
+                    $runningCost += $campaign['cost'];
+                    $runningConversions += $realConversions;
+                    $runningConversionValue += $realConversionValue;  
+                } else {
+                    $pausedCampaigns++;
+                    $pausedConversion += $realConversions;
+                    $pausedConversionValue += $realConversionValue;
+                }
             }
 
             // Save campaign data
             $this->campaignsDataModel->saveCampaignsData($account['customer_id'], $campaigns, date('Y-m-d'));
+            // Save campaign reports
+            $this->reportsModel->saveReportByCampaigns($account['user_id'], $account['customer_id'], $campaigns);
+
             $currencySymbol = $account['currency_code'] == 'VND' ? '₫' : '$';
 
+            $reportMessage .= "☀️ <b>Camp hoạt động:</b> " . number_format($runningCampaigns, 0, '', '.')."\n";
+            $reportMessage .= "💰 <b>Chi tiêu:</b> " . number_format($runningCost, 0, '', '.') . " " . $currencySymbol . "\n";
+            $reportMessage .= "🛒 <b>Đơn:</b> " . number_format($runningConversions, 0, '', '.')."\n";
+            if($totalConversions > 0){
+                $reportMessage .= "🎯 <b>CPA:</b> " . number_format($runningCost / $runningConversions, 0, '', '.') . " " . $currencySymbol ."\n";
+            } else {
+                $reportMessage .= "🎯 <b>CPA:</b> 0\n";
+            }   
+            if($totalCost > 0){
+                $reportMessage .= "🎯 <b>ROAS:</b> " . number_format($runningConversionValue / $runningCost, 1, ',', '.')."\n";
+            } else {
+                $reportMessage .= "🎯 <b>ROAS:</b> 0\n";
+            }
+            $reportMessage .= "====== <b>Tổng số</b> ======\n";
+            $reportMessage .= "☀️ <b>Camp:</b> " . number_format($totalCampaigns, 0, '', '.')."\n";
             $reportMessage .= "💰 <b>Chi tiêu:</b> " . number_format($totalCost, 0, '', '.') . " " . $currencySymbol . "\n";
             $reportMessage .= "🛒 <b>Đơn:</b> " . number_format($totalConversions, 0, '', '.')."\n";
             if($totalConversions > 0){
@@ -209,7 +259,7 @@ class ReportCampaigns extends BaseCommand
                 $reportMessage .= "🎯 <b>ROAS:</b> 0\n";
             }
             
-            $reportMessage .= "====== END ======\n";
+            $reportMessage .= "========== END ==========\n";
 
             foreach($telegramChatIds as $telegramChatId){
                 $this->telegramService->sendMessage($reportMessage, $telegramChatId);
