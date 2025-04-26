@@ -23,6 +23,13 @@
                             </div>
                         </div>
                     </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <a href="<?= base_url('reports/view/' . $user['id']) ?>" class="btn btn-sm btn-info">
+                                View Reports
+                            </a>
+                        </div>
+                    </div>
                     <!-- Date Range Filter -->
                     <form method="get" class="mb-4">
                         <div class="row">
