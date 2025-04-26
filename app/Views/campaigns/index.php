@@ -501,7 +501,7 @@ $(document).ready(function() {
                     <td>${formatNumber(campaign.average_cpc)}</td>
                     <td>${(campaign.real_conversion_value > 0) ? formatNumber(campaign.real_conversion_value): '-'}</td>
                     <td>${(campaign.real_conversion_rate > 0) ? formatPercent(campaign.real_conversion_rate) : '-'}</td>
-                    <td>${(campaign.last_cost_conversion > 0) ? formatNumber(campaign.cost - campaign.last_cost_conversion) : '-'}</td>
+                    <td class="cflc-value">${(campaign.last_cost_conversion > 0) ? formatNumber(campaign.cost - campaign.last_cost_conversion) : '-'}</td>
                     <td class="small text-muted">
                         ${campaign.bidding_strategy || '-'}
                         ${campaign.target_cpa ? 
@@ -522,13 +522,21 @@ $(document).ready(function() {
                         }
                     </td>
                     <td>
-                        <button class="btn ${campaign.status === 'ENABLED' ? 'btn-danger' : 'btn-success'} btn-sm toggle-status"
+                        <button class="btn ${campaign.status === 'ENABLED' ? 'btn-danger' : 'btn-success'} btn-sm toggle-status m-1"
                                 data-customer-id="${campaign.customer_id}"
                                 data-campaign-id="${campaign.campaign_id}"
                                 data-status="${campaign.status}">
                             <i class="fas fa-power-off"></i>
                             ${campaign.status === 'ENABLED' ? 'Tắt' : 'Bật'}
                         </button>
+                        <?php if (session()->get('role') === 'superadmin'): ?>
+                        <button class="btn btn-primary btn-sm btn-cflc m-1"
+                                data-customer-id="${campaign.customer_id}"
+                                data-campaign-id="${campaign.campaign_id}"
+                            <i class="fa fa-refresh"></i>
+                            CFLC
+                        </button>
+                        <?php endif; ?>
                     </td>
                 </tr>
             `;
@@ -561,6 +569,7 @@ $(document).ready(function() {
         
         $('#campaignsBody').html(html);
         initializeToggleButtons();
+        initializeCFLCButtons();
         initializeEditableTargets();
     }
 
@@ -628,6 +637,61 @@ $(document).ready(function() {
             complete: function() {
                 // Re-enable button
                 $(`.toggle-status[data-campaign-id="${campaignId}"]`).prop('disabled', false);
+            }
+        });
+    }
+
+    function initializeCFLCButtons() {
+        $('.btn-cflc').off('click').on('click', function(e) {
+            e.preventDefault();
+            
+            const btn = $(this);
+            const customerId = currentCustomerId;
+            const campaignId = btn.data('campaign-id');
+            
+            // Validate
+            if (!customerId || !campaignId) {
+                showNotification('Lỗi: Thiếu thông tin cần thiết', 'error');
+                return;
+            }
+            
+            updateCFLC(customerId, campaignId);
+        });
+    }
+
+    function updateCFLC(customerId, campaignId) {
+        // Kiểm tra customerId
+        if (!customerId) {
+            showNotification('Lỗi: Không tìm thấy ID tài khoản', 'error');
+            return;
+        }
+
+        // Disable button while processing
+        $(`.btn-cflc[data-campaign-id="${campaignId}"]`).prop('disabled', true);
+
+        $.ajax({
+            url: `/campaigns/updateCFLC/${customerId}/${campaignId}`,
+            method: 'POST',
+            success: function(response) {
+                if (response.success) {
+                    showNotification(response.message);
+                    // Cập nhật UI
+                    const row = $(`#campaign-${campaignId}`);
+                    const cflcValue = row.find('.cflc-value');
+                    
+                    // Cập nhật cflcValue
+                    cflcValue.text('0');
+                } else {
+                    showNotification(response.message, 'error');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error:', xhr.responseText);
+                showNotification('Có lỗi xảy ra khi cập nhật trạng thái chiến dịch', 'error');
+            },
+            complete: function() {
+                // Re-enable button
+                $(`.btn-cflc[data-campaign-id="${campaignId}"]`).prop('disabled', false);
             }
         });
     }

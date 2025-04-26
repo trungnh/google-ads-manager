@@ -151,6 +151,27 @@ class CampaignsDataModel extends Model
                 ->where('campaign_id', $campaignId)
                 ->update($data);    
     }
+
+    public function saveCampaignCFLC($customerId, $campaignId)
+    {
+        $campaign = $this->where('customer_id', $customerId)
+                        ->where('campaign_id', $campaignId)
+                        ->where('date', date('Y-m-d'))
+                        ->first();
+
+        $data = [
+            'customer_id' => $customerId,
+            'campaign_id' => $campaignId,
+            'last_cost_conversion' => $campaign['cost'],
+            'last_count_conversion' => $campaign['real_conversions'],
+            'last_count_conversion_value' => $campaign['real_conversion_value'],
+        ];
+
+        $this->db->table('campaigns_data')
+                ->where('customer_id', $customerId)
+                ->where('campaign_id', $campaignId)
+                ->update($data);    
+    }
     
     public function getCampaignsByID($customerId, $campaignId)
     {

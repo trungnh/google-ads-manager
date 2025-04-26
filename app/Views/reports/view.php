@@ -25,7 +25,7 @@
                     </div>
                     <div class="row mb-3">
                         <div class="col">
-                            <a href="<?= base_url('optimize-logs/view/' . $user['id']) ?>" class="btn btn-sm btn-info">
+                            <a href="<?= base_url('optimize-logs/view/' . $userId) ?>" class="btn btn-sm btn-info">
                                 View Logs
                             </a>
                         </div>

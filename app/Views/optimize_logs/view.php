@@ -25,7 +25,7 @@
                     </div>
                     <div class="row mb-3">
                         <div class="col">
-                            <a href="<?= base_url('reports/view/' . $user['id']) ?>" class="btn btn-sm btn-info">
+                            <a href="<?= base_url('reports/view/' . $uId) ?>" class="btn btn-sm btn-info">
                                 View Reports
                             </a>
                         </div>

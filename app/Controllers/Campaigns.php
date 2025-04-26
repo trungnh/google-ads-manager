@@ -466,4 +466,26 @@ class Campaigns extends BaseController
             ]);
         }
     }
+
+    public function updateCFLC($customerId, $campaignId)
+    {
+        if (!session()->get('isLoggedIn')) {
+            return $this->response->setJSON(['success' => false,'message' => 'Unauthorized']);
+        }
+
+        try {
+            $this->campaignsDataModel->saveCampaignCFLC($customerId, $campaignId);
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Cập nhật cflc thành công',
+            ]);
+
+        } catch (\Exception $e) {
+            log_message('error', 'Lỗi khi cập nhật CFLC: '. $e->getMessage());
+            return $this->response->setJSON([
+               'success' => false,
+               'message' => 'Lỗi khi cập nhật CFLC: '. $e->getMessage()
+            ]);
+        }
+    }
 }

@@ -108,6 +108,7 @@ $routes->group('', ['filter' => 'auth'], function($routes) {
         $routes->get('users/delete/(:num)', 'Users::delete/$1');
         $routes->get('optimize-logs/view/(:num)', 'OptimizeLogs::view/$1');
         $routes->get('reports/view/(:num)', 'Reports::view/$1');
+        $routes->post('campaigns/updateCFLC/(:segment)/(:segment)', 'Campaigns::updateCFLC/$1/$2');
     });
 });
 
