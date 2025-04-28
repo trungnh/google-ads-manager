@@ -10,6 +10,11 @@
                     <a href="<?= base_url('adsaccounts/settings/' . $account['id']) ?>" class="btn btn-sm btn-primary">
                         <i class="fas fa-cog"></i> Settings
                     </a>
+                    <?php if (session()->get('role') === 'superadmin'): ?>
+                    <a href="<?= base_url('campaignschedules/' . $account['customer_id']) ?>" class="btn btn-sm btn-info ml-2">
+                        <i class="fas fa-clock"></i> Campaign Schedules
+                    </a>
+                    <?php endif; ?>
                 </div>
                 <div class="text-end">
                     <select class="form-select" id="accountSelector" style="width: 300px;" onchange="window.location.href=this.value">

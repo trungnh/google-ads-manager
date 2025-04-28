@@ -28,6 +28,9 @@ body {
 .table {
     font-size: 14px!important;
 }
+.font-weight-bold {
+    font-weight: 700!important;
+}
 @media (min-width: 1400px) {
     .container, .container-lg, .container-md, .container-sm, .container-xl, .container-xxl {
         max-width: 1600px;

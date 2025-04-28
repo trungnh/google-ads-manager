@@ -109,6 +109,14 @@ $routes->group('', ['filter' => 'auth'], function($routes) {
         $routes->get('optimize-logs/view/(:num)', 'OptimizeLogs::view/$1');
         $routes->get('reports/view/(:num)', 'Reports::view/$1');
         $routes->post('campaigns/updateCFLC/(:segment)/(:segment)', 'Campaigns::updateCFLC/$1/$2');
+
+        // Campaign Schedules Routes
+        $routes->get('campaignschedules/(:segment)', 'CampaignSchedules::index/$1', ['filter' => 'auth']);
+        $routes->get('campaignschedules/(:segment)/create', 'CampaignSchedules::create/$1', ['filter' => 'auth']);
+        $routes->post('campaignschedules/(:segment)/create', 'CampaignSchedules::create/$1', ['filter' => 'auth']);
+        $routes->get('campaignschedules/(:segment)/edit/(:num)', 'CampaignSchedules::edit/$1/$2', ['filter' => 'auth']);
+        $routes->post('campaignschedules/(:segment)/edit/(:num)', 'CampaignSchedules::edit/$1/$2', ['filter' => 'auth']);
+        $routes->get('campaignschedules/(:segment)/delete/(:num)', 'CampaignSchedules::delete/$1/$2', ['filter' => 'auth']);
     });
 });
 
