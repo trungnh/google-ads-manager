@@ -565,7 +565,7 @@ class OptimizeCampaigns extends BaseCommand
     protected function sendTelegramMessage($message, $telegramChatIds = [])
     {
         $hour = date('H');
-        if($hour < 6 || $hour > 21){
+        if($hour < 5 || $hour > 21){
             return;
         }
         foreach($telegramChatIds as $telegramChatId){

@@ -49,7 +49,7 @@ class ReportCampaigns extends BaseCommand
     public function run(array $params)
     {
         $hour = date('H');
-        if($hour < 7 || $hour > 21){
+        if($hour < 5 || $hour > 21){
             //CLI::write("Thời gian không hợp lệ, chỉ chạy từ 7:00 đến 22:00", 'yellow');
             return;
         }

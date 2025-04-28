@@ -4,7 +4,7 @@
         <div class="col-md-8">
             <div class="card">
                 <div class="card-header">
-                    <h4 class="mb-0">Thông tin cá nhân</h4>
+                    <h4 class="mb-0">User Profile</h4>
                 </div>
                 <div class="card-body">
                     <?php if (session()->has('success')) : ?>
