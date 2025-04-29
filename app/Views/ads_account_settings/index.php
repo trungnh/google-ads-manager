@@ -178,6 +178,19 @@
                                 </div>
                             </div>
                         </div>
+
+                        <hr class="my-4">
+                        <h5 class="card-title mb-4 mt-4">Cài đặt tài khoản ads</h5>
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="default_paused_campaigns" name="default_paused_campaigns" 
+                                    <?= isset($settings['default_paused_campaigns']) && $settings['default_paused_campaigns'] ? 'checked' : '' ?>>
+                                <label class="form-check-label" for="default_paused_campaigns">Default load chiến dịch đã tạm dừng</label>
+                            </div>
+                            <small class="form-text text-muted">
+                                <i>Khi bật, ở trang dánh sách chiến dịch của tài khoản, hệ thống sẽ tự động load các chiến dịch đã tạm dừng</i>
+                            </small>
+                        </div>
                         <div class="mb-3">
                             <label for="order" class="form-label">Thứ tự sắp xếp</label>
                             <input type="number" class="form-control" id="order" name="order" 
@@ -219,6 +232,7 @@ $(document).ready(function() {
             auto_on_off: $('#auto_on_off').is(':checked') ? 'true' : 'false',
             use_roas_threshold: $('#use_roas_threshold').is(':checked')? 'true' : 'false',
             extended_cpa_threshold: $('#extended_cpa_threshold').val(),
+            default_paused_campaigns: $('#default_paused_campaigns').is(':checked') ? 'true' : 'false'
         };
         
         $.ajax({

@@ -38,7 +38,7 @@
     <div class="row mb-3">
         <div class="col-md-8">
             <div class="form-check form-check-inline mb-2">
-                <input class="form-check-input" type="checkbox" id="showPaused">
+                <input class="form-check-input" type="checkbox" id="showPaused" <?php echo (isset($accountSettings['default_paused_campaigns']) && $accountSettings['default_paused_campaigns'] == 1) ? 'checked' : '';?>>
                 <label class="form-check-label" for="showPaused">
                     Hiển thị chiến dịch đã tạm dừng
                 </label>

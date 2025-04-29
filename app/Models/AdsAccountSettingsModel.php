@@ -27,7 +27,8 @@ class AdsAccountSettingsModel extends Model
         'cost_threshold',
         'auto_on_off',
         'use_roas_threshold',
-        'extended_cpa_threshold'
+        'extended_cpa_threshold',
+        'default_paused_campaigns'
     ];
     protected $useTimestamps = true;
     protected $createdField = 'created_at';
@@ -48,7 +49,8 @@ class AdsAccountSettingsModel extends Model
         'cost_threshold' => 'permit_empty|decimal',
         'auto_on_off' => 'permit_empty|in_list[0,1]',
         'use_roas_threshold' => 'permit_empty|in_list[0,1]',
-        'extended_cpa_threshold' => 'permit_empty|decimal'
+        'extended_cpa_threshold' => 'permit_empty|decimal',
+        'default_paused_campaigns' => 'permit_empty|in_list[0,1]'
     ];
 
     public function getSettingsByAccountId($accountId)
@@ -78,7 +80,8 @@ class AdsAccountSettingsModel extends Model
             'cost_threshold' => $data['cost_threshold'] ?? 0,
             'auto_on_off' => ($data['auto_on_off'] === 'true' || $data['auto_on_off'] === true || $data['auto_on_off'] === 1) ? 1 : 0,
             'use_roas_threshold' => ($data['use_roas_threshold'] === 'true' || $data['use_roas_threshold'] === true || $data['use_roas_threshold'] === 1) ? 1 : 0,
-            'extended_cpa_threshold' => $data['extended_cpa_threshold']?? 0
+            'extended_cpa_threshold' => $data['extended_cpa_threshold']?? 0,
+            'default_paused_campaigns' => ($data['default_paused_campaigns'] === 'true' || $data['default_paused_campaigns'] === true || $data['default_paused_campaigns'] === 1) ? 1 : 0
         ];
 
         // Debug log
