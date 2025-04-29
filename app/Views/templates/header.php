@@ -109,7 +109,7 @@
                 <i class="fas fa-bars"></i>
             </button>
             
-            <a class="navbar-brand d-flex align-items-center" href="<?= base_url() ?>">
+            <a class="navbar-brand d-flex align-items-center" href="<?= base_url('dashboard') ?>">
                 <img src="<?= base_url('assets/images/logo.png') ?>" alt="Logo" class="me-2">
                 <span>NNHD Ads Manager</span>
             </a>
