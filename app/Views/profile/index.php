@@ -7,18 +7,6 @@
                     <h4 class="mb-0">User Profile</h4>
                 </div>
                 <div class="card-body">
-                    <?php if (session()->has('success')) : ?>
-                        <div class="alert alert-success">
-                            <?= session('success') ?>
-                        </div>
-                    <?php endif; ?>
-
-                    <?php if (session()->has('error')) : ?>
-                        <div class="alert alert-danger">
-                            <?= session('error') ?>
-                        </div>
-                    <?php endif; ?>
-
                     <form action="<?= base_url('profile/update') ?>" method="post">
                         <?= csrf_field() ?>
                         

@@ -9,11 +9,6 @@
                     <h3>Đồng bộ tài khoản Google Ads</h3>
                 </div>
                 <div class="card-body">
-                    <?php if (session()->has('error')): ?>
-                        <div class="alert alert-danger">
-                            <?= session('error') ?>
-                        </div>
-                    <?php endif; ?>
 
                     <p>Tính năng này sẽ đồng bộ tất cả các tài khoản Google Ads mà bạn có quyền truy cập.</p>
                     

@@ -9,22 +9,6 @@
                     <h3>User Settings</h3>
                 </div>
                 <div class="card-body">
-                    <?php if (session()->has('success')): ?>
-                        <div class="alert alert-success">
-                            <?= session('success') ?>
-                        </div>
-                    <?php endif; ?>
-
-                    <?php if (session()->has('errors')): ?>
-                        <div class="alert alert-danger">
-                            <ul>
-                                <?php foreach (session('errors') as $error): ?>
-                                    <li><?= $error ?></li>
-                                <?php endforeach; ?>
-                            </ul>
-                        </div>
-                    <?php endif; ?>
-
                     <form action="<?= base_url('settings/update') ?>" method="post">
                         <div class="form-group mb-3">
                             <label for="mcc_id">Google Ads MCC ID (Optional)</label>

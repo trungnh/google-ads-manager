@@ -47,7 +47,7 @@
                         <div class="form-group mt-3">
                             <label class="font-weight-bold">Select Campaigns</label>
                             <div class="table-responsive">
-                                <table class="table table-bordered table-striped">
+                                <table class="table table-bordered table-striped table-hover">
                                     <thead>
                                         <tr>
                                             <th width="50px">

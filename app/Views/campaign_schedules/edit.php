@@ -13,12 +13,6 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <?php if (session()->has('error')): ?>
-                        <div class="alert alert-danger">
-                            <?= session('error') ?>
-                        </div>
-                    <?php endif; ?>
-
                     <form action="<?= base_url("campaignschedules/{$customerId}/edit/{$schedule['id']}") ?>" method="post">
                         <div class="form-group mt-2">
                             <label class="font-weight-bold" for="action_type">Hành động</label>
@@ -57,7 +51,7 @@
                         <div class="form-group mt-3">
                             <label class="font-weight-bold">Select Campaigns</label>
                             <div class="table-responsive">
-                                <table class="table table-bordered table-striped">
+                                <table class="table table-bordered table-striped table-hover">
                                     <thead>
                                         <tr>
                                             <th width="50px">

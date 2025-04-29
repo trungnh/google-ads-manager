@@ -16,27 +16,15 @@
                         </select>
                     </div>
                     <div class="card-tools">
-                        <a href="<?= base_url("campaignschedules/{$customerId}/create") ?>" class="btn btn-sm btn-primary">
+                        <a href="<?= base_url("campaignschedules/{$customerId}/create") ?>" class="btn btn-sm btn-primary my-1">
                             <i class="fas fa-plus"></i> Add New Schedule
                         </a>
-                        <a href="<?= base_url('campaigns/index/' . $customerId); ?>" class="btn btn-sm btn-info">
+                        <a href="<?= base_url('campaigns/index/' . $customerId); ?>" class="btn btn-sm btn-info my-1">
                             View Campaigns
                         </a>
                     </div>
                 </div>
                 <div class="card-body">
-                    <?php if (session()->has('success')): ?>
-                        <div class="alert alert-success">
-                            <?= session('success') ?>
-                        </div>
-                    <?php endif; ?>
-
-                    <?php if (session()->has('error')): ?>
-                        <div class="alert alert-danger">
-                            <?= session('error') ?>
-                        </div>
-                    <?php endif; ?>
-
                     <div class="table-responsive">
                         <table class="table table-bordered table-striped">
                             <thead>
@@ -66,11 +54,11 @@
                                         </td>
                                         <td>
                                             <a href="<?= base_url("campaignschedules/{$customerId}/edit/{$schedule['id']}") ?>" 
-                                               class="btn btn-sm btn-primary">
+                                               class="btn btn-sm btn-primary m-1">
                                                 <i class="fas fa-edit"></i> Edit
                                             </a>
                                             <a href="<?= base_url("campaignschedules/{$customerId}/delete/{$schedule['id']}") ?>" 
-                                               class="btn btn-sm btn-danger"
+                                               class="btn btn-sm btn-danger m-1"
                                                onclick="return confirm('Are you sure you want to delete this schedule?')">
                                                 <i class="fas fa-trash"></i> Delete
                                             </a>

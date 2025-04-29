@@ -34,12 +34,6 @@
                         </div>
                     </div>
 
-                    <?php if (session()->has('error')): ?>
-                        <div class="alert alert-danger">
-                            <?= session('error') ?>
-                        </div>
-                    <?php endif; ?>
-
                     <div class="row mb-3">
                         <div class="col-md-8">
                             <div class="form-check form-check-inline mb-2">
