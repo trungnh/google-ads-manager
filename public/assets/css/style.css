@@ -155,7 +155,7 @@ body.sidebar-collapsed .sidebar .nav-link i {
 /* Content area styling */
 .content-wrapper {
     margin-left: 250px;
-    padding: 1.5rem;
+    padding: 0.3rem;
     min-height: calc(100vh - 70px);
     background: var(--bg-dark);
     transition: all .3s ease;
