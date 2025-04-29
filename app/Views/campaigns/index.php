@@ -1,101 +1,111 @@
 <?= $this->include('templates/header') ?>
 
-<div class="container-fluid mt-4">
-    <div class="row mb-3">
-        <div class="col">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h2>Chiến dịch - <?= esc($account['customer_name']) ?></h2>
-                    <p>ID tài khoản: <?= esc($account['customer_id']) ?></p>
-                    <a href="<?= base_url('adsaccounts/settings/' . $account['id']) ?>" class="btn btn-sm btn-primary">
-                        <i class="fas fa-cog"></i> Settings
-                    </a>
-                    <?php if (session()->get('role') === 'superadmin'): ?>
-                    <a href="<?= base_url('campaignschedules/' . $account['customer_id']) ?>" class="btn btn-sm btn-info ml-2">
-                        <i class="fas fa-clock"></i> Campaign Schedules
-                    </a>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title">Chiến dịch - <?= esc($account['customer_name']) ?></h4>
+                    
+                    <div class="row mb-3">
+                        <div class="col">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <p>ID tài khoản: <?= esc($account['customer_id']) ?></p>
+                                    <a href="<?= base_url('adsaccounts/settings/' . $account['id']) ?>" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-cog"></i> Settings
+                                    </a>
+                                    <?php if (session()->get('role') === 'superadmin'): ?>
+                                    <a href="<?= base_url('campaignschedules/' . $account['customer_id']) ?>" class="btn btn-sm btn-info ml-2">
+                                        <i class="fas fa-clock"></i> Campaign Schedules
+                                    </a>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="text-end">
+                                    <select class="form-select" id="accountSelector" style="width: 300px;" onchange="window.location.href=this.value">
+                                        <?php foreach ($accounts as $acc): ?>
+                                            <option value="<?= base_url('campaigns/index/' . $acc['customer_id']) ?>" <?= $acc['customer_id'] == $account['customer_id'] ? 'selected' : '' ?>>
+                                                <?= esc($acc['customer_name']) ?> - <?= esc($acc['customer_id']) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <?php if (session()->has('error')): ?>
+                        <div class="alert alert-danger">
+                            <?= session('error') ?>
+                        </div>
                     <?php endif; ?>
-                </div>
-                <div class="text-end">
-                    <select class="form-select" id="accountSelector" style="width: 300px;" onchange="window.location.href=this.value">
-                        <?php foreach ($accounts as $acc): ?>
-                            <option value="<?= base_url('campaigns/index/' . $acc['customer_id']) ?>" <?= $acc['customer_id'] == $account['customer_id'] ? 'selected' : '' ?>>
-                                <?= esc($acc['customer_name']) ?> - <?= esc($acc['customer_id']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <?php if (session()->has('error')): ?>
-        <div class="alert alert-danger">
-            <?= session('error') ?>
-        </div>
-    <?php endif; ?>
-
-    <div class="row mb-3">
-        <div class="col-md-8">
-            <div class="form-check form-check-inline mb-2">
-                <input class="form-check-input" type="checkbox" id="showPaused" <?php echo (isset($accountSettings['default_paused_campaigns']) && $accountSettings['default_paused_campaigns'] == 1) ? 'checked' : '';?>>
-                <label class="form-check-label" for="showPaused">
-                    Hiển thị chiến dịch đã tạm dừng
-                </label>
-            </div>
-            <div class="d-inline-block">
-                <div class="input-group">
-                    <input type="text" class="form-control" id="startDate" placeholder="Từ ngày">
-                    <span class="input-group-text">đến</span>
-                    <input type="text" class="form-control" id="endDate" placeholder="Đến ngày">
-                    <button id="loadCampaigns" class="btn btn-primary">Load chiến dịch</button>
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <div class="form-check form-check-inline mb-2">
+                                <input class="form-check-input" type="checkbox" id="showPaused" <?php echo (isset($accountSettings['default_paused_campaigns']) && $accountSettings['default_paused_campaigns'] == 1) ? 'checked' : '';?>>
+                                <label class="form-check-label" for="showPaused">
+                                    Hiển thị chiến dịch đã tạm dừng
+                                </label>
+                            </div>
+                            <div class="d-inline-block">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="startDate" placeholder="Từ ngày">
+                                    <span class="input-group-text">đến</span>
+                                    <input type="text" class="form-control" id="endDate" placeholder="Đến ngày">
+                                    <button id="loadCampaigns" class="btn btn-primary">Load chiến dịch</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <div id="lastUpdate" class="text-muted mt-2" style="display: none;">
+                                Lần cập nhật gần nhất: <span id="lastUpdateTime"></span>
+                            </div>
+                            <div class="d-inline-block">
+                                <div class="input-group">
+                                    <button id="updateData" class="btn btn-warning" style="display: none;">
+                                        <i class="fas fa-sync-alt"></i> Cập nhật dữ liệu
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="campaignsTable" class="table-responsive" style="display: none;">
+                        <table class="table table-bordered table-hover">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th class="" data-sort="campaign_id">ID</th>
+                                    <th class="sortable" data-sort="name">Tên chiến dịch</th>
+                                    <th class="sortable" data-sort="budget">Ngân sách</th>
+                                    <th class="" data-sort="status">Trạng thái</th>
+                                    <th class="sortable" data-sort="cost">Chi tiêu</th>
+                                    <th class="sortable" data-sort="roas">ROAS</th>
+                                    <th class="sortable" data-sort="cost_per_conversion">CPA</th>
+                                    <th class="sortable" data-sort="conversions">Conv</th>
+                                    <th class="sortable" data-sort="ctr">CTR</th>
+                                    <th class="sortable" data-sort="clicks">Clicks</th>
+                                    <th class="sortable" data-sort="average_cpc">CPC</th>
+                                    <th class="sortable" data-sort="conversion_value">Conv value</th>
+                                    <th class="sortable" data-sort="conversion_rate">Conv rate</th>
+                                    <th class="sortable" data-toggle="tooltip" data-placement="top" title="Cost From Last Conv">CFLC</th>
+                                    <th class="" data-sort="bidding_strategy">Chiến lược</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="campaignsBody">
+                                <tr>
+                                    <td colspan="14" class="text-center">Đang tải dữ liệu...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    <div class="row mb-3">
-        <div class="col-md-8">
-            <div id="lastUpdate" class="text-muted mt-2" style="display: none;">
-                Lần cập nhật gần nhất: <span id="lastUpdateTime"></span>
-            </div>
-            <div class="d-inline-block">
-                <div class="input-group">
-                    <button id="updateData" class="btn btn-warning" style="display: none;">
-                        <i class="fas fa-sync-alt"></i> Cập nhật dữ liệu
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="campaignsTable" class="table-responsive" style="display: none;">
-        <table class="table table-bordered table-hover">
-            <thead class="thead-dark">
-                <tr>
-                    <th class="" data-sort="campaign_id">ID</th>
-                    <th class="sortable" data-sort="name">Tên chiến dịch</th>
-                    <th class="sortable" data-sort="budget">Ngân sách</th>
-                    <th class="" data-sort="status">Trạng thái</th>
-                    <th class="sortable" data-sort="cost">Chi tiêu</th>
-                    <th class="sortable" data-sort="roas">ROAS</th>
-                    <th class="sortable" data-sort="cost_per_conversion">CPA</th>
-                    <th class="sortable" data-sort="conversions">Conv</th>
-                    <th class="sortable" data-sort="ctr">CTR</th>
-                    <th class="sortable" data-sort="clicks">Clicks</th>
-                    <th class="sortable" data-sort="average_cpc">CPC</th>
-                    <th class="sortable" data-sort="conversion_value">Conv value</th>
-                    <th class="sortable" data-sort="conversion_rate">Conv rate</th>
-                    <th class="sortable" data-toggle="tooltip" data-placement="top" title="Cost From Last Conv">CFLC</th>
-                    <th class="" data-sort="bidding_strategy">Chiến lược</th>
-                    <th>Thao tác</th>
-                </tr>
-            </thead>
-            <tbody id="campaignsBody">
-                <tr>
-                    <td colspan="14" class="text-center">Đang tải dữ liệu...</td>
-                </tr>
-            </tbody>
-        </table>
     </div>
 </div>
 

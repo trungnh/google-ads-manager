@@ -1,32 +1,37 @@
 <?= $this->include('templates/header') ?>
 
-<div class="container-fluid mt-4">
+<div class="container-fluid">
     <div class="row mb-3">
-        <div class="col">
-            <h2>Cài đặt tài khoản - <?= esc($account['customer_name']) ?></h2>
-            <div class="text-end mb-3">
-                <select class="form-select" id="accountSelector" style="width: 300px;" onchange="window.location.href=this.value">
-                    <?php foreach ($accounts as $acc): ?>
-                        <option value="<?= base_url('adsaccounts/settings/' . $acc['id']) ?>" <?= $acc['id'] == $account['id'] ? 'selected' : '' ?>>
-                            <?= esc($acc['customer_name']) ?> - <?= esc($acc['customer_id']) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Cài đặt tài khoản - <?= esc($account['customer_name']) ?></h2>
+                </div>
+                <div class="card-body">
+                    <div class="text-end mb-3">
+                        <select class="form-select" id="accountSelector" style="width: 300px;" onchange="window.location.href=this.value">
+                            <?php foreach ($accounts as $acc): ?>
+                                <option value="<?= base_url('adsaccounts/settings/' . $acc['id']) ?>" <?= $acc['id'] == $account['id'] ? 'selected' : '' ?>>
+                                    <?= esc($acc['customer_name']) ?> - <?= esc($acc['customer_id']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <a href="<?= base_url('campaigns/index/' . $account['customer_id']) ?>" class="btn btn-sm btn-info">
+                        View Campaigns
+                    </a>
+                    <?php if (session()->has('error')): ?>
+                        <div class="alert alert-danger">
+                            <?= session('error') ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
             </div>
-            <a href="<?= base_url('campaigns/index/' . $account['customer_id']) ?>" class="btn btn-sm btn-info">
-                View Campaigns
-            </a>
         </div>
     </div>
 
-    <?php if (session()->has('error')): ?>
-        <div class="alert alert-danger">
-            <?= session('error') ?>
-        </div>
-    <?php endif; ?>
-
     <div class="row">
-        <div class="col-md-6">
+        <div class="col-md-8">
             <div class="card">
                 <div class="card-header">
                     <h5 class="card-title mb-0">Cài đặt tối ưu hóa tự động</h5>

@@ -1,6 +1,6 @@
 <?= $this->include('templates/header') ?>
-<div class="container py-4">
-    <div class="row justify-content-center">
+<div class="container-fluid">
+    <div class="row">
         <div class="col-md-8">
             <div class="card">
                 <div class="card-header">

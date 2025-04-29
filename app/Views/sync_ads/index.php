@@ -1,9 +1,9 @@
 <!-- app/Views/sync_ads/index.php -->
 <?= $this->include('templates/header') ?>
 
-<div class="container mt-5">
+<div class="container-fluid">
     <div class="row">
-        <div class="col-md-8 offset-md-2">
+        <div class="col-md-12">
             <div class="card">
                 <div class="card-header">
                     <h3>Đồng bộ tài khoản Google Ads</h3>

@@ -1,9 +1,9 @@
 <!-- app/Views/settings/index.php -->
 <?= $this->include('templates/header') ?>
 
-<div class="container mt-5">
+<div class="container-fluid">
     <div class="row">
-        <div class="col-md-6 offset-md-3">
+        <div class="col-md-8">
             <div class="card">
                 <div class="card-header">
                     <h3>User Settings</h3>
