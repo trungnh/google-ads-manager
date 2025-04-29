@@ -70,17 +70,26 @@
             document.body.classList.remove('page-loading');
             document.body.classList.add('page-ready');
             
-            // Toggle sidebar
-            $('#sidebarToggle').on('click', function() {
-                $('body').toggleClass('sidebar-collapsed');
-                localStorage.setItem('sidebarCollapsed', $('body').hasClass('sidebar-collapsed'));
+            // Toggle sidebar trên mobile và desktop
+            $('#sidebarToggle').on('click', function(e) {
+                e.preventDefault();
+                if (window.innerWidth < 992) {
+                    $('.sidebar').toggleClass('show');
+                } else {
+                    $('body').toggleClass('sidebar-collapsed');
+                    localStorage.setItem('sidebarCollapsed', $('body').hasClass('sidebar-collapsed'));
+                }
             });
 
-            // Toggle sidebar on mobile
-            $('.navbar-toggler').on('click', function() {
-                $('.sidebar').toggleClass('show');
+            // Close sidebar when clicking outside of it on mobile
+            $(document).on('click', function(e) {
+                if (window.innerWidth < 992) {
+                    if (!$(e.target).closest('.sidebar').length && !$(e.target).closest('#sidebarToggle').length) {
+                        $('.sidebar').removeClass('show');
+                    }
+                }
             });
-            
+
             // Initialize dropdowns
             var dropdownTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="dropdown"]'));
             dropdownTriggerList.map(function(dropdownTriggerEl) {
@@ -95,64 +104,46 @@
 <body class="page-loading">
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-gradient-primary fixed-top">
-        <div class="container-fluid px-0">
-            <!-- Sidebar Toggle Button -->
-            <button id="sidebarToggle" class="btn btn-link text-light me-3">
+        <div class="container-fluid">
+            <button id="sidebarToggle" class="btn btn-link text-light">
                 <i class="fas fa-bars"></i>
             </button>
             
-            <!-- Toggler -->
-            <button class="navbar-toggler ms-n3 bg-transparent border-0" type="button">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            
-            <!-- Brand -->
-            <a class="navbar-brand d-flex align-items-center mx-3" href="<?= base_url() ?>">
-                <img src="<?= base_url('assets/images/logo.png') ?>" alt="Logo" width="30" height="30" class="me-2">
+            <a class="navbar-brand d-flex align-items-center" href="<?= base_url() ?>">
+                <img src="<?= base_url('assets/images/logo.png') ?>" alt="Logo" class="me-2">
                 <span>NNHD Ads Manager</span>
             </a>
-
-            <!-- Right navbar -->
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav align-items-center ms-auto">
-                    <?php if (session()->get('isLoggedIn')): ?>
-                        <!-- User -->
+            
+            <?php if (session()->get('isLoggedIn')): ?>
+                <a href="<?= base_url('logout') ?>" class="btn btn-link text-light d-lg-none">
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
+                
+                <!-- User dropdown (chỉ hiện trên desktop) -->
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav align-items-center ms-auto">
                         <li class="nav-item dropdown">
                             <a class="nav-link pr-0" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <div class="d-flex align-items-center">
-                                    <div class="me-2 d-none d-lg-inline">
+                                    <div class="me-2">
                                         <span class="mb-0 text-sm font-weight-bold"><?= session()->get('username') ?></span>
                                     </div>
                                     <i class="fas fa-user-circle"></i>
                                 </div>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                                <!-- <?php if (session()->get('role') === 'superadmin'): ?>
-                                    <li><a class="dropdown-item" href="<?= base_url('users') ?>">
-                                        <i class="fas fa-users-cog me-2"></i>Quản lý Users
-                                    </a></li>
-                                <?php endif; ?>
-                                <li><a class="dropdown-item" href="<?= base_url('profile') ?>">
-                                    <i class="fas fa-user me-2"></i>User Profile
-                                </a></li>
-                                <li><a class="dropdown-item" href="<?= base_url('settings') ?>">
-                                    <i class="fas fa-cog me-2"></i>User Settings
-                                </a></li> -->
-                                <!-- <li><hr class="dropdown-divider"></li> -->
                                 <li><a class="dropdown-item text-danger" href="<?= base_url('logout') ?>">
                                     <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
                                 </a></li>
                             </ul>
                         </li>
-                    <?php else: ?>
-                        <li class="nav-item">
-                            <a class="nav-link" href="<?= base_url('login') ?>">
-                                <i class="fas fa-sign-in-alt me-1"></i>Đăng nhập
-                            </a>
-                        </li>
-                    <?php endif; ?>
-                </ul>
-            </div>
+                    </ul>
+                </div>
+            <?php else: ?>
+                <a class="nav-link" href="<?= base_url('login') ?>">
+                    <i class="fas fa-sign-in-alt me-1"></i>Đăng nhập
+                </a>
+            <?php endif; ?>
         </div>
     </nav>
 

@@ -39,7 +39,7 @@
                         <?php endif; ?>
 
                         <form action="<?= base_url('syncads/syncaccounts') ?>" method="post">
-                            <button type="submit" class="btn btn-primary">Bắt đầu đồng bộ</button>
+                            <button type="submit" class="btn btn-primary mb-2 mb-md-0">Bắt đầu đồng bộ</button>
                             <a href="<?= base_url('adsaccounts') ?>" class="btn btn-secondary ml-2">Xem tài khoản hiện có</a>
                         </form>
                     <?php endif; ?>

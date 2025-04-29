@@ -51,11 +51,22 @@ body {
     padding: 0.75rem 1rem;
     border: 0;
     box-shadow: 0 0 1rem 0 rgba(0, 0, 0, .15);
+    min-height: 70px;
+}
+
+.navbar .container-fluid {
+    padding: 0 1rem;
 }
 
 .navbar-brand {
     color: #fff !important;
     font-weight: 600;
+    margin-right: 0;
+}
+
+.navbar-brand img {
+    width: 30px;
+    height: 30px;
 }
 
 .navbar .nav-link {
@@ -346,24 +357,107 @@ body.sidebar-collapsed .sidebar .nav-link i {
 
 /* Responsive */
 @media (max-width: 992px) {
-    .sidebar {
-        transform: translateX(-100%);
-    }
-
-    .sidebar.show {
-        transform: translateX(0);
-    }
-
-    .content-wrapper {
+    .navbar-brand {
         margin-left: 0;
+        font-size: 0.9rem;
+    }
+
+    .navbar-brand img {
+        width: 25px;
+        height: 25px;
+    }
+
+    #sidebarToggle {
+        order: 1;
+        margin: 0 0.5rem;
+        padding: 0.25rem;
+        z-index: 1060; /* Đảm bảo nút toggle luôn ở trên cùng */
+    }
+
+    .navbar .btn-link {
+        color: white !important;
+        font-size: 1.2rem;
     }
 
     .navbar .container-fluid {
-        padding: 0 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 0.5rem !important;
+    }
+
+    /* Sidebar styling on mobile */
+    .sidebar {
+        position: fixed;
+        left: -250px;
+        transition: all 0.3s ease;
+        z-index: 1050;
+        background-color: #f8f9fa !important; /* Màu nền sáng */
+        box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+    }
+
+    .sidebar .nav-link {
+        color: #333 !important; /* Màu chữ tối */
+    }
+
+    .sidebar .nav-link:hover {
+        background-color: #e9ecef !important; /* Màu hover sáng */
+        color: #000 !important;
+    }
+
+    .sidebar .nav-link i {
+        color: #6c757d !important; /* Màu icon xám */
+    }
+
+    .sidebar .nav-link.active {
+        background-color: #e3e6f0 !important;
+        color: #fff !important;
+    }
+
+    .sidebar .nav-link.active i {
+        color: #fff !important;
+    }
+
+    .sidebar.show {
+        left: 0;
+    }
+
+    /* Overlay khi sidebar hiện */
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1040;
+    }
+
+    .sidebar.show + .sidebar-overlay {
+        display: block;
+    }
+
+    .content-wrapper {
+        margin-left: 0 !important;
+        width: 100% !important;
     }
 
     body.sidebar-collapsed .content-wrapper {
         margin-left: 0;
+    }
+
+    /* Đơn giản hóa nút đăng xuất trên mobile */
+    .navbar .btn-link.text-light {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem;
+        font-size: 1.2rem;
+    }
+
+    /* Ẩn dropdown user trên mobile */
+    .navbar-nav {
+        display: none !important;
     }
     
     body.sidebar-collapsed .sidebar {
@@ -381,6 +475,9 @@ body.sidebar-collapsed .sidebar .nav-link i {
         float: none;
         margin: 0;
         border-radius: 0;
+    }
+    table .btn {
+        padding: 0.325rem;
     }
 }
 

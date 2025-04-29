@@ -55,11 +55,11 @@
                                             </td>
                                             <td><?= $account['last_synced'] ? date('Y-m-d H:i', strtotime($account['last_synced'])) : 'Never' ?></td>
                                             <td>
-                                                <a href="<?= base_url('campaigns/index/' . $account['customer_id']) ?>" class="btn btn-sm btn-info">
+                                                <a href="<?= base_url('campaigns/index/' . $account['customer_id']) ?>" class="btn btn-sm btn-info mb-2 mb-md-0">
                                                     View Campaigns
                                                 </a>
                                                 <?php if (in_array(session()->get('role'), ['superadmin', 'admin'])): ?>
-                                                <a href="<?= base_url('adsaccounts/settings/' . $account['id']) ?>" class="btn btn-sm btn-primary">
+                                                <a href="<?= base_url('adsaccounts/settings/' . $account['id']) ?>" class="btn btn-sm btn-primary mb-2 mb-md-0">
                                                     <i class="fas fa-cog"></i> Settings
                                                 </a>
                                                 <button onclick="deleteAccount('<?= $account['id'] ?>', '<?= $account['customer_name'] ?>')" class="btn btn-sm btn-danger">
@@ -129,5 +129,10 @@ function deleteAccount(accountId, accountName) {
     };
 }
 </script>
-
+<style>
+    .table td .btn {
+        font-size: 0.8rem;
+        font-weight: normal;
+    }
+</style> 
 <?= $this->include('templates/footer') ?>

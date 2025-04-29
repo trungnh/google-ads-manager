@@ -8,28 +8,28 @@
                     <h4 class="card-title">Chiến dịch - <?= esc($account['customer_name']) ?></h4>
                     
                     <div class="row mb-3">
-                        <div class="col">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <p>ID tài khoản: <?= esc($account['customer_id']) ?></p>
-                                    <a href="<?= base_url('adsaccounts/settings/' . $account['id']) ?>" class="btn btn-sm btn-primary">
-                                        <i class="fas fa-cog"></i> Settings
-                                    </a>
-                                    <?php if (session()->get('role') === 'superadmin'): ?>
-                                    <a href="<?= base_url('campaignschedules/' . $account['customer_id']) ?>" class="btn btn-sm btn-info ml-2">
-                                        <i class="fas fa-clock"></i> Campaign Schedules
-                                    </a>
-                                    <?php endif; ?>
-                                </div>
-                                <div class="text-end">
-                                    <select class="form-select" id="accountSelector" style="width: 300px;" onchange="window.location.href=this.value">
-                                        <?php foreach ($accounts as $acc): ?>
-                                            <option value="<?= base_url('campaigns/index/' . $acc['customer_id']) ?>" <?= $acc['customer_id'] == $account['customer_id'] ? 'selected' : '' ?>>
-                                                <?= esc($acc['customer_name']) ?> - <?= esc($acc['customer_id']) ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
+                        <div class="col-md-6">
+                            <div>
+                                <p>ID tài khoản: <?= esc($account['customer_id']) ?></p>
+                                <a href="<?= base_url('adsaccounts/settings/' . $account['id']) ?>" class="btn btn-sm btn-primary mb-2 mb-md-0">
+                                    <i class="fas fa-cog"></i> Settings
+                                </a>
+                                <?php if (session()->get('role') === 'superadmin'): ?>
+                                <a href="<?= base_url('campaignschedules/' . $account['customer_id']) ?>" class="btn btn-sm btn-info ml-2 mb-2 mb-md-0">
+                                    <i class="fas fa-clock"></i> Campaign Schedules
+                                </a>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-right">
+                            <div class="text-end">
+                                <select class="form-select" id="accountSelector" style="width: 300px;" onchange="window.location.href=this.value">
+                                    <?php foreach ($accounts as $acc): ?>
+                                        <option value="<?= base_url('campaigns/index/' . $acc['customer_id']) ?>" <?= $acc['customer_id'] == $account['customer_id'] ? 'selected' : '' ?>>
+                                            <?= esc($acc['customer_name']) ?> - <?= esc($acc['customer_id']) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
                             </div>
                         </div>
                     </div>
