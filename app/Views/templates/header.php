@@ -105,9 +105,11 @@
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-gradient-primary fixed-top">
         <div class="container-fluid">
+            <?php if (session()->get('isLoggedIn')): ?>
             <button id="sidebarToggle" class="btn btn-link text-light">
                 <i class="fas fa-bars"></i>
             </button>
+            <?php endif; ?>
             
             <a class="navbar-brand d-flex align-items-center" href="<?= base_url('dashboard') ?>">
                 <img src="<?= base_url('assets/images/logo.png') ?>" alt="Logo" class="me-2">

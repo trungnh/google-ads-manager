@@ -1,7 +1,7 @@
 <?= $this->include('templates/header') ?>
 
 <div class="row justify-content-md-center">
-    <div class="col-md-6">
+    <div class="col-md-3">
         <div class="card">
             <div class="card-header">
                 <h4 class="card-title">Đăng nhập</h4>

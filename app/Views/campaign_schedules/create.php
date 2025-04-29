@@ -53,6 +53,7 @@
                                             <th width="50px">
                                                 <input type="checkbox" id="select-all">
                                             </th>
+                                            <th>Campaign ID</th>
                                             <th>Campaign Name</th>
                                             <th>Status</th>
                                         </tr>
@@ -65,6 +66,7 @@
                                                            value="<?= $campaign['campaign_id'] ?>" 
                                                            class="campaign-checkbox">
                                                 </td>
+                                                <td><?= $campaign['campaign_id'] ?></td>
                                                 <td><?= $campaign['name'] ?></td>
                                                 <td>
                                                     <span class="badge badge-<?= $campaign['status'] === 'ENABLED' ? 'success' : 'warning' ?>">

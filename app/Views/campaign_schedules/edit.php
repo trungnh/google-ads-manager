@@ -63,6 +63,7 @@
                                             <th width="50px">
                                                 <input type="checkbox" id="select-all">
                                             </th>
+                                            <th>Campaign ID</th>
                                             <th>Campaign Name</th>
                                             <th>Status</th>
                                         </tr>
@@ -79,6 +80,7 @@
                                                            class="campaign-checkbox"
                                                            <?= in_array($campaign['campaign_id'], $scheduledCampaignIds) ? 'checked' : '' ?>>
                                                 </td>
+                                                <td><?= $campaign['campaign_id'] ?></td>
                                                 <td><?= $campaign['name'] ?></td>
                                                 <td>
                                                     <span class="badge bg-<?= $campaign['status'] === 'ENABLED' ? 'success' : 'warning' ?>">
