@@ -2,11 +2,7 @@
 <div class="sidebar">
     <div class="d-flex flex-column h-100">
         <!-- Sidebar header -->
-        <div class="sidebar-header p-3">
-            <div class="text-center">
-                <h6 class="text-uppercase mb-1">Navigation</h6>
-            </div>
-        </div>
+        <div class="sidebar-header p-3"></div>
 
         <!-- Nav items -->
         <ul class="nav flex-column">

@@ -22,6 +22,14 @@
     <!-- Toastr JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <script>
+        // Đợi DOM content loaded rồi mới thực thi
+        document.addEventListener('DOMContentLoaded', function() {
+            // Kiểm tra sidebar state
+            if (localStorage.getItem('sidebarCollapsed') === 'true') {
+                document.body.classList.add('sidebar-collapsed');
+            }
+        });
+        
         // Toastr configuration
         toastr.options = {
             "closeButton": true,
@@ -58,6 +66,16 @@
         }
         
         $(document).ready(function() {
+            // Remove page-loading and add page-ready class when DOM is ready
+            document.body.classList.remove('page-loading');
+            document.body.classList.add('page-ready');
+            
+            // Toggle sidebar
+            $('#sidebarToggle').on('click', function() {
+                $('body').toggleClass('sidebar-collapsed');
+                localStorage.setItem('sidebarCollapsed', $('body').hasClass('sidebar-collapsed'));
+            });
+
             // Toggle sidebar on mobile
             $('.navbar-toggler').on('click', function() {
                 $('.sidebar').toggleClass('show');
@@ -74,10 +92,15 @@
         });
     </script>
 </head>
-<body>
+<body class="page-loading">
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-gradient-primary fixed-top">
         <div class="container-fluid px-0">
+            <!-- Sidebar Toggle Button -->
+            <button id="sidebarToggle" class="btn btn-link text-light me-3">
+                <i class="fas fa-bars"></i>
+            </button>
+            
             <!-- Toggler -->
             <button class="navbar-toggler ms-n3 bg-transparent border-0" type="button">
                 <span class="navbar-toggler-icon"></span>
