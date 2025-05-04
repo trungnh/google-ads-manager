@@ -85,7 +85,7 @@
                                     <th class="sortable" data-sort="average_cpc">CPC</th>
                                     <th class="sortable" data-sort="conversion_value">Conv value</th>
                                     <th class="sortable" data-sort="conversion_rate">Conv rate</th>
-                                    <th class="sortable" data-toggle="tooltip" data-placement="top" title="Cost From Last Conv">CFLC</th>
+                                    <th class="sortable" data-toggle="tooltip" data-placement="top" title="Chi tiêu thêm từ lần ra đơn gần nhất">CFLC</th>
                                     <th class="" data-sort="bidding_strategy">Chiến lược</th>
                                     <th>Thao tác</th>
                                 </tr>
