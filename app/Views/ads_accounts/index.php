@@ -58,14 +58,12 @@
                                                 <a href="<?= base_url('campaigns/index/' . $account['customer_id']) ?>" class="btn btn-sm btn-info mb-2 mb-md-0">
                                                     View Campaigns
                                                 </a>
-                                                <?php if (in_array(session()->get('role'), ['superadmin', 'admin'])): ?>
                                                 <a href="<?= base_url('adsaccounts/settings/' . $account['id']) ?>" class="btn btn-sm btn-primary mb-2 mb-md-0">
                                                     <i class="fas fa-cog"></i> Settings
                                                 </a>
                                                 <button onclick="deleteAccount('<?= $account['id'] ?>', '<?= $account['customer_name'] ?>')" class="btn btn-sm btn-danger">
                                                     <i class="fas fa-trash"></i> Delete
                                                 </button>
-                                                <?php endif; ?>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>

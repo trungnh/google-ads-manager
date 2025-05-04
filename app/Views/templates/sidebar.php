@@ -20,14 +20,12 @@
                 </a>
             </li>
 
-            <?php if (in_array(session()->get('role'), ['superadmin', 'admin'])): ?>
-                <li class="nav-item">
-                    <a href="<?= base_url('optimize-logs') ?>" class="nav-link <?= str_replace('/index.php', '', current_url()) == base_url('optimize-logs') ? 'active' : '' ?>">
-                        <i class="fas fa-chart-line"></i>
-                        <span>Lịch sử tối ưu</span>
-                    </a>
-                </li>
-            <?php endif; ?>
+            <li class="nav-item">
+                <a href="<?= base_url('optimize-logs') ?>" class="nav-link <?= str_replace('/index.php', '', current_url()) == base_url('optimize-logs') ? 'active' : '' ?>">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Lịch sử tối ưu</span>
+                </a>
+            </li>
 
             <li class="nav-item">
                 <a href="<?= base_url('settings') ?>" class="nav-link <?= str_replace('/index.php', '', current_url()) == base_url('settings') ? 'active' : '' ?>">

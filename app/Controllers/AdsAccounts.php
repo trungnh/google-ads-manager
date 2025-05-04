@@ -123,9 +123,9 @@ class AdsAccounts extends BaseController
             return $this->response->setJSON(['success' => false, 'message' => 'Unauthorized']);
         }
 
-        if (!in_array(session()->get('role'), ['superadmin', 'admin'])) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Permission denied']);
-        }
+        // if (!in_array(session()->get('role'), ['superadmin', 'admin'])) {
+        //     return $this->response->setJSON(['success' => false, 'message' => 'Permission denied']);
+        // }
 
         if (!$id) {
             return $this->response->setJSON(['success' => false, 'message' => 'Invalid account ID']);
