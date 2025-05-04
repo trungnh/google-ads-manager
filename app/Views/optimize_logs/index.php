@@ -52,6 +52,7 @@
                                 <tr>
                                     <th>Thời gian</th>
                                     <th>Tài khoản</th>
+                                    <th>ID</th>
                                     <th>Chiến dịch</th>
                                     <th>Hành động</th>
                                     <th>Chi tiết</th>
@@ -67,6 +68,7 @@
                                         <tr>
                                             <td><?= date('d/m/Y H:i:s', strtotime($log['created_at'])) ?></td>
                                             <td><?= esc($log['customer_id']) ?></td>
+                                            <td><?= esc($log['campaign_id']) ?></td>
                                             <td><?= esc($log['campaign_name']) ?></td>
                                             <td>
                                                 <?php if ($log['action'] === 'pause'): ?>
