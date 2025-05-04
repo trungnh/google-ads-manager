@@ -8,6 +8,7 @@ use App\Models\CampaignScheduleModel;
 use App\Models\CampaignScheduleItemModel;
 use App\Models\GoogleTokenModel;
 use App\Models\AdsAccountModel;
+use App\Models\UserSettingsModel;
 use App\Services\GoogleAdsService;
 use Exception;
 
@@ -21,6 +22,7 @@ class ExecuteCampaignSchedules extends BaseCommand
     protected $campaignScheduleItemModel;
     protected $googleTokenModel;
     protected $adsAccountModel;
+    protected $userSettingsModel;
     protected $googleAdsService;
 
     public function __construct()
@@ -29,6 +31,7 @@ class ExecuteCampaignSchedules extends BaseCommand
         $this->campaignScheduleItemModel = new CampaignScheduleItemModel();
         $this->googleTokenModel = new GoogleTokenModel();
         $this->adsAccountModel = new AdsAccountModel();
+        $this->userSettingsModel = new UserSettingsModel();
         $this->googleAdsService = new GoogleAdsService();
     }
 
@@ -73,6 +76,10 @@ class ExecuteCampaignSchedules extends BaseCommand
                         throw new Exception("Account not found for customer ID: {$schedule['customer_id']}");
                     }
 
+                    // Lấy MCC ID từ user settings
+                    $userSettings = $this->userSettingsModel->where('user_id', $account['user_id'])->first();
+                    $mccId = $userSettings['mcc_id'] ?? null;
+
                     // Get valid token
                     $tokenData = $this->googleTokenModel->getValidToken($account['user_id']);
                     if (empty($tokenData) || empty($tokenData['access_token'])) {
@@ -88,7 +95,8 @@ class ExecuteCampaignSchedules extends BaseCommand
                                 $tokenData['access_token'],
                                 $schedule['customer_id'],
                                 $campaign['campaign_id'],
-                                $status
+                                $status,
+                                $mccId
                             );
                             CLI::write("Successfully {$schedule['action_type']}d campaign: {$campaign['campaign_id']}", 'green');
                         } catch (Exception $e) {
