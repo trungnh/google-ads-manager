@@ -56,6 +56,8 @@ class Auth extends Controller
         
         // Đăng nhập thành công, lưu thông tin vào session
         $this->setUserSession($user);
+        // Update last login
+        $userModel->updateUserLastLogin($user['id']);
         
         // Chuyển hướng đến trang chủ
         return redirect()->to('/dashboard');

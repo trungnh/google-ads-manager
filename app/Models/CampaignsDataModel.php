@@ -73,6 +73,7 @@ class CampaignsDataModel extends Model
         $db = \Config\Database::connect();
         $builder = $db->table('campaigns_data');
         $date = $date ?? date('Y-m-d');
+        $campaignReturnData = [];
         foreach ($campaignsData as $campaign) {
             $realConversions = $campaign['real_conversions']?? 0;
             $realConversionValue = $campaign['real_conversion_value']?? 0;
@@ -133,9 +134,11 @@ class CampaignsDataModel extends Model
                 }
                 $builder->insert($data);
             }
+            $campaignReturnData[] = $data;
         }
         
-        return true;
+        return $campaignReturnData;
+        // return true;
     }
 
     public function saveCampaignStatus($customerId, $campaignId, $status)

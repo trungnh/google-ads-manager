@@ -190,7 +190,15 @@ class OptimizeCampaigns extends BaseCommand
                 $this->sendTelegramMessage("❌Lỗi tối ưu chiến dịch - xử lý đơn thực tế - {$account['customer_id']}: " . $e->getMessage(), $telegramChatIds);
             }
 
-            foreach ($campaigns as $campaign) {
+            try {
+                // Save campaign data
+                $campaignData = $this->campaignsDataModel->saveCampaignsData($account['customer_id'], $campaigns, date('Y-m-d'));
+            } catch (\Exception $e) {
+                log_message('error', 'Lỗi tối ưu chiến dịch - Save Campaigns - '. $account['customer_id']. ': '. $e->getMessage());
+                $this->sendTelegramMessage("❌Lỗi tối ưu chiến dịch - Save Campaigns - {$account['customer_id']}: ". $e->getMessage(), $telegramChatIds);
+            }
+
+            foreach ($campaignData as $campaign) {
                 if (!isset($campaign['campaign_id']) || !isset($campaign['cost']) || !isset($campaign['budget'])) {
                     CLI::write("Bỏ qua chiến dịch không hợp lệ: thiếu thông tin bắt buộc", 'yellow');
                     // foreach($telegramChatIds as $telegramChatId){
@@ -246,21 +254,27 @@ class OptimizeCampaigns extends BaseCommand
                     // TH: Nhiều hơn 1 đơn
                     elseif ($realConversions > 1) {
                         // Lấy campaign data từ DB
-                        $tmpCampaign = $this->campaignsDataModel->where('customer_id', $account['customer_id'])
-                            ->where('campaign_id', $campaign['campaign_id'])
-                            ->where('date', date('Y-m-d'))
-                            ->first();
+                        // $tmpCampaign = $this->campaignsDataModel->where('customer_id', $account['customer_id'])
+                        //     ->where('campaign_id', $campaign['campaign_id'])
+                        //     ->where('date', date('Y-m-d'))
+                        //     ->first();
 
                         // Check tồn tại
-                        $tmpLastCostConversion = $tmpCampaign['last_cost_conversion']?? 0;
-                        $tmpLastCountConversion = $tmpCampaign['last_count_conversion']?? 0;
-                        $tmpLastCountConversionValue = $tmpCampaign['last_count_conversion_value']?? 0;
-                        $tmpLastCostConversion = $tmpCampaign['last_cost_conversion']?? 0;
+                        // $tmpLastCostConversion = $tmpCampaign['last_cost_conversion']?? 0;
+                        // $tmpLastCountConversion = $tmpCampaign['last_count_conversion']?? 0;
+                        // $tmpLastCountConversionValue = $tmpCampaign['last_count_conversion_value']?? 0;
+
+                        $lastCostConversion = $campaign['last_cost_conversion']?? 0;
+                        $lastCountConversion = $campaign['last_count_conversion']?? 0;
+                        $lastCountConversionValue = $campaign['last_count_conversion_value']?? 0;
                         
                         // Tính chi tiêu từ lần ra cuối cùng ra chuyển đổi
-                        $costExtendFromLastConversion = $campaign['cost'] - $tmpLastCostConversion;
-                        $conversionsExtendFromLastConversion = $realConversions - $tmpLastCountConversion;
-                        $conversionValueExtendFromLastConversion = $realConversionValue - $tmpLastCountConversionValue;
+                        // $costExtendFromLastConversion = $campaign['cost'] - $tmpLastCostConversion;
+                        // $conversionsExtendFromLastConversion = $realConversions - $tmpLastCountConversion;
+                        // $conversionValueExtendFromLastConversion = $realConversionValue - $tmpLastCountConversionValue;
+                        $costExtendFromLastConversion = $campaign['cost'] - $lastCostConversion;
+                        $conversionsExtendFromLastConversion = $realConversions - $lastCountConversion;
+                        $conversionValueExtendFromLastConversion = $realConversionValue - $lastCountConversionValue;
                         if ($conversionsExtendFromLastConversion == 0) {
                             if ($costExtendFromLastConversion > $account['cpa_threshold']) {
                                 $shouldPause = true;
@@ -316,9 +330,6 @@ class OptimizeCampaigns extends BaseCommand
             }
             
             try {
-                // Save campaign data
-                $this->campaignsDataModel->saveCampaignsData($account['customer_id'], $campaigns, date('Y-m-d'));
-
                 // Cập nhật thời gian chạy cuối cùng
                 $this->adsAccountSettingsModel->update($account['id'], [
                     'last_optimize_run' => date('Y-m-d H:i:s')

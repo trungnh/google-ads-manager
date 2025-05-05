@@ -92,6 +92,11 @@ class UserModel extends Model
         return $this->update($userId, $data);
     }
 
+    public function updateUserLastLogin($userId)
+    {
+        return $this->update($userId, ['last_login' => date('Y-m-d H:i:s')]);
+    }
+
     public function getAllActiveUsers()
     {
         return $this->where('status', 'active')->findAll();
