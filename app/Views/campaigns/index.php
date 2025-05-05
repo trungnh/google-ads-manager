@@ -926,7 +926,7 @@ $(document).ready(function() {
 
     function formatPercent(number) {
         if (!number || isNaN(number)) return '0%';
-        return number_format(parseFloat(number), 2, ',', '.') + '%';
+        return number_format(parseFloat(number*100), 2, ',', '.') + '%';
     }
 
     function formatDateTime(dateTimeStr) {
