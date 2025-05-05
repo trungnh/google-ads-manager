@@ -539,6 +539,9 @@ $(document).ready(function() {
                             ${campaign.status === 'ENABLED' ? 'Tắt' : 'Bật'}
                         </button>
                         <?php if (in_array(session()->get('role'), ['superadmin', 'admin'])): ?>
+                        <a href="<?= base_url('campaign-details/campaign/') ?>${campaign.customer_id}/${campaign.campaign_id}" class="btn btn-sm btn-info m-1">
+                            <i class="fas fa-eye"></i> Chi tiết
+                        </a>
                         <button class="btn btn-primary btn-sm btn-cflc m-1"
                                 data-customer-id="${campaign.customer_id}"
                                 data-campaign-id="${campaign.campaign_id}"

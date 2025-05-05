@@ -105,6 +105,12 @@ $routes->group('', ['filter' => 'auth'], function($routes) {
         $routes->get('campaignschedules/(:segment)/edit/(:num)', 'CampaignSchedules::edit/$1/$2', ['filter' => 'auth']);
         $routes->post('campaignschedules/(:segment)/edit/(:num)', 'CampaignSchedules::edit/$1/$2', ['filter' => 'auth']);
         $routes->get('campaignschedules/(:segment)/delete/(:num)', 'CampaignSchedules::delete/$1/$2', ['filter' => 'auth']);
+
+        // Campaign Details routes
+        $routes->get('campaign-details/campaign/(:segment)/(:segment)', 'CampaignDetails::campaign/$1/$2');
+        $routes->get('campaign-details/ad-group/(:segment)/(:segment)/(:segment)', 'CampaignDetails::adGroup/$1/$2/$3');
+        $routes->get('campaign-details/asset-group/(:segment)/(:segment)/(:segment)', 'CampaignDetails::assetGroup/$1/$2/$3');
+        $routes->get('campaign-details/ad/(:segment)/(:segment)/(:segment)/(:segment)', 'CampaignDetails::ad/$1/$2/$3/$4');
     });
 
     // Route chỉ dành cho role superadmin - quản lý người dùng
