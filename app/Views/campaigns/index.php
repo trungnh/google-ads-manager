@@ -14,11 +14,9 @@
                                 <a href="<?= base_url('adsaccounts/settings/' . $account['id']) ?>" class="btn btn-sm btn-primary mb-2 mb-md-0">
                                     <i class="fas fa-cog"></i> Settings
                                 </a>
-                                <?php if (in_array(session()->get('role'), ['superadmin', 'admin'])): ?>
                                 <a href="<?= base_url('campaignschedules/' . $account['customer_id']) ?>" class="btn btn-sm btn-info ml-2 mb-2 mb-md-0">
                                     <i class="fas fa-clock"></i> Campaign Schedules
                                 </a>
-                                <?php endif; ?>
                             </div>
                         </div>
                         <div class="col-md-6 text-right">

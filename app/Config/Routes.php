@@ -95,16 +95,17 @@ $routes->group('', ['filter' => 'auth'], function($routes) {
     $routes->post('adsaccounts/settings/update/(:num)', 'AdsAccountSettings::update/$1');
     $routes->post('adsaccounts/delete/(:num)', 'AdsAccounts::delete/$1');
 
+    // Campaign Schedules Routes
+    $routes->get('campaignschedules/(:segment)', 'CampaignSchedules::index/$1', ['filter' => 'auth']);
+    $routes->get('campaignschedules/(:segment)/create', 'CampaignSchedules::create/$1', ['filter' => 'auth']);
+    $routes->post('campaignschedules/(:segment)/create', 'CampaignSchedules::create/$1', ['filter' => 'auth']);
+    $routes->get('campaignschedules/(:segment)/edit/(:num)', 'CampaignSchedules::edit/$1/$2', ['filter' => 'auth']);
+    $routes->post('campaignschedules/(:segment)/edit/(:num)', 'CampaignSchedules::edit/$1/$2', ['filter' => 'auth']);
+    $routes->get('campaignschedules/(:segment)/delete/(:num)', 'CampaignSchedules::delete/$1/$2', ['filter' => 'auth']);
+
     // Route chỉ dành cho role admin và superadmin
     $routes->group('', ['filter' => 'role:admin,superadmin'], function($routes) {
         $routes->post('campaigns/updateCFLC/(:segment)/(:segment)', 'Campaigns::updateCFLC/$1/$2');
-        // Campaign Schedules Routes
-        $routes->get('campaignschedules/(:segment)', 'CampaignSchedules::index/$1', ['filter' => 'auth']);
-        $routes->get('campaignschedules/(:segment)/create', 'CampaignSchedules::create/$1', ['filter' => 'auth']);
-        $routes->post('campaignschedules/(:segment)/create', 'CampaignSchedules::create/$1', ['filter' => 'auth']);
-        $routes->get('campaignschedules/(:segment)/edit/(:num)', 'CampaignSchedules::edit/$1/$2', ['filter' => 'auth']);
-        $routes->post('campaignschedules/(:segment)/edit/(:num)', 'CampaignSchedules::edit/$1/$2', ['filter' => 'auth']);
-        $routes->get('campaignschedules/(:segment)/delete/(:num)', 'CampaignSchedules::delete/$1/$2', ['filter' => 'auth']);
 
         // Campaign Details routes
         $routes->get('campaign-details/campaign/(:segment)/(:segment)', 'CampaignDetails::campaign/$1/$2');
