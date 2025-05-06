@@ -119,7 +119,7 @@
                                     </table>
                                 </div>
                             </div>
-                            
+                            <?php /*?>
                             <div class="card mb-4">
                                 <div class="card-header">
                                     <h5 class="card-title">Hiệu suất</h5>
@@ -167,6 +167,7 @@
                                     </table>
                                 </div>
                             </div>
+                            <?php */?>
                         </div>
                     </div>
                     

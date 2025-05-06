@@ -98,7 +98,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+                        <?php /*?>
                         <div class="col-md-6">
                             <div class="card mb-4">
                                 <div class="card-header">
@@ -148,6 +148,7 @@
                                 </div>
                             </div>
                         </div>
+                        <?php */ ?>
                     </div>
                     
                     <div class="card mt-4">

@@ -64,7 +64,8 @@ class GoogleAdsServiceExtension extends GoogleAdsService
                 metrics.clicks,
                 metrics.impressions
             FROM campaign
-            WHERE campaign.id = {$campaignId}";
+            WHERE campaign.id = {$campaignId}" . 
+            " AND segments.date BETWEEN '".date('Y-m-d')."' AND '".date('Y-m-d')."'";
         
         $data = [
             'query' => $query
@@ -192,7 +193,8 @@ class GoogleAdsServiceExtension extends GoogleAdsService
                 metrics.clicks,
                 metrics.impressions
             FROM ad_group
-            WHERE ad_group.campaign = 'customers/{$formattedCustomerId}/campaigns/{$campaignId}'";
+            WHERE ad_group.campaign = 'customers/{$formattedCustomerId}/campaigns/{$campaignId}'". 
+            " AND segments.date BETWEEN '".date('Y-m-d')."' AND '".date('Y-m-d')."'";
         
         $data = [
             'query' => $query
@@ -298,8 +300,8 @@ class GoogleAdsServiceExtension extends GoogleAdsService
                 metrics.clicks,
                 metrics.impressions
             FROM ad_group_ad
-            WHERE ad_group_ad.ad_group = 'customers/{$formattedCustomerId}/adGroups/{$adGroupId}'";
-        
+            WHERE ad_group_ad.ad_group = 'customers/{$formattedCustomerId}/adGroups/{$adGroupId}'". 
+            " AND segments.date BETWEEN '".date('Y-m-d')."' AND '".date('Y-m-d')."'";
         $data = [
             'query' => $query
         ];
@@ -631,7 +633,8 @@ class GoogleAdsServiceExtension extends GoogleAdsService
                 metrics.clicks,
                 metrics.impressions
             FROM asset_group
-            WHERE asset_group.campaign = 'customers/{$formattedCustomerId}/campaigns/{$campaignId}'";
+            WHERE asset_group.campaign = 'customers/{$formattedCustomerId}/campaigns/{$campaignId}'" . 
+            " AND segments.date BETWEEN '".date('Y-m-d')."' AND '".date('Y-m-d')."'";
         
         $data = [
             'query' => $query
@@ -931,7 +934,8 @@ class GoogleAdsServiceExtension extends GoogleAdsService
                 metrics.clicks,
                 metrics.impressions
             FROM ad_group_criterion
-            WHERE ad_group_criterion.ad_group = 'customers/{$formattedCustomerId}/adGroups/{$adGroupId}'";
+            WHERE ad_group_criterion.ad_group = 'customers/{$formattedCustomerId}/adGroups/{$adGroupId}'" . 
+            " AND segments.date BETWEEN '".date('Y-m-d')."' AND '".date('Y-m-d')."'";
         
         $data = [
             'query' => $query
