@@ -414,7 +414,7 @@ class GoogleAdsService
                                 'campaign_id' => $campaign['id'],
                                 'name' => $campaign['name'],
                                 'status' => $campaign['status'],
-                                'budget' => $budget ? $this->microToStandard($budget['amountMicros']) : 0,
+                                'budget' => isset($budget['amountMicros']) ? $this->microToStandard($budget['amountMicros']) : 0,
                                 'cost' => isset($metrics['costMicros']) ? $this->microToStandard($metrics['costMicros']) : 0,
                                 'conversions' => $metrics['conversions'] ?? 0,
                                 'conversion_value' => $metrics['conversionsValue'] ?? 0,
