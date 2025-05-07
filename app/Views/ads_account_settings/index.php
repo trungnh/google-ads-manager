@@ -123,6 +123,15 @@
                                 <i>Nhập ngưỡng ROAS để tự động tắt chiến dịch khi ROAS thực tế thấp hơn ngưỡng này</i>
                             </small>
                         </div>
+
+                        <div class="mb-3">
+                            <label for="exclude_campaign_ids" class="form-label">Loại trừ chiến dịch (ID chiến dịch)</label>
+                            <input type="text" class="form-control" id="exclude_campaign_ids" name="exclude_campaign_ids"
+                                value="<?= isset($settings['exclude_campaign_ids']) ? $settings['exclude_campaign_ids'] : '' ?>">
+                            <small class="form-text text-muted">
+                                <i>Phần tự động tối ưu sẽ <strong>bỏ qua</strong> các chiến dịch này khi chạy tự động. Điền <strong>ID chiến dịch</strong>, phân cách bằng dấu ","</i>
+                            </small>
+                        </div>
                         <hr class="my-4">
                         <h5 class="card-title mb-4 mt-4">Cài đặt Google Sheet (Chuyển đổi thực tế)</h5>
 
@@ -237,7 +246,8 @@ $(document).ready(function() {
             auto_on_off: $('#auto_on_off').is(':checked') ? 'true' : 'false',
             use_roas_threshold: $('#use_roas_threshold').is(':checked')? 'true' : 'false',
             extended_cpa_threshold: $('#extended_cpa_threshold').val(),
-            default_paused_campaigns: $('#default_paused_campaigns').is(':checked') ? 'true' : 'false'
+            default_paused_campaigns: $('#default_paused_campaigns').is(':checked') ? 'true' : 'false',
+            exclude_campaign_ids: $('#exclude_campaign_ids').val(),
         };
         
         $.ajax({

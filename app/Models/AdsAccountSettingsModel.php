@@ -28,7 +28,8 @@ class AdsAccountSettingsModel extends Model
         'auto_on_off',
         'use_roas_threshold',
         'extended_cpa_threshold',
-        'default_paused_campaigns'
+        'default_paused_campaigns',
+        'exclude_campaign_ids'
     ];
     protected $useTimestamps = true;
     protected $createdField = 'created_at';
@@ -50,7 +51,8 @@ class AdsAccountSettingsModel extends Model
         'auto_on_off' => 'permit_empty|in_list[0,1]',
         'use_roas_threshold' => 'permit_empty|in_list[0,1]',
         'extended_cpa_threshold' => 'permit_empty|decimal',
-        'default_paused_campaigns' => 'permit_empty|in_list[0,1]'
+        'default_paused_campaigns' => 'permit_empty|in_list[0,1]',
+        'exclude_campaign_ids' => 'permit_empty|string'
     ];
 
     public function getSettingsByAccountId($accountId)
@@ -81,7 +83,8 @@ class AdsAccountSettingsModel extends Model
             'auto_on_off' => ($data['auto_on_off'] === 'true' || $data['auto_on_off'] === true || $data['auto_on_off'] === 1) ? 1 : 0,
             'use_roas_threshold' => ($data['use_roas_threshold'] === 'true' || $data['use_roas_threshold'] === true || $data['use_roas_threshold'] === 1) ? 1 : 0,
             'extended_cpa_threshold' => $data['extended_cpa_threshold']?? 0,
-            'default_paused_campaigns' => ($data['default_paused_campaigns'] === 'true' || $data['default_paused_campaigns'] === true || $data['default_paused_campaigns'] === 1) ? 1 : 0
+            'default_paused_campaigns' => ($data['default_paused_campaigns'] === 'true' || $data['default_paused_campaigns'] === true || $data['default_paused_campaigns'] === 1) ? 1 : 0,
+            'exclude_campaign_ids' => $data['exclude_campaign_ids']?? null,
         ];
 
         // Debug log

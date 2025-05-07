@@ -72,7 +72,8 @@ class AdsAccountSettings extends BaseController
                     'auto_on_off' => 0,
                     'use_roas_threshold' => 0,
                     'extended_cpa_threshold' => 0,
-                    'default_paused_campaigns' => 0
+                    'default_paused_campaigns' => 0,
+                    'exclude_campaign_ids' => null
                 ];
                 log_message('info', 'Creating default settings for account: ' . $adsAccountId);
                 $this->adsAccountSettingsModel->insert($settings);
@@ -126,7 +127,8 @@ class AdsAccountSettings extends BaseController
                 'auto_on_off' => $this->request->getPost('auto_on_off'),
                 'use_roas_threshold' => $this->request->getPost('use_roas_threshold'),
                 'extended_cpa_threshold' => $this->request->getPost('extended_cpa_threshold'),
-                'default_paused_campaigns' => $this->request->getPost('default_paused_campaigns')
+                'default_paused_campaigns' => $this->request->getPost('default_paused_campaigns'),
+                'exclude_campaign_ids' => $this->request->getPost('exclude_campaign_ids')
             ];
 
             log_message('info', 'Processed settings: ' . json_encode($settings));

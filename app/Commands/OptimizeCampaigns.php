@@ -198,7 +198,14 @@ class OptimizeCampaigns extends BaseCommand
                 $this->sendTelegramMessage("❌Lỗi tối ưu chiến dịch - Save Campaigns - {$account['customer_id']}: ". $e->getMessage(), $telegramChatIds);
             }
 
+            $excludeCampaignIds = explode(',', $account['exclude_campaign_ids']);
+            $excludeCampaignIds = array_map('trim', $excludeCampaignIds);
             foreach ($campaignData as $campaign) {
+                if (in_array($campaign['campaign_id'], $excludeCampaignIds)) {
+                    CLI::write("Bỏ qua chiến dịch {$campaign['campaign_id']} vì đã được exclude", 'yellow');
+                    continue;
+                }
+
                 if (!isset($campaign['campaign_id']) || !isset($campaign['cost']) || !isset($campaign['budget'])) {
                     CLI::write("Bỏ qua chiến dịch không hợp lệ: thiếu thông tin bắt buộc", 'yellow');
                     // foreach($telegramChatIds as $telegramChatId){
