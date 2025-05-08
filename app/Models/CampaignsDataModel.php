@@ -100,9 +100,6 @@ class CampaignsDataModel extends Model
                 'real_conversion_rate' => $realConversionRate,
                 'real_cpa' => $campaign['real_cpa'] ?? 0,
                 'last_updated_at' => date('Y-m-d H:i:s'),
-                'last_cost_conversion' => $campaign['last_cost_conversion']?? 0,
-                'last_count_conversion' => $campaign['last_count_conversion']?? 0,
-                'last_count_conversion_value' => $campaign['last_count_conversion_value']?? 0,
             ];
             
             // Kiểm tra xem dữ liệu đã tồn tại chưa
@@ -117,6 +114,10 @@ class CampaignsDataModel extends Model
                     $data['last_cost_conversion'] = $campaign['cost'];
                     $data['last_count_conversion'] = $realConversions;
                     $data['last_count_conversion_value'] = $realConversionValue;
+                } else {
+                    $data['last_cost_conversion'] = $tmpCampaign['last_cost_conversion']?? 0;
+                    $data['last_count_conversion'] = $tmpCampaign['last_count_conversion']?? 0;
+                    $data['last_count_conversion_value'] = $tmpCampaign['last_count_conversion_value']?? 0;
                 }
                 // Cập nhật dữ liệu nếu đã tồn tại
                 $builder->where('customer_id', $customerId)
