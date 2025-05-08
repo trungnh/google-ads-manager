@@ -75,6 +75,7 @@ class Campaigns extends BaseController
             // 5. Lấy dữ liệu chiến dịch từ database
             $today = date('Y-m-d');
             $showPaused = $this->request->getGet('showPaused') === 'true';
+            $showPausedAndCost = $this->request->getGet('showPausedAndCost') === 'true';
             $campaigns = $this->campaignsDataModel->getCampaignsByDate($customerId, $today, $showPaused);
             $userSettings = $this->userSettingsModel->where('user_id', $userId)->first();
             $mccId = $userSettings['mcc_id'] ?? null;
@@ -124,12 +125,23 @@ class Campaigns extends BaseController
                 $this->campaignsDataModel->saveCampaignsData($customerId, $campaigns);
             }
 
+            $returnCampaigns = []; 
+            foreach ($campaigns as $campaign) {
+                if ($showPausedAndCost) {
+                    $returnCampaigns[] = $campaign;
+                } else {
+                    if ($campaign['cost'] > 0) {
+                        $returnCampaigns[] = $campaign;
+                    }
+                }
+            }
+
             // 7. Render view với dữ liệu
             return view('campaigns/index', [
                 'title' => 'Danh sách chiến dịch - ' . $account['customer_name'],
                 'account' => $account,
                 'accounts' => $accounts,
-                'campaigns' => $campaigns,
+                'campaigns' => $returnCampaigns,
                 'accountSettings' => $settings ?? [],
                 'mccId' => $mccId
             ]);
@@ -153,6 +165,7 @@ class Campaigns extends BaseController
         try {
             $userId = session()->get('id');
             $showPaused = $this->request->getGet('showPaused') === 'true';
+            $showPausedAndCost = $this->request->getGet('showPausedAndCost') === 'true';
             $startDate = $this->request->getGet('startDate');
             $endDate = $this->request->getGet('endDate');
             $forceUpdate = $this->request->getGet('forceUpdate') === 'true';
@@ -207,17 +220,29 @@ class Campaigns extends BaseController
             $userSettings = $this->userSettingsModel->where('user_id', $userId)->first();
             $mccId = $userSettings['mcc_id'] ?? null;
 
+            $returnCampaigns = [];
+
             // Nếu ngày bắt đầu và kết thúc là cùng ngày
             if ($startDate === $endDate) {
                 // Kiểm tra xem có data trong database không và không phải force update
                 if (!$forceUpdate) {
                     $campaigns = $this->campaignsDataModel->getCampaignsByDate($customerId, $startDate, $showPaused);
                     $lastUpdateTime = $this->campaignsDataModel->getLastUpdateTime($customerId, $startDate);
+
+                    foreach ($campaigns as $campaign) {
+                        if ($showPausedAndCost) {
+                            $returnCampaigns[] = $campaign;
+                        } else {
+                            if ($campaign['cost'] > 0) {
+                                $returnCampaigns[] = $campaign;
+                            }
+                        }
+                    }
                     
-                    if (!empty($campaigns)) {
+                    if (!empty($returnCampaigns)) {
                         return $this->response->setJSON([
                             'success' => true,
-                            'campaigns' => $campaigns,
+                            'campaigns' => $returnCampaigns,
                             'lastUpdateTime' => $lastUpdateTime,
                             'isFromCache' => true
                         ]);
@@ -246,10 +271,21 @@ class Campaigns extends BaseController
                 $this->campaignsDataModel->saveCampaignsData($customerId, $campaigns, $startDate);
                 $lastUpdateTime = date('Y-m-d H:i:s');
                 $responseCampaigns = $this->campaignsDataModel->getCampaignsByDate($customerId, $startDate, $showPaused);
+
+                foreach ($responseCampaigns as $campaign) {
+                    if ($showPausedAndCost) {
+                        $returnCampaigns[] = $campaign;
+                    } else {
+                        if ($campaign['cost'] > 0) {
+                            $returnCampaigns[] = $campaign;
+                        }
+                    }
+                }
+
                 if (!empty($campaigns)) {
                     return $this->response->setJSON([
                         'success' => true,
-                        'campaigns' => $responseCampaigns,
+                        'campaigns' => $returnCampaigns,
                         'lastUpdateTime' => $lastUpdateTime,
                         'isFromCache' => true
                     ]);
@@ -258,10 +294,20 @@ class Campaigns extends BaseController
             } else {
                 $lastUpdateTime = null;
             }
+            
+            foreach ($campaigns as $campaign) {
+                if ($showPausedAndCost) {
+                    $returnCampaigns[] = $campaign;
+                } else {
+                    if ($campaign['cost'] > 0) {
+                        $returnCampaigns[] = $campaign;
+                    }
+                }
+            }
 
             return $this->response->setJSON([
                 'success' => true,
-                'campaigns' => $campaigns,
+                'campaigns' => $returnCampaigns,
                 'lastUpdateTime' => $lastUpdateTime,
                 'isFromCache' => false
             ]);

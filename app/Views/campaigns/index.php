@@ -40,6 +40,16 @@
                                     Hiển thị chiến dịch đã tạm dừng
                                 </label>
                             </div>
+                            <div class="form-check form-check-inline mb-2">
+                                <input class="form-check-input" type="checkbox" id="showPausedAndCost">
+                                <label class="form-check-label" for="showPausedAndCost">
+                                    Hiển thị chiến dịch đã tạm dừng và không chi tiêu
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-8">
                             <div class="d-inline-block">
                                 <div class="input-group">
                                     <input type="text" class="form-control" id="startDate" placeholder="Từ ngày">
@@ -265,6 +275,7 @@ $(document).ready(function() {
 
     function loadCampaignsData(forceUpdate = false) {
         const showPaused = $('#showPaused').is(':checked');
+        const showPausedAndCost = $('#showPausedAndCost').is(':checked');
         const startDate = $('#startDate').val();
         const endDate = $('#endDate').val();
         const button = forceUpdate ? $('#updateData') : $('#loadCampaigns');
@@ -286,6 +297,7 @@ $(document).ready(function() {
             method: 'GET',
             data: { 
                 showPaused: showPaused,
+                showPausedAndCost: showPausedAndCost,
                 startDate: startDate,
                 endDate: endDate,
                 forceUpdate: forceUpdate
