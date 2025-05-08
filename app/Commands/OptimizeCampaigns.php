@@ -192,7 +192,7 @@ class OptimizeCampaigns extends BaseCommand
 
             try {
                 // Save campaign data
-                $campaignData = $this->campaignsDataModel->saveCampaignsData($account['customer_id'], $campaigns, date('Y-m-d'));
+                $this->campaignsDataModel->saveCampaignsData($account['customer_id'], $campaigns, date('Y-m-d'));
             } catch (\Exception $e) {
                 log_message('error', 'Lỗi tối ưu chiến dịch - Save Campaigns - '. $account['customer_id']. ': '. $e->getMessage());
                 $this->sendTelegramMessage("❌Lỗi tối ưu chiến dịch - Save Campaigns - {$account['customer_id']}: ". $e->getMessage(), $telegramChatIds);
@@ -200,7 +200,7 @@ class OptimizeCampaigns extends BaseCommand
 
             $excludeCampaignIds = explode(',', $account['exclude_campaign_ids']);
             $excludeCampaignIds = array_map('trim', $excludeCampaignIds);
-            foreach ($campaignData as $campaign) {
+            foreach ($campaigns as $campaign) {
                 if (in_array($campaign['campaign_id'], $excludeCampaignIds)) {
                     CLI::write("Bỏ qua chiến dịch {$campaign['campaign_id']} vì đã được exclude", 'yellow');
                     continue;
@@ -208,10 +208,12 @@ class OptimizeCampaigns extends BaseCommand
 
                 if (!isset($campaign['campaign_id']) || !isset($campaign['cost']) || !isset($campaign['budget'])) {
                     CLI::write("Bỏ qua chiến dịch không hợp lệ: thiếu thông tin bắt buộc", 'yellow');
-                    // foreach($telegramChatIds as $telegramChatId){
-                    //     $this->telegramService->sendMessage("❌ Bỏ qua chiến dịch không hợp lệ: thiếu thông tin bắt buộc", $telegramChatId);
-                    // }
                     continue;
+                }
+
+                // Bỏ qua chiến dịch đã tạm dừng hoặc chưa có chi tiêu
+                if ($campaign['cost'] == 0 || $campaign['status'] == 'PAUSED') {
+                    continue; 
                 }
 
                 $shouldPause = false;
@@ -267,19 +269,12 @@ class OptimizeCampaigns extends BaseCommand
                             ->first();
 
                         // Check tồn tại
-                        // $tmpLastCostConversion = $tmpCampaign['last_cost_conversion']?? 0;
-                        // $tmpLastCountConversion = $tmpCampaign['last_count_conversion']?? 0;
-                        // $tmpLastCountConversionValue = $tmpCampaign['last_count_conversion_value']?? 0;
-
-                        $lastCostConversion = $campaign['last_cost_conversion']?? 0;
-                        $lastCountConversion = $campaign['last_count_conversion']?? 0;
-                        $lastCountConversionValue = $campaign['last_count_conversion_value']?? 0;
+                        $lastCostConversion = $tmpCampaign['last_cost_conversion']?? 0;
+                        $lastCountConversion = $tmpCampaign['last_count_conversion']?? 0;
+                        $lastCountConversionValue = $tmpCampaign['last_count_conversion_value']?? 0;
                         
                         // Tính chi tiêu từ lần ra cuối cùng ra chuyển đổi
-                        // $costExtendFromLastConversion = $campaign['cost'] - $tmpLastCostConversion;
-                        // $conversionsExtendFromLastConversion = $realConversions - $tmpLastCountConversion;
-                        // $conversionValueExtendFromLastConversion = $realConversionValue - $tmpLastCountConversionValue;
-                        $costExtendFromLastConversion = $campaign['cost'] - $lastCostConversion;
+                        $costExtendFromLastConversion = $tmpCampaign['cost'] - $lastCostConversion;
                         $conversionsExtendFromLastConversion = $realConversions - $lastCountConversion;
                         $conversionValueExtendFromLastConversion = $realConversionValue - $lastCountConversionValue;
                         if ($conversionsExtendFromLastConversion == 0) {
