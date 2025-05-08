@@ -261,10 +261,10 @@ class OptimizeCampaigns extends BaseCommand
                     // TH: Nhiều hơn 1 đơn
                     elseif ($realConversions > 1) {
                         // Lấy campaign data từ DB
-                        // $tmpCampaign = $this->campaignsDataModel->where('customer_id', $account['customer_id'])
-                        //     ->where('campaign_id', $campaign['campaign_id'])
-                        //     ->where('date', date('Y-m-d'))
-                        //     ->first();
+                        $tmpCampaign = $this->campaignsDataModel->where('customer_id', $account['customer_id'])
+                            ->where('campaign_id', $campaign['campaign_id'])
+                            ->where('date', date('Y-m-d'))
+                            ->first();
 
                         // Check tồn tại
                         // $tmpLastCostConversion = $tmpCampaign['last_cost_conversion']?? 0;
