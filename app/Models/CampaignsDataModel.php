@@ -99,21 +99,20 @@ class CampaignsDataModel extends Model
                 'real_conversion_value' => $realConversionValue,
                 'real_conversion_rate' => $realConversionRate,
                 'real_cpa' => $campaign['real_cpa'] ?? 0,
-                'last_updated_at' => date('Y-m-d H:i:s')
+                'last_updated_at' => date('Y-m-d H:i:s'),
+                'last_cost_conversion' => $campaign['last_cost_conversion']?? 0,
+                'last_count_conversion' => $campaign['last_count_conversion']?? 0,
+                'last_count_conversion_value' => $campaign['last_count_conversion_value']?? 0,
             ];
             
             // Kiểm tra xem dữ liệu đã tồn tại chưa
-            $exists = $builder->where('customer_id', $customerId)
-                            ->where('campaign_id', $campaign['campaign_id'])
-                            ->where('date', $date)
-                            ->countAllResults();
-            
-            if ($exists) {
-                // Nếu có thêm conversions mới thì cập nhật last_cost_conversion, last_count_conversion, last_count_conversion_value
-                $tmpCampaign = $this->where('customer_id', $customerId)
+            $tmpCampaign = $this->where('customer_id', $customerId)
                         ->where('campaign_id', $campaign['campaign_id'])
                         ->where('date', date('Y-m-d'))
                         ->first();
+            
+            if ($tmpCampaign) {
+                // Nếu có thêm conversions mới thì cập nhật last_cost_conversion, last_count_conversion, last_count_conversion_value
                 if (isset($tmpCampaign['real_conversions']) && $tmpCampaign['real_conversions'] < $realConversions) {
                     $data['last_cost_conversion'] = $campaign['cost'];
                     $data['last_count_conversion'] = $realConversions;
