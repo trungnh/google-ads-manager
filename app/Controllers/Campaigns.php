@@ -130,7 +130,7 @@ class Campaigns extends BaseController
                 if ($showPausedAndCost) {
                     $returnCampaigns[] = $campaign;
                 } else {
-                    if ($campaign['cost'] > 0) {
+                    if ($campaign['cost'] > 0 && $campaign['status']!== 'PAUSED') {
                         $returnCampaigns[] = $campaign;
                     }
                 }
@@ -276,7 +276,7 @@ class Campaigns extends BaseController
                     if ($showPausedAndCost) {
                         $returnCampaigns[] = $campaign;
                     } else {
-                        if ($campaign['cost'] > 0) {
+                        if ($campaign['cost'] > 0 && $campaign['status']!== 'PAUSED') {
                             $returnCampaigns[] = $campaign;
                         }
                     }
@@ -299,7 +299,7 @@ class Campaigns extends BaseController
                 if ($showPausedAndCost) {
                     $returnCampaigns[] = $campaign;
                 } else {
-                    if ($campaign['cost'] > 0) {
+                    if ($campaign['cost'] > 0 && $campaign['status']!== 'PAUSED') {
                         $returnCampaigns[] = $campaign;
                     }
                 }
