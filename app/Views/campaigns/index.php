@@ -43,7 +43,7 @@
                             <div class="form-check form-check-inline mb-2">
                                 <input class="form-check-input" type="checkbox" id="showPausedAndCost">
                                 <label class="form-check-label" for="showPausedAndCost">
-                                    Hiển thị chiến dịch đã tạm dừng và không chi tiêu
+                                    Hiển thị chiến dịch không chi tiêu
                                 </label>
                             </div>
                         </div>
