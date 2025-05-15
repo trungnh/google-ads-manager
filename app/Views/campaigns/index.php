@@ -93,7 +93,9 @@
                                     <th class="sortable" data-sort="average_cpc">CPC</th>
                                     <th class="sortable" data-sort="conversion_value">Conv value</th>
                                     <th class="sortable" data-sort="conversion_rate">Conv rate</th>
+                                    <?php if (in_array(session()->get('role'), ['superadmin', 'admin'])): ?>
                                     <th class="sortable" data-toggle="tooltip" data-placement="top" title="Chi tiêu thêm từ lần ra đơn gần nhất">CFLC</th>
+                                    <?php endif;?>
                                     <th class="" data-sort="bidding_strategy">Chiến lược</th>
                                     <th>Thao tác</th>
                                 </tr>
@@ -520,7 +522,9 @@ $(document).ready(function() {
                     <td>${formatNumber(campaign.average_cpc)}</td>
                     <td>${(campaign.real_conversion_value > 0) ? formatNumber(campaign.real_conversion_value): '-'}</td>
                     <td>${(campaign.real_conversion_rate > 0) ? formatPercent(campaign.real_conversion_rate) : '-'}</td>
+                    <?php if (in_array(session()->get('role'), ['superadmin', 'admin'])): ?>
                     <td class="cflc-value">${(campaign.last_cost_conversion > 0) ? formatNumber(campaign.cost - campaign.last_cost_conversion) : '-'}</td>
+                    <?php endif;?>
                     <td class="small text-muted">
                         ${campaign.bidding_strategy || '-'}
                         ${campaign.target_cpa ? 
