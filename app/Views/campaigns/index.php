@@ -11,7 +11,7 @@
                         <div class="col-md-6">
                             <div>
                                 <p>ID tài khoản: <?= esc($account['customer_id']) ?></p>
-                                <a href="<?= base_url('adsaccounts/settings/' . $account['id']) ?>" class="btn btn-sm btn-primary mb-2 mb-md-0">
+                                <a href="<?= base_url('adsaccounts/settings/' . $account['customer_id']) ?>" class="btn btn-sm btn-primary mb-2 mb-md-0">
                                     <i class="fas fa-cog"></i> Settings
                                 </a>
                                 <a href="<?= base_url('campaignschedules/' . $account['customer_id']) ?>" class="btn btn-sm btn-info ml-2 mb-2 mb-md-0">

@@ -16,7 +16,7 @@ class AdsAccountSettings extends BaseController
         $this->adsAccountSettingsModel = new AdsAccountSettingsModel();
     }
 
-    public function index($adsAccountId)
+    public function index($customerId)
     {
         // Kiểm tra đăng nhập
         if (!session()->get('isLoggedIn')) {
@@ -29,7 +29,7 @@ class AdsAccountSettings extends BaseController
             // Kiểm tra xem user có quyền truy cập account này không
             $account = $this->adsAccountModel
                 ->where('user_id', $userId)
-                ->where('id', $adsAccountId)
+                ->where('customer_id', $customerId)
                 ->first();
 
             if (!$account) {
@@ -43,22 +43,23 @@ class AdsAccountSettings extends BaseController
             ->findAll();
 
             // Lấy settings hiện tại
-            $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($adsAccountId);
+            $settings = $this->adsAccountSettingsModel->getSettingsByCustomerId($customerId);
             // Check trường hợp ads account thuộc nhiều user khác nhau. Chỉ check 1 setting duy nhất
-            if (!$settings) {
-                $tmpAccounts = $this->adsAccountModel->getAccountsByCustomerId($account['customer_id']);
-                foreach ($tmpAccounts as $acc) {
-                    $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($acc['id']);
-                    if ($settings) {
-                        break;
-                    }
-                }
-            }
+            // if (!$settings) {
+            //     $tmpAccounts = $this->adsAccountModel->getAccountsByCustomerId($account['customer_id']);
+            //     foreach ($tmpAccounts as $acc) {
+            //         $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($acc['id']);
+            //         if ($settings) {
+            //             break;
+            //         }
+            //     }
+            // }
             
             // Tạo settings mặc định nếu chưa có
             if (!$settings) {
                 $settings = [
-                    'account_id' => $adsAccountId,
+                    'account_id' => $account['id'],
+                    'customer_id' => $account['customer_id'],
                     'auto_optimize' => 0,
                     'cpa_threshold' => 0,
                     'increase_budget' => 0,
@@ -75,9 +76,9 @@ class AdsAccountSettings extends BaseController
                     'default_paused_campaigns' => 0,
                     'exclude_campaign_ids' => null
                 ];
-                log_message('info', 'Creating default settings for account: ' . $adsAccountId);
+                log_message('info', 'Creating default settings for account: ' . $customerId);
                 $this->adsAccountSettingsModel->insert($settings);
-                $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($adsAccountId);
+                $settings = $this->adsAccountSettingsModel->getSettingsByCustomerId($customerId);
             }
 
             $data = [
@@ -95,17 +96,21 @@ class AdsAccountSettings extends BaseController
         }
     }
 
-    public function update($adsAccountId)
+    public function update($customerId)
     {
         if (!session()->get('isLoggedIn')) {
             return $this->response->setJSON(['success' => false, 'message' => 'Unauthorized']);
         }
 
         try {
-            log_message('info', 'Updating settings for account: ' . $adsAccountId);
+            log_message('info', 'Updating settings for account: ' . $customerId);
             log_message('info', 'POST data: ' . json_encode($this->request->getPost()));
             $order = $this->request->getPost('order') ?? 0;
-            $account = $this->adsAccountModel->find($adsAccountId);
+            $userId = session()->get('id');
+            $account = $this->adsAccountModel
+                ->where('user_id', $userId)
+                ->where('customer_id', $customerId)
+                ->first();
 
             // Debug log for auto_optimize value
             $autoOptimizeValue = $this->request->getPost('auto_optimize');
@@ -128,21 +133,23 @@ class AdsAccountSettings extends BaseController
                 'use_roas_threshold' => $this->request->getPost('use_roas_threshold'),
                 'extended_cpa_threshold' => $this->request->getPost('extended_cpa_threshold'),
                 'default_paused_campaigns' => $this->request->getPost('default_paused_campaigns'),
-                'exclude_campaign_ids' => $this->request->getPost('exclude_campaign_ids')
+                'exclude_campaign_ids' => $this->request->getPost('exclude_campaign_ids'),
+                'account_id' => $account['id'],
             ];
 
             log_message('info', 'Processed settings: ' . json_encode($settings));
-            $result = $this->adsAccountSettingsModel->saveSettings($adsAccountId, $settings);
-            $this->adsAccountModel->update($adsAccountId, ['order' => $order]);
+            $result = $this->adsAccountSettingsModel->saveSettings($customerId, $settings);
+
+            $this->adsAccountModel->update($account['id'], ['order' => $order]);
             
             if ($result) {
-                log_message('info', 'Settings saved successfully for account: ' . $adsAccountId);
+                log_message('info', 'Settings saved successfully for account: ' . $customerId);
                 return $this->response->setJSON([
                     'success' => true,
                     'message' => 'Cập nhật cài đặt thành công'
                 ]);
             } else {
-                log_message('error', 'Failed to save settings for account: ' . $adsAccountId);
+                log_message('error', 'Failed to save settings for account: ' . $customerId);
                 return $this->response->setJSON([
                     'success' => false,
                     'message' => 'Lỗi khi lưu cài đặt'

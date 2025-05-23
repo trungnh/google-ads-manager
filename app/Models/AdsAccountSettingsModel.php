@@ -29,7 +29,8 @@ class AdsAccountSettingsModel extends Model
         'use_roas_threshold',
         'extended_cpa_threshold',
         'default_paused_campaigns',
-        'exclude_campaign_ids'
+        'exclude_campaign_ids',
+        'customer_id',
     ];
     protected $useTimestamps = true;
     protected $createdField = 'created_at';
@@ -52,7 +53,8 @@ class AdsAccountSettingsModel extends Model
         'use_roas_threshold' => 'permit_empty|in_list[0,1]',
         'extended_cpa_threshold' => 'permit_empty|decimal',
         'default_paused_campaigns' => 'permit_empty|in_list[0,1]',
-        'exclude_campaign_ids' => 'permit_empty|string'
+        'exclude_campaign_ids' => 'permit_empty|string',
+        'customer_id' => 'permit_empty|string',
     ];
 
     public function getSettingsByAccountId($accountId)
@@ -60,15 +62,21 @@ class AdsAccountSettingsModel extends Model
         return $this->where('account_id', $accountId)->first();
     }
 
-    public function saveSettings($accountId, $data)
+    public function getSettingsByCustomerId($customerId)
+    {
+        return $this->where('customer_id', $customerId)->first();
+    }
+
+    public function saveSettings($customerId, $data)
     {
         // Debug log
-        log_message('info', 'Saving settings for account: ' . $accountId);
+        log_message('info', 'Saving settings for account: ' . $customerId);
         log_message('info', 'Input data: ' . json_encode($data));
 
         // Chuẩn hóa dữ liệu
         $settings = [
-            'account_id' => $accountId,
+            'customer_id' => $customerId,
+            'account_id' => $data['account_id'],
             'auto_optimize' => ($data['auto_optimize'] === 'true' || $data['auto_optimize'] === true || $data['auto_optimize'] === 1) ? 1 : 0,
             'cpa_threshold' => $data['cpa_threshold'] ?? 0,
             'roas_threshold' => $data['roas_threshold'] ?? 0,
@@ -84,14 +92,14 @@ class AdsAccountSettingsModel extends Model
             'use_roas_threshold' => ($data['use_roas_threshold'] === 'true' || $data['use_roas_threshold'] === true || $data['use_roas_threshold'] === 1) ? 1 : 0,
             'extended_cpa_threshold' => $data['extended_cpa_threshold']?? 0,
             'default_paused_campaigns' => ($data['default_paused_campaigns'] === 'true' || $data['default_paused_campaigns'] === true || $data['default_paused_campaigns'] === 1) ? 1 : 0,
-            'exclude_campaign_ids' => $data['exclude_campaign_ids']?? null,
+            'exclude_campaign_ids' => $data['exclude_campaign_ids']?? null
         ];
 
         // Debug log
         log_message('info', 'Processed settings: ' . json_encode($settings));
 
         // Kiểm tra xem đã có settings chưa
-        $existing = $this->where('account_id', $accountId)->first();
+        $existing = $this->where('customer_id', $customerId)->first();
 
         if ($existing) {
             return $this->update($existing['id'], $settings);

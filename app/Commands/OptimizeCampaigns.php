@@ -64,8 +64,6 @@ class OptimizeCampaigns extends BaseCommand
             $message = "🔄 Bắt đầu tối ưu chiến dịch cho " . count($accounts) . " tài khoản";
             CLI::write($message, 'green');
 
-            $totalCampaigns = 0;
-            $totalOptimized = 0;
             $totalErrors = 0;
 
             $optimizeCampaignsResult = [
