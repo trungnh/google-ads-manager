@@ -11,7 +11,7 @@
                     <div class="text-end mb-3">
                         <select class="form-select" id="accountSelector" style="width: 300px;" onchange="window.location.href=this.value">
                             <?php foreach ($accounts as $acc): ?>
-                                <option value="<?= base_url('adsaccounts/settings/' . $acc['id']) ?>" <?= $acc['id'] == $account['id'] ? 'selected' : '' ?>>
+                                <option value="<?= base_url('adsaccounts/settings/' . $acc['customer_id']) ?>" <?= $acc['id'] == $account['id'] ? 'selected' : '' ?>>
                                     <?= esc($acc['customer_name']) ?> - <?= esc($acc['customer_id']) ?>
                                 </option>
                             <?php endforeach; ?>
@@ -251,7 +251,7 @@ $(document).ready(function() {
         };
         
         $.ajax({
-            url: '<?= base_url('adsaccounts/settings/update/' . $account['id']) ?>',
+            url: '<?= base_url('adsaccounts/settings/update/' . $account['customer_id']) ?>',
             method: 'POST',
             data: formData,
             success: function(response) {
