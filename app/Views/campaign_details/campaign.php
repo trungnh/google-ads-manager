@@ -8,7 +8,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <h4 class="card-title">Chi tiết chiến dịch: <?= esc($campaignDetails['name']) ?></h4>
                         <div>
-                            <a href="<?= base_url('campaigns/index/' . $account['customer_id']) ?>" class="btn btn-secondary">
+                            <a href="<?= base_url('campaigns/admin_view/' . $account['customer_id']) ?>" class="btn btn-secondary">
                                 <i class="fas fa-arrow-left"></i> Quay lại danh sách chiến dịch
                             </a>
                         </div>
@@ -25,7 +25,7 @@
                             <div class="text-end">
                                 <select class="form-select" id="accountSelector" style="width: 300px;" onchange="window.location.href=this.value">
                                     <?php foreach ($accounts as $acc): ?>
-                                        <option value="<?= base_url('campaigns/index/' . $acc['customer_id']) ?>" <?= $acc['customer_id'] == $account['customer_id'] ? 'selected' : '' ?>>
+                                        <option value="<?= base_url('campaigns/admin_view/' . $acc['customer_id']) ?>" <?= $acc['customer_id'] == $account['customer_id'] ? 'selected' : '' ?>>
                                             <?= esc($acc['customer_name']) ?> - <?= esc($acc['customer_id']) ?>
                                         </option>
                                     <?php endforeach; ?>
