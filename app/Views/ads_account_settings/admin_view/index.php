@@ -12,12 +12,12 @@
                         <select class="form-select" id="accountSelector" style="width: 300px;" onchange="window.location.href=this.value">
                             <?php foreach ($accounts as $acc): ?>
                                 <option value="<?= base_url('adsaccounts/settings/' . $acc['customer_id']) ?>" <?= $acc['id'] == $account['id'] ? 'selected' : '' ?>>
-                                    <?= esc($acc['customer_name']) ?> - <?= esc($acc['customer_id']) ?>
+                                [<?= esc($acc['username']) ?>] - <?= esc($acc['customer_name']) ?> - <?= esc($acc['customer_id']) ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <a href="<?= base_url('campaigns/index/' . $account['customer_id']) ?>" class="btn btn-sm btn-info">
+                    <a href="<?= base_url('campaigns/admin_view/' . $account['customer_id']) ?>" class="btn btn-sm btn-info">
                         View Campaigns
                     </a>
                     <?php if (session()->has('error')): ?>

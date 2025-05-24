@@ -34,9 +34,11 @@
                                     <div class="text-end">
                                         <select class="form-select" id="accountSelector" style="width: 300px;" onchange="window.location.href=this.value">
                                             <?php foreach ($users as $user): ?>
+                                                <?php if (session()->get('id') != $user['id']): ?>
                                                 <option value="<?= base_url('adsaccounts/admin_view/' . $user['id']) ?>" <?= $user['id'] == $userId ? 'selected' : '' ?>>
                                                     <?= esc($user['username']) ?> - <?= esc($user['id']) ?>
                                                 </option>
+                                                <?php endif; ?>
                                             <?php endforeach; ?>
                                         </select>
                                     </div>

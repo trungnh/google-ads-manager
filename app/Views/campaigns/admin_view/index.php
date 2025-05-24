@@ -21,7 +21,7 @@
                                 <select class="form-select" id="accountSelector" style="width: 300px;" onchange="window.location.href=this.value">
                                     <?php foreach ($accounts as $acc): ?>
                                         <option value="<?= base_url('campaigns/admin_view/' . $acc['customer_id']) ?>" <?= $acc['customer_id'] == $account['customer_id'] ? 'selected' : '' ?>>
-                                            <?= esc($acc['customer_name']) ?> - <?= esc($acc['customer_id']) ?>
+                                        [<?= esc($acc['username']) ?>] - <?= esc($acc['customer_name']) ?> - <?= esc($acc['customer_id']) ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>

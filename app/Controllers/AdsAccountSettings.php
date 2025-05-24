@@ -102,11 +102,15 @@ class AdsAccountSettings extends BaseController
             return redirect()->to('/login');
         }
 
+        $userId = session()->get('id'); 
+
         try {
             // Lấy danh sách tất cả tài khoản của user để hiển thị trong dropdown
-            $accounts = $this->adsAccountModel
-            ->orderBy('order', 'ASC')
-            ->findAll();
+            $accounts = $this->adsAccountModel->select('ads_accounts.*, users.username')
+                ->join('users', 'users.id = ads_accounts.user_id')
+                ->where('ads_accounts.user_id !=', $userId)
+                ->orderBy('ads_accounts.user_id', 'ASC')
+                ->findAll();
 
             $account = $this->adsAccountModel
                 ->where('customer_id', $customerId)

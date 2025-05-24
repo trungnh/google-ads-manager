@@ -53,9 +53,11 @@
                                                 <a href="<?= base_url('reports/view/' . $user['id']) ?>" class="btn btn-sm btn-info">
                                                     Reports
                                                 </a>
+                                                <?php if (session()->get('id') != $user['id']): ?>
                                                 <a href="<?= base_url('adsaccounts/admin_view/' . $user['id']) ?>" class="btn btn-sm btn-success">
                                                     Check
                                                 </a>
+                                                <?php endif; ?>
                                             </td>
                                             <td>
                                                 <a href="<?= site_url('users/edit/'.$user['id']) ?>" class="btn btn-sm btn-info">Sửa</a>

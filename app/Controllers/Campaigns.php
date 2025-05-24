@@ -147,6 +147,8 @@ class Campaigns extends BaseController
             return redirect()->to('/login');
         }
 
+        $loggedId = session()->get('id'); 
+
         try {
             // 2. Kiểm tra tài khoản hiện tại
             $account = $this->adsAccountModel
@@ -160,8 +162,10 @@ class Campaigns extends BaseController
             }
 
             // 4. Lấy danh sách tất cả tài khoản của user để hiển thị trong dropdown
-            $accounts = $this->adsAccountModel
-                ->orderBy('order', 'ASC')
+            $accounts = $this->adsAccountModel->select('ads_accounts.*, users.username')
+                ->join('users', 'users.id = ads_accounts.user_id')
+                ->where('ads_accounts.user_id !=', $loggedId)
+                ->orderBy('ads_accounts.user_id', 'ASC')
                 ->findAll();
 
             $userId = $account['user_id'];
