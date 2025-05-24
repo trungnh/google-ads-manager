@@ -513,7 +513,7 @@ $(document).ready(function() {
                             ${tmpRoas > 0 ? formatNumberWithoutCurrency2(tmpRoas) : '-'}
                         </span>
                     </td>
-                    <td class="text-${(campaign.real_cpa > accountSettings.cpa_threshold) || campaign.real_cpa == 0 ? 'danger' : 'primary'}">
+                    <td class="fw-bold text-${(campaign.real_cpa > accountSettings.cpa_threshold) ? 'success' : 'danger'}">
                         ${(campaign.real_cpa > 0) ? formatNumber(campaign.real_cpa): '-'}
                     </td>
                     <td class="text-primary">${(campaign.real_conversions > 0) ? formatNumberWithoutCurrency(campaign.real_conversions) + ' đơn' : '-'}</td>

@@ -80,7 +80,7 @@ class Campaigns extends BaseController
             $userSettings = $this->userSettingsModel->where('user_id', $userId)->first();
             $mccId = $userSettings['mcc_id'] ?? null;
 
-            $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($account['customer_id']);
+            $settings = $this->adsAccountSettingsModel->getSettingsByCustomerId($account['customer_id']);
 
             // 6. Nếu không có dữ liệu trong database, lấy từ API
             if (empty($campaigns)) {
@@ -178,7 +178,7 @@ class Campaigns extends BaseController
             $userSettings = $this->userSettingsModel->where('user_id', $userId)->first();
             $mccId = $userSettings['mcc_id'] ?? null;
 
-            $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($account['customer_id']);
+            $settings = $this->adsAccountSettingsModel->getSettingsByCustomerId($account['customer_id']);
 
             // 6. Nếu không có dữ liệu trong database, lấy từ API
             if (empty($campaigns)) {
@@ -278,7 +278,7 @@ class Campaigns extends BaseController
                 ]);
             }
 
-            $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($account['id']);
+            $settings = $this->adsAccountSettingsModel->getSettingsByCustomerId($customerId);
             $gsheetUrl = $settings['gsheet1'] ?? null;
             $gsheetUrl2 = $settings['gsheet2'] ?? null;
             // Lấy access token
@@ -432,7 +432,7 @@ class Campaigns extends BaseController
                 ]);
             }
 
-            $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($account['id']);
+            $settings = $this->adsAccountSettingsModel->getSettingsByCustomerId($customerId);
             $gsheetUrl = $settings['gsheet1'] ?? null;
             $gsheetUrl2 = $settings['gsheet2'] ?? null;
             // Lấy access token
