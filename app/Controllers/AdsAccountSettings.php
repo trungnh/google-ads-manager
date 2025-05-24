@@ -96,6 +96,45 @@ class AdsAccountSettings extends BaseController
         }
     }
 
+    public function viewAdmin($customerId)
+    {
+        if (!session()->get('isLoggedIn')) {
+            return redirect()->to('/login');
+        }
+
+        try {
+            // Lấy danh sách tất cả tài khoản của user để hiển thị trong dropdown
+            $accounts = $this->adsAccountModel
+            ->orderBy('order', 'ASC')
+            ->findAll();
+
+            $account = $this->adsAccountModel
+                ->where('customer_id', $customerId)
+                ->first();
+
+            // Lấy settings hiện tại
+            $settings = $this->adsAccountSettingsModel->getSettingsByCustomerId($customerId);
+            
+            // Tạo settings mặc định nếu chưa có
+            if (!$settings) {
+                return redirect()->to('/adsaccounts/admin_view')->with('error', 'Chưa có setting cho tài khoản này');
+            }
+
+            $data = [
+                'title' => 'Cài đặt tài khoản - ' . $account['customer_name'],
+                'account' => $account,
+                'accounts' => $accounts,
+                'settings' => $settings
+            ];
+
+            return view('ads_account_settings/admin_view/index', $data);
+
+        } catch (\Exception $e) {
+            log_message('error', 'Error in AdsAccountSettings::index: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Lỗi khi lấy thông tin cài đặt: ' . $e->getMessage());
+        }
+    }
+
     public function update($customerId)
     {
         if (!session()->get('isLoggedIn')) {

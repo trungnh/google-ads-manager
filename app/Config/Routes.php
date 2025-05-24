@@ -124,6 +124,12 @@ $routes->group('', ['filter' => 'auth'], function($routes) {
         $routes->get('users/delete/(:num)', 'Users::delete/$1');
         $routes->get('optimize-logs/view/(:num)', 'OptimizeLogs::view/$1');
         $routes->get('reports/view/(:num)', 'Reports::view/$1');
+
+        // Ads Accounts routes
+        $routes->get('adsaccounts/admin_view/(:num)', 'AdsAccounts::adminList/$1');
+        $routes->get('adsaccounts/settings/admin_view/(:num)', 'AdsAccountSettings::viewAdmin/$1');
+        $routes->get('campaigns/admin_view/(:segment)', 'Campaigns::viewAdmin/$1');
+        $routes->get('campaigns/admin_view/load/(:segment)', 'Campaigns::adminViewLoadCampaigns/$1');
     });
 });
 

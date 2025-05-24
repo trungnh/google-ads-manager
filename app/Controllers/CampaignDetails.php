@@ -42,29 +42,20 @@ class CampaignDetails extends BaseController
             return redirect()->to('/login');
         }
 
-        $userId = session()->get('id');
-
         try {
             // 2. Kiểm tra tài khoản hiện tại
             $account = $this->adsAccountModel
-                ->where('user_id', $userId)
                 ->where('customer_id', $customerId)
                 ->first();
 
             // 3. Nếu không tìm thấy tài khoản hiện tại, tìm tài khoản đầu tiên của user
             if (!$account) {
-                $firstAccount = $this->adsAccountModel
-                    ->where('user_id', $userId)
-                    ->first();
-
-                if ($firstAccount) {
-                    return redirect()->to('/campaigns/index/' . $firstAccount['customer_id']);
-                }
-
                 // Nếu không có tài khoản nào
-                session()->setFlashdata('error', 'Bạn chưa có tài khoản Google Ads nào');
-                return redirect()->to('/adsaccounts');
+                session()->setFlashdata('error', 'Không có tài khoản này - ' . $customerId);
+                return redirect()->to('/adsaccounts/admin_view');
             }
+
+            $userId = $account['user_id'];
 
             // 4. Lấy danh sách tất cả tài khoản của user để hiển thị trong dropdown
             $accounts = $this->adsAccountModel
@@ -117,7 +108,7 @@ class CampaignDetails extends BaseController
             }
         } catch (Exception $e) {
             session()->setFlashdata('error', 'Lỗi khi lấy thông tin chiến dịch: ' . $e->getMessage());
-            return redirect()->to('/campaigns/index/' . $customerId);
+            return redirect()->to('/campaigns/admin_view/' . $customerId);
         }
     }
 
@@ -137,20 +128,19 @@ class CampaignDetails extends BaseController
             return redirect()->to('/login');
         }
 
-        $userId = session()->get('id');
-
         try {
             // 2. Kiểm tra tài khoản hiện tại
             $account = $this->adsAccountModel
-                ->where('user_id', $userId)
                 ->where('customer_id', $customerId)
                 ->first();
 
             // 3. Nếu không tìm thấy tài khoản hiện tại, tìm tài khoản đầu tiên của user
             if (!$account) {
                 session()->setFlashdata('error', 'Không tìm thấy tài khoản');
-                return redirect()->to('/campaigns');
+                return redirect()->to('/campaigns/admin_view/' . $customerId);
             }
+
+            $userId = $account['user_id'];
 
             // 4. Lấy danh sách tất cả tài khoản của user để hiển thị trong dropdown
             $accounts = $this->adsAccountModel
@@ -227,20 +217,19 @@ class CampaignDetails extends BaseController
             return redirect()->to('/login');
         }
 
-        $userId = session()->get('id');
-
         try {
             // 2. Kiểm tra tài khoản hiện tại
             $account = $this->adsAccountModel
-                ->where('user_id', $userId)
                 ->where('customer_id', $customerId)
                 ->first();
 
             // 3. Nếu không tìm thấy tài khoản hiện tại, tìm tài khoản đầu tiên của user
             if (!$account) {
                 session()->setFlashdata('error', 'Không tìm thấy tài khoản');
-                return redirect()->to('/campaigns');
+                return redirect()->to('/campaigns/admin_view/'. $customerId);
             }
+
+            $userId = $account['user_id'];
 
             // 4. Lấy danh sách tất cả tài khoản của user để hiển thị trong dropdown
             $accounts = $this->adsAccountModel
@@ -317,20 +306,19 @@ class CampaignDetails extends BaseController
             return redirect()->to('/login');
         }
 
-        $userId = session()->get('id');
-
         try {
             // 2. Kiểm tra tài khoản hiện tại
             $account = $this->adsAccountModel
-                ->where('user_id', $userId)
                 ->where('customer_id', $customerId)
                 ->first();
 
             // 3. Nếu không tìm thấy tài khoản hiện tại, tìm tài khoản đầu tiên của user
             if (!$account) {
                 session()->setFlashdata('error', 'Không tìm thấy tài khoản');
-                return redirect()->to('/campaigns');
+                return redirect()->to('/campaigns/admin_view/'. $customerId);
             }
+
+            $userId = $account['user_id'];
 
             // 4. Lấy danh sách tất cả tài khoản của user để hiển thị trong dropdown
             $accounts = $this->adsAccountModel

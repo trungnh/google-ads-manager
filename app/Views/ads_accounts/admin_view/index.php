@@ -1,0 +1,153 @@
+<!-- app/Views/ads_accounts/index.php -->
+<?= $this->include('templates/header') ?>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-3">Ads Accounts</h4>
+                    <!-- <a href="<?= base_url('ads-accounts/create') ?>" class="btn btn-success me-2">Thêm Account</a> -->
+                    <a href="<?= base_url('syncads') ?>" class="btn btn-primary">Sync Accounts</a>
+                </div>
+                <div class="card-body">
+                    <?php if (session()->has('success')): ?>
+                        <div class="alert alert-success">
+                            <?= session('success') ?>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <?php if (session()->has('error')): ?>
+                        <div class="alert alert-danger">
+                            <?= session('error') ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if (empty($accounts)): ?>
+                        <div class="alert alert-info">
+                            No accounts found.
+                        </div>
+                    <?php else: ?>
+                        <div class="row mb-3">
+                            <div class="col">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="text-end">
+                                        <select class="form-select" id="accountSelector" style="width: 300px;" onchange="window.location.href=this.value">
+                                            <?php foreach ($users as $user): ?>
+                                                <option value="<?= base_url('adsaccounts/admin_view/' . $user['id']) ?>" <?= $user['id'] == $userId ? 'selected' : '' ?>>
+                                                    <?= esc($user['username']) ?> - <?= esc($user['id']) ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class=row>
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover">
+                                    <thead class="thead-dark">
+                                        <tr>
+                                            <th>Customer ID</th>
+                                            <th>Account Name</th>
+                                            <th>Currency</th>
+                                            <th>Time Zone</th>
+                                            <th>Status</th>
+                                            <th>Last Synced</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($accounts as $account): ?>
+                                            <tr>
+                                                <td><?= $account['customer_id'] ?></td>
+                                                <td class="fw-bold"><?= $account['customer_name'] ?></td>
+                                                <td><?= $account['currency_code'] ?? 'N/A' ?></td>
+                                                <td><?= $account['time_zone'] ?? 'N/A' ?></td>
+                                                <td>
+                                                    <span class="badge <?= strtolower($account['status']) === 'active' ? 'bg-success' : 'bg-warning' ?>">
+                                                        <?= $account['status'] ?>
+                                                    </span>
+                                                </td>
+                                                <td><?= $account['last_synced'] ? date('Y-m-d H:i', strtotime($account['last_synced'])) : 'Never' ?></td>
+                                                <td>
+                                                    <a href="<?= base_url('campaigns/admin_view/' . $account['customer_id']) ?>" class="btn btn-sm btn-info mb-2 mb-md-0">
+                                                        View Campaigns
+                                                    </a>
+                                                    <a href="<?= base_url('adsaccounts/settings/admin_view/' . $account['customer_id']) ?>" class="btn btn-sm btn-primary mb-2 mb-md-0">
+                                                        <i class="fas fa-cog"></i> Settings
+                                                    </a>
+                                                    <button onclick="deleteAccount('<?= $account['id'] ?>', '<?= $account['customer_name'] ?>')" class="btn btn-sm btn-danger">
+                                                        <i class="fas fa-trash"></i> Delete
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Account Modal -->
+<div class="modal fade" id="deleteAccountModal" tabindex="-1" aria-labelledby="deleteAccountModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteAccountModalLabel">Xoá thật không?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Chắc chắn chưa? Chốt nhé: <span id="accountNameToDelete"></span>?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Thôi, đùa đấy!</button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">Xoá cực mạnh!</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function deleteAccount(accountId, accountName) {
+    document.getElementById('accountNameToDelete').textContent = accountName;
+    const modal = new bootstrap.Modal(document.getElementById('deleteAccountModal'));
+    modal.show();
+    
+    document.getElementById('confirmDelete').onclick = function() {
+        fetch(`<?= base_url('adsaccounts/delete') ?>/${accountId}`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message || 'Error deleting account');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error deleting account');
+        })
+        .finally(() => {
+            modal.hide();
+        });
+    };
+}
+</script>
+<style>
+    .table td .btn {
+        font-size: 0.8rem;
+        font-weight: normal;
+    }
+</style> 
+<?= $this->include('templates/footer') ?>

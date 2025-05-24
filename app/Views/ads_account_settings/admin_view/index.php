@@ -1,0 +1,272 @@
+<?= $this->include('templates/header') ?>
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Cài đặt tài khoản - <?= esc($account['customer_name']) ?></h2>
+                </div>
+                <div class="card-body">
+                    <div class="text-end mb-3">
+                        <select class="form-select" id="accountSelector" style="width: 300px;" onchange="window.location.href=this.value">
+                            <?php foreach ($accounts as $acc): ?>
+                                <option value="<?= base_url('adsaccounts/settings/' . $acc['customer_id']) ?>" <?= $acc['id'] == $account['id'] ? 'selected' : '' ?>>
+                                    <?= esc($acc['customer_name']) ?> - <?= esc($acc['customer_id']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <a href="<?= base_url('campaigns/index/' . $account['customer_id']) ?>" class="btn btn-sm btn-info">
+                        View Campaigns
+                    </a>
+                    <?php if (session()->has('error')): ?>
+                        <div class="alert alert-danger">
+                            <?= session('error') ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Cài đặt tối ưu hóa tự động</h5>
+                </div>
+                <div class="card-body">
+                    <form id="settingsForm">
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="auto_optimize" name="auto_optimize" 
+                                    <?= isset($settings['auto_optimize']) && $settings['auto_optimize'] ? 'checked' : '' ?>>
+                                <label class="form-check-label" for="auto_optimize">Tự động tối ưu</label>
+                            </div>
+                            <small class="form-text text-muted">
+                                <i>Khi bật, hệ thống sẽ tự động kiểm tra và tối ưu chiến dịch</i>
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="cost_threshold" class="form-label">Ngưỡng chi tiêu</label>
+                            <input type="number" step="0.01" class="form-control" id="cost_threshold" name="cost_threshold" 
+                                value="<?= isset($settings['cost_threshold']) ? $settings['cost_threshold'] : '' ?>">
+                            <small class="form-text text-muted">
+                                <i>Khi chi tiêu vượt quá ngưỡng này, chiến dịch sẽ check các điều kiện để Tắt hoặc Tăng ngân sách</i>
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="increase_budget" class="form-label">Tăng ngân sách</label>
+                            <input type="number" step="0.01" class="form-control" id="increase_budget" name="increase_budget" 
+                                value="<?= isset($settings['increase_budget']) ? $settings['increase_budget'] : '' ?>">
+                            <small class="form-text text-muted">
+                                <i>
+                                    Số tiền tăng thêm khi chiến dịch đã chi tiêu > 50% ngân sách
+                                    <br>
+                                    Nếu không muốn tăng ngân sách thì để 0
+                                    <br>
+                                    (Nếu chiến dịch thoả mãn điều kiện ngưỡng ROAS/CPA bên dưới thì mới tăng NS)
+                                </i>
+                            </small>
+                        </div>
+
+                        <div class="mb-3 mt-5">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="auto_on_off" name="auto_on_off" 
+                                    <?= isset($settings['auto_on_off']) && $settings['auto_on_off'] ? 'checked' : '' ?>>
+                                <label class="form-check-label" for="auto_on_off">Tự động tắt chiến dịch</label>
+                            </div>
+                            <small class="form-text text-muted">
+                                <i>Khi bật, hệ thống sẽ tự động tắt chiến dịch dựa trên ngưỡng chi tiêu và CPA</i>
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="cpa_threshold" class="form-label">Ngưỡng CPA</label>
+                            <input type="number" step="0.01" class="form-control" id="cpa_threshold" name="cpa_threshold" 
+                                value="<?= isset($settings['cpa_threshold']) ? $settings['cpa_threshold'] : '' ?>">
+                            <small class="form-text text-muted">
+                                <i>Chiến dịch sẽ bị tạm dừng nếu CPA vượt quá ngưỡng này</i>
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="extended_cpa_threshold" class="form-label">Ngưỡng CPA giữa 2 lần chuyển đổi</label>
+                            <input type="number" step="0.01" class="form-control" id="extended_cpa_threshold" name="extended_cpa_threshold" 
+                                value="<?= isset($settings['extended_cpa_threshold']) ? $settings['extended_cpa_threshold'] : '' ?>">
+                            <small class="form-text text-muted">
+                                <i>Nếu chi tiêu thêm hoặc CPA từ lần ra đơn gần nhất > ngưỡng này thì tạm dừng chiến dịch 
+                                    <br> Mặc định nêu skhoong điền sẽ = <strong>Ngưỡng CPA</strong>
+                                    <br>(Không dùng được khi bật ROAS bên dưới)</i>
+                            </small>
+                        </div>
+
+                        <div class="mb-3 mt-5">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="use_roas_threshold" name="use_roas_threshold" 
+                                    <?= isset($settings['use_roas_threshold']) && $settings['use_roas_threshold'] ? 'checked' : '' ?>>
+                                <label class="form-check-label" for="use_roas_threshold">Tắt theo ROAS</label>
+                            </div>
+                            <small class="form-text text-muted">
+                                <i>Khi bật, hệ thống sẽ tự động bật/tắt chiến dịch dựa trên ROAS thay vì CPA</i>
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="roas_threshold" class="form-label">Ngưỡng ROAS</label>
+                            <input type="number" step="0.01" class="form-control" id="roas_threshold" name="roas_threshold"
+                                value="<?= isset($settings['roas_threshold']) ? $settings['roas_threshold'] : '' ?>">
+                            <small class="form-text text-muted">
+                                <i>Nhập ngưỡng ROAS để tự động tắt chiến dịch khi ROAS thực tế thấp hơn ngưỡng này</i>
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="exclude_campaign_ids" class="form-label">Loại trừ chiến dịch (ID chiến dịch)</label>
+                            <input type="text" class="form-control" id="exclude_campaign_ids" name="exclude_campaign_ids"
+                                value="<?= isset($settings['exclude_campaign_ids']) ? $settings['exclude_campaign_ids'] : '' ?>">
+                            <small class="form-text text-muted">
+                                <i>Phần tự động tối ưu sẽ <strong>bỏ qua</strong> các chiến dịch này khi chạy tự động. Điền <strong>ID chiến dịch</strong>, phân cách bằng dấu ","</i>
+                            </small>
+                        </div>
+                        <hr class="my-4">
+                        <h5 class="card-title mb-4 mt-4">Cài đặt Google Sheet (Chuyển đổi thực tế)</h5>
+
+                        <div class="mb-3">
+                            <label for="gsheet1" class="form-label">URL Google Sheet (CSV)</label>
+                            <input type="text" class="form-control" id="gsheet1" name="gsheet1" 
+                                value="<?= isset($settings['gsheet1']) ? $settings['gsheet1'] : '' ?>"
+                                placeholder="https://docs.google.com/spreadsheets/d/.../export?format=csv">
+                        </div>
+                        <div class="mb-3">
+                            <label for="gsheet2" class="form-label">URL Google Sheet 2 (CSV)</label>
+                            <small class="form-text text-muted">
+                                <i> - Đảm bảo thứ tự các cột giống nhau giữa 2 sheet</i>
+                            </small>
+                            <input type="text" class="form-control" id="gsheet2" name="gsheet2" 
+                                value="<?= isset($settings['gsheet2']) ? $settings['gsheet2'] : '' ?>"
+                                placeholder="https://docs.google.com/spreadsheets/d/.../export?format=csv">
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="gsheet_date_col" class="form-label">Cột ngày chuyển đổi</label>
+                                    <input type="text" class="form-control" id="gsheet_date_col" name="gsheet_date_col" 
+                                        value="<?= isset($settings['gsheet_date_col']) ? $settings['gsheet_date_col'] : 'A' ?>"
+                                        placeholder="Ví dụ: A">
+                                    <div class="form-text">Nhập chữ cái của cột (A, B, C,...)</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="gsheet_phone_col" class="form-label">Cột số điện thoại</label>
+                                    <input type="text" class="form-control" id="gsheet_phone_col" name="gsheet_phone_col" 
+                                        value="<?= isset($settings['gsheet_phone_col']) ? $settings['gsheet_phone_col'] : 'C' ?>"
+                                        placeholder="Ví dụ: C">
+                                    <div class="form-text">Nhập chữ cái của cột (A, B, C,...)</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="gsheet_value_col" class="form-label">Cột giá trị chuyển đổi</label>
+                                    <input type="text" class="form-control" id="gsheet_value_col" name="gsheet_value_col" 
+                                        value="<?= isset($settings['gsheet_value_col']) ? $settings['gsheet_value_col'] : 'F' ?>"
+                                        placeholder="Ví dụ: F">
+                                    <div class="form-text">Nhập chữ cái của cột (A, B, C,...)</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="gsheet_campaign_col" class="form-label">Cột Campaign ID</label>
+                                    <input type="text" class="form-control" id="gsheet_campaign_col" name="gsheet_campaign_col" 
+                                        value="<?= isset($settings['gsheet_campaign_col']) ? $settings['gsheet_campaign_col'] : 'L' ?>"
+                                        placeholder="Ví dụ: L">
+                                    <div class="form-text">Nhập chữ cái của cột (A, B, C,...)</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+                        <h5 class="card-title mb-4 mt-4">Cài đặt tài khoản ads</h5>
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="default_paused_campaigns" name="default_paused_campaigns" 
+                                    <?= isset($settings['default_paused_campaigns']) && $settings['default_paused_campaigns'] ? 'checked' : '' ?>>
+                                <label class="form-check-label" for="default_paused_campaigns">Default load chiến dịch đã tạm dừng</label>
+                            </div>
+                            <small class="form-text text-muted">
+                                <i>Khi bật, ở trang dánh sách chiến dịch của tài khoản, hệ thống sẽ tự động load các chiến dịch đã tạm dừng</i>
+                            </small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="order" class="form-label">Thứ tự sắp xếp</label>
+                            <input type="number" class="form-control" id="order" name="order" 
+                                value="<?= isset($account['order']) ? $account['order'] : '' ?>">
+                            <small class="form-text text-muted">
+                                Số thứ tự sắp xếp tài khoản
+                            </small>
+                        </div>
+
+                        <!-- <button type="submit" class="btn btn-primary" disabled>Lưu cài đặt</button> -->
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    $('#settingsForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        // Debug log for checkbox state
+        console.log('Checkbox checked:', $('#auto_optimize').is(':checked'));
+        
+        const formData = {
+            auto_optimize: $('#auto_optimize').is(':checked') ? 'true' : 'false',
+            cost_threshold: $('#cost_threshold').val(),
+            cpa_threshold: $('#cpa_threshold').val(),
+            roas_threshold: $('#roas_threshold').val(),
+            increase_budget: $('#increase_budget').val(),
+            gsheet1: $('#gsheet1').val(),
+            gsheet_date_col: $('#gsheet_date_col').val().toUpperCase(),
+            gsheet_phone_col: $('#gsheet_phone_col').val().toUpperCase(),
+            gsheet_value_col: $('#gsheet_value_col').val().toUpperCase(),
+            gsheet_campaign_col: $('#gsheet_campaign_col').val().toUpperCase(),
+            gsheet2: $('#gsheet2').val(),
+            order: $('#order').val(),
+            auto_on_off: $('#auto_on_off').is(':checked') ? 'true' : 'false',
+            use_roas_threshold: $('#use_roas_threshold').is(':checked')? 'true' : 'false',
+            extended_cpa_threshold: $('#extended_cpa_threshold').val(),
+            default_paused_campaigns: $('#default_paused_campaigns').is(':checked') ? 'true' : 'false',
+            exclude_campaign_ids: $('#exclude_campaign_ids').val(),
+        };
+        
+        $.ajax({
+            url: '<?= base_url('adsaccounts/settings/update/' . $account['customer_id']) ?>',
+            method: 'POST',
+            data: formData,
+            success: function(response) {
+                if (response.success) {
+                    alert('Cài đặt đã được lưu thành công!');
+                } else {
+                    alert('Lỗi: ' + response.message);
+                }
+            },
+            error: function() {
+                alert('Có lỗi xảy ra khi lưu cài đặt');
+            }
+        });
+    });
+});
+</script>
+
+<?= $this->include('templates/footer') ?> 

@@ -53,6 +53,9 @@
                                                 <a href="<?= base_url('reports/view/' . $user['id']) ?>" class="btn btn-sm btn-info">
                                                     Reports
                                                 </a>
+                                                <a href="<?= base_url('adsaccounts/admin_view' . $user['id']) ?>" class="btn btn-sm btn-success">
+                                                    Check
+                                                </a>
                                             </td>
                                             <td>
                                                 <a href="<?= site_url('users/edit/'.$user['id']) ?>" class="btn btn-sm btn-info">Sửa</a>

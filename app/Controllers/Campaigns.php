@@ -80,21 +80,7 @@ class Campaigns extends BaseController
             $userSettings = $this->userSettingsModel->where('user_id', $userId)->first();
             $mccId = $userSettings['mcc_id'] ?? null;
 
-            $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($account['id']);
-            // Check trường hợp ads account thuộc nhiều user khác nhau. Chỉ check 1 setting duy nhất
-            if (!$settings) {
-                $tmpAccounts = $this->adsAccountModel->getAccountsByCustomerId($account['customer_id']);
-                if (!empty($tmpAccounts)) {
-                    foreach ($tmpAccounts as $acc) {
-                        if (!empty($acc['id'])) {
-                            $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($acc['id']);
-                            if ($settings) {
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
+            $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($account['customer_id']);
 
             // 6. Nếu không có dữ liệu trong database, lấy từ API
             if (empty($campaigns)) {
@@ -153,6 +139,100 @@ class Campaigns extends BaseController
         }
     }
 
+    public function viewAdmin($customerId)
+    {
+        // 1. Kiểm tra đăng nhập
+        if (!session()->get('isLoggedIn')) {
+            session()->setFlashdata('error', 'Vui lòng đăng nhập để tiếp tục');
+            return redirect()->to('/login');
+        }
+
+        try {
+            // 2. Kiểm tra tài khoản hiện tại
+            $account = $this->adsAccountModel
+                ->where('customer_id', $customerId)
+                ->orderBy('order', 'ASC')
+                ->first();
+
+            // 3. Nếu không tìm thấy tài khoản hiện tại, tìm tài khoản đầu tiên của user
+            if (!$account) {
+                return redirect()->to('/adsaccounts/admin_view')->with('error', 'Không có tài khoản này');
+            }
+
+            // 4. Lấy danh sách tất cả tài khoản của user để hiển thị trong dropdown
+            $accounts = $this->adsAccountModel
+                ->orderBy('order', 'ASC')
+                ->findAll();
+
+            $userId = $account['user_id'];
+
+            // 5. Lấy dữ liệu chiến dịch từ database
+            $today = date('Y-m-d');
+            $showPaused = $this->request->getGet('showPaused') === 'true';
+            $showPausedAndCost = $this->request->getGet('showPausedAndCost') === 'true';
+            $campaigns = $this->campaignsDataModel->getCampaignsByDate($customerId, $today, $showPaused);
+            $userSettings = $this->userSettingsModel->where('user_id', $userId)->first();
+            $mccId = $userSettings['mcc_id'] ?? null;
+
+            $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($account['customer_id']);
+
+            // 6. Nếu không có dữ liệu trong database, lấy từ API
+            if (empty($campaigns)) {
+                $tokenData = $this->googleTokenModel->getValidToken($userId);
+                if (empty($tokenData) || empty($tokenData['access_token'])) {
+                    session()->setFlashdata('error', 'Bạn cần kết nối lại với Google Ads');
+                    return redirect()->to('/adsaccounts/admin_view');
+                }
+
+                $campaigns = $this->googleAdsService->getCampaigns(
+                    $customerId, 
+                    $tokenData['access_token'], 
+                    $mccId, 
+                    $showPaused,
+                    $today,
+                    $today
+                );
+
+                $gsheetUrl = $settings['gsheet1'] ?? null;
+                if (!empty($campaigns) && !empty($gsheetUrl)) {
+                    $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, $today, $today, $settings);
+                }
+                $gsheetUrl2 = $settings['gsheet2'] ?? null;
+                if (!empty($campaigns) && !empty($gsheetUrl2)) {
+                    $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl2, $today, $today, $settings);
+                }
+
+                $this->campaignsDataModel->saveCampaignsData($customerId, $campaigns);
+            }
+
+            $returnCampaigns = []; 
+            foreach ($campaigns as $campaign) {
+                if ($showPausedAndCost) {
+                    $returnCampaigns[] = $campaign;
+                } else {
+                    if ($campaign['cost'] > 0) {
+                        $returnCampaigns[] = $campaign;
+                    }
+                }
+            }
+
+            // 7. Render view với dữ liệu
+            return view('campaigns/admin_view/index', [
+                'title' => 'Danh sách chiến dịch - ' . $account['customer_name'],
+                'account' => $account,
+                'accounts' => $accounts,
+                'campaigns' => $returnCampaigns,
+                'accountSettings' => $settings ?? [],
+                'mccId' => $mccId
+            ]);
+
+        } catch (Exception $e) {
+            log_message('error', 'Error in Campaigns::index: ' . $e->getMessage());
+            session()->setFlashdata('error', 'Lỗi khi lấy danh sách chiến dịch: ' . $e->getMessage());
+            return redirect()->to('/adsaccounts/admin_view');
+        }
+    }
+
     public function loadCampaigns($customerId)
     {
         if (!session()->get('isLoggedIn')) {
@@ -193,21 +273,162 @@ class Campaigns extends BaseController
                     'message' => 'Không tìm thấy tài khoản Google Ads hoặc tài khoản không hợp lệ'
                 ]);
             }
+
             $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($account['id']);
-            // Check trường hợp ads account thuộc nhiều user khác nhau. Chỉ check 1 setting duy nhất
-            if (!$settings) {
-                $tmpAccounts = $this->adsAccountModel->getAccountsByCustomerId($account['customer_id']);
-                if (!empty($tmpAccounts)) {
-                    foreach ($tmpAccounts as $acc) {
-                        if (!empty($acc['id'])) {
-                            $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($acc['id']);
-                            if ($settings) {
-                                break;
+            $gsheetUrl = $settings['gsheet1'] ?? null;
+            $gsheetUrl2 = $settings['gsheet2'] ?? null;
+            // Lấy access token
+            $tokenData = $this->googleTokenModel->getValidToken($userId);
+            if (empty($tokenData) || empty($tokenData['access_token'])) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Bạn cần kết nối lại với Google Ads']);
+            }
+
+            // Lấy MCC ID từ settings
+            $userSettings = $this->userSettingsModel->where('user_id', $userId)->first();
+            $mccId = $userSettings['mcc_id'] ?? null;
+
+            $returnCampaigns = [];
+
+            // Nếu ngày bắt đầu và kết thúc là cùng ngày
+            if ($startDate === $endDate) {
+                // Kiểm tra xem có data trong database không và không phải force update
+                if (!$forceUpdate) {
+                    $campaigns = $this->campaignsDataModel->getCampaignsByDate($customerId, $startDate, $showPaused);
+                    $lastUpdateTime = $this->campaignsDataModel->getLastUpdateTime($customerId, $startDate);
+
+                    foreach ($campaigns as $campaign) {
+                        if ($showPausedAndCost) {
+                            $returnCampaigns[] = $campaign;
+                        } else {
+                            if ($campaign['cost'] > 0) {
+                                $returnCampaigns[] = $campaign;
                             }
                         }
                     }
+                    
+                    if (!empty($returnCampaigns)) {
+                        return $this->response->setJSON([
+                            'success' => true,
+                            'campaigns' => $returnCampaigns,
+                            'lastUpdateTime' => $lastUpdateTime,
+                            'isFromCache' => true
+                        ]);
+                    }
                 }
             }
+            
+            // Lấy danh sách chiến dịch từ API
+            $campaigns = $this->googleAdsService->getCampaigns(
+                $customerId, 
+                $tokenData['access_token'], 
+                $mccId, 
+                $showPaused,
+                $startDate,
+                $endDate
+            );
+            // Xử lý dữ liệu chuyển đổi thực tế từ Google Sheet
+            if (!empty($campaigns) && !empty($gsheetUrl)) {
+                $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, $startDate, $endDate, $settings);
+            }
+            if (!empty($campaigns) && !empty($gsheetUrl2)) {
+                $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl2, $startDate, $endDate, $settings);
+            }
+            // Chỉ lưu vào database nếu ngày bắt đầu và kết thúc là cùng ngày
+            if ($startDate === $endDate) {
+                $this->campaignsDataModel->saveCampaignsData($customerId, $campaigns, $startDate);
+                $lastUpdateTime = date('Y-m-d H:i:s');
+                $responseCampaigns = $this->campaignsDataModel->getCampaignsByDate($customerId, $startDate, $showPaused);
+
+                foreach ($responseCampaigns as $campaign) {
+                    if ($showPausedAndCost) {
+                        $returnCampaigns[] = $campaign;
+                    } else {
+                        if ($campaign['cost'] > 0) {
+                            $returnCampaigns[] = $campaign;
+                        }
+                    }
+                }
+
+                if (!empty($campaigns)) {
+                    return $this->response->setJSON([
+                        'success' => true,
+                        'campaigns' => $returnCampaigns,
+                        'lastUpdateTime' => $lastUpdateTime,
+                        'isFromCache' => true
+                    ]);
+                }
+
+            } else {
+                $lastUpdateTime = null;
+            }
+            
+            foreach ($campaigns as $campaign) {
+                if ($showPausedAndCost) {
+                    $returnCampaigns[] = $campaign;
+                } else {
+                    if ($campaign['cost'] > 0) {
+                        $returnCampaigns[] = $campaign;
+                    }
+                }
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'campaigns' => $returnCampaigns,
+                'lastUpdateTime' => $lastUpdateTime,
+                'isFromCache' => false
+            ]);
+        } catch (Exception $e) {
+            log_message('error', 'Error in Campaigns::loadCampaigns: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi lấy danh sách chiến dịch: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    public function adminViewLoadCampaigns($customerId)
+    {
+        if (!session()->get('isLoggedIn')) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Vui lòng đăng nhập để tiếp tục'
+            ]);
+        }
+
+        try {
+            $account = $this->adsAccountModel->where('customer_id', $customerId)->first();
+            $userId = $account['user_id'];
+            $showPaused = $this->request->getGet('showPaused') === 'true';
+            $showPausedAndCost = $this->request->getGet('showPausedAndCost') === 'true';
+            $startDate = $this->request->getGet('startDate');
+            $endDate = $this->request->getGet('endDate');
+            $forceUpdate = $this->request->getGet('forceUpdate') === 'true';
+            
+            // Convert date format from dd/mm/yyyy to yyyy-mm-dd
+            $startDateObj = DateTime::createFromFormat('d/m/Y', $startDate);
+            $endDateObj = DateTime::createFromFormat('d/m/Y', $endDate);
+            
+            if (!$startDateObj || !$endDateObj) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Định dạng ngày không hợp lệ'
+                ]);
+            }
+            
+            $startDate = $startDateObj->format('Y-m-d');
+            $endDate = $endDateObj->format('Y-m-d');
+
+            // Lấy account settings để đọc URL Google Sheet và cấu hình cột
+            if (!$account || empty($account['id'])) {
+                log_message('error', 'Account not found or invalid for customer ID: ' . $customerId);
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Không tìm thấy tài khoản Google Ads hoặc tài khoản không hợp lệ'
+                ]);
+            }
+
+            $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($account['id']);
             $gsheetUrl = $settings['gsheet1'] ?? null;
             $gsheetUrl2 = $settings['gsheet2'] ?? null;
             // Lấy access token

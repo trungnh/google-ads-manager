@@ -5,16 +5,19 @@ namespace App\Controllers;
 use CodeIgniter\Controller;
 use App\Models\AdsAccountModel;
 use App\Models\AdsAccountSettingsModel;
+use App\Models\UserModel;
 
 class AdsAccounts extends BaseController
 {
     protected $adsAccountModel;
     protected $adsAccountSettingsModel;
+    protected $userModel;
 
     public function __construct()
     {
         $this->adsAccountModel = new AdsAccountModel();
         $this->adsAccountSettingsModel = new AdsAccountSettingsModel();
+        $this->userModel = new UserModel();
     }
 
     public function index()
@@ -38,6 +41,31 @@ class AdsAccounts extends BaseController
         ];
         
         return view('ads_accounts/index', $data);
+    }
+
+    public function adminList($userId)
+    {
+        // Kiểm tra đăng nhập
+        if (!session()->get('isLoggedIn')) {
+            return redirect()->to('/auth/login');
+        }
+        
+        // Lấy danh sách tài khoản ads
+        $accounts = $this->adsAccountModel
+            ->where('user_id', $userId)
+            ->orderBy('order', 'ASC')
+            ->findAll();
+
+        $users = $this->userModel->getAllActiveUsers();
+        
+        $data = [
+            'title' => 'Google Ads Accounts',
+            'accounts' => $accounts,
+            'userId' => $userId,
+            'users' => $users
+        ];
+        
+        return view('ads_accounts/admin_view/index', $data);
     }
 
     public function create()

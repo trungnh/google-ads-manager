@@ -49,7 +49,7 @@
                                             <td><?= $account['currency_code'] ?? 'N/A' ?></td>
                                             <td><?= $account['time_zone'] ?? 'N/A' ?></td>
                                             <td>
-                                                <span class="badge <?= $account['status'] === 'ACTIVE' ? 'bg-success' : 'bg-secondary' ?>">
+                                                <span class="badge <?= strtolower($account['status']) === 'active' ? 'bg-success' : 'bg-secondary' ?>">
                                                     <?= $account['status'] ?>
                                                 </span>
                                             </td>

@@ -48,4 +48,12 @@ class AdsAccountModel extends Model
                     ->where("status", "ACTIVE")
                     ->findAll();
     }
+
+    public function getAdsAccountsAndUsers()
+    {
+        return $this->select('ads_accounts.*, users.username, users.status')
+                    ->join('users', 'users.id = ads_accounts.user_id')
+                    ->where('users.status', 'active')
+                    ->findAll();
+    }
 }
