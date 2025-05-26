@@ -94,6 +94,7 @@ class OptimizeCampaigns extends BaseCommand
                     $userSettings = $this->userSettingsModel->where('user_id', $account['user_id'])->first();
                     $mccId = $userSettings['mcc_id'] ?? null;
 
+                    $this->telegramService->loadProxySettings($account['user_id']);
                     $linkedUsers = $this->adsAccountsModel->getLinkedUsers($account['customer_id']);
                     $telegramChatIds = [];
                     foreach($linkedUsers as $linkedUser){
