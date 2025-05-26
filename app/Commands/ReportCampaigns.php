@@ -75,7 +75,8 @@ class ReportCampaigns extends BaseCommand
                 if ($account['customer_id'] == $mccId){
                     continue;
                 }
-
+                
+                $this->telegramService->loadProxySettings($account['user_id']);
                 $linkedUsers = $this->adsAccountsModel->getLinkedUsers($account['customer_id']);
                 $telegramChatIds = [];
                 foreach($linkedUsers as $linkedUser){

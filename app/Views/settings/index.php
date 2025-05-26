@@ -43,6 +43,20 @@
                             </small>
                         </div>
                         
+                        <div class="mb-3">
+                            <label for="telegram_proxy" class="form-label">Proxy Telegram</label>
+                            <input type="text" class="form-control" id="telegram_proxy" name="telegram_proxy" 
+                                    value="<?= isset($settings['telegram_proxy']) ? $settings['telegram_proxy'] : '' ?>"
+                                    placeholder="IP:port:username:password">
+                            <div class="form-text text-muted"><i>Định dạng proxy: IP:port:username:password</i></div>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="use_telegram_proxy" name="use_telegram_proxy" 
+                                    <?= (isset($settings['use_telegram_proxy']) && $settings['use_telegram_proxy']) ? 'checked' : '' ?>>
+                            <label class="form-check-label" for="use_telegram_proxy">Sử dụng proxy cho Telegram</label>
+                        </div>
+                        
                         <button type="submit" class="btn btn-primary">Save Settings</button>
                     </form>
                 </div>

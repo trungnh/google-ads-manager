@@ -2,10 +2,10 @@
 
 namespace App\Controllers;
 
-use CodeIgniter\Controller;
 use App\Models\UserSettingsModel;
+use CodeIgniter\Controller;
 
-class Settings extends BaseController
+class Settings extends Controller
 {
     protected $userSettingsModel;
 
@@ -57,6 +57,8 @@ class Settings extends BaseController
         $mccId = $this->request->getPost('mcc_id');
         $telegramChatId = $this->request->getPost('telegram_chat_id');
         $reportTelegramChatId = $this->request->getPost('report_telegram_chat_id'); 
+        $proxy = $this->request->getPost('telegram_proxy');
+        $useProxy = $this->request->getPost('use_telegram_proxy') ? 1 : 0;
         // Kiểm tra xem có settings cho user này chưa
         $existingSettings = $this->userSettingsModel->where('user_id', $userId)->first();
         
@@ -66,6 +68,8 @@ class Settings extends BaseController
                 'mcc_id' => $mccId,
                 'telegram_chat_id' => $telegramChatId,
                 'report_telegram_chat_id' => $reportTelegramChatId,
+                'telegram_proxy' => $proxy,
+                'use_telegram_proxy' => $useProxy,
                 'updated_at' => date('Y-m-d H:i:s')
             ]);
         } else {
@@ -75,6 +79,8 @@ class Settings extends BaseController
                 'mcc_id' => $mccId,
                 'telegram_chat_id' => $telegramChatId,
                 'report_telegram_chat_id' => $reportTelegramChatId,
+                'telegram_proxy' => $proxy,
+                'use_telegram_proxy' => $useProxy,
                 'created_at' => date('Y-m-d H:i:s'),
                 'updated_at' => date('Y-m-d H:i:s')
             ]);

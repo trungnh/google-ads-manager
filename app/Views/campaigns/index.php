@@ -483,6 +483,7 @@ $(document).ready(function() {
         // Render các chiến dịch
         sortedCampaigns.forEach(campaign => {
             let tmpRoas = (campaign.cost > 0) ? campaign.real_conversion_value / campaign.cost : 0;
+            let tmpRealCpa = (campaign.real_conversions > 0) ? campaign.cost / campaign.real_conversions : 0;
             html += `
                 <tr id="campaign-${campaign.campaign_id}">
                     <td>${campaign.campaign_id}</td>
@@ -513,8 +514,10 @@ $(document).ready(function() {
                             ${tmpRoas > 0 ? formatNumberWithoutCurrency2(tmpRoas) : '-'}
                         </span>
                     </td>
-                    <td class="fw-bold text-${(campaign.real_cpa > accountSettings.cpa_threshold) ? 'success' : 'danger'}">
-                        ${(campaign.real_cpa > 0) ? formatNumber(campaign.real_cpa): '-'}
+                    <td>
+                        <span class="${(tmpRealCpa < accountSettings.cpa_threshold) ? 'text-primary' : 'text-danger'}">
+                            ${tmpRealCpa > 0 ? formatNumber(tmpRealCpa) : '-'}
+                        </span>
                     </td>
                     <td class="text-primary">${(campaign.real_conversions > 0) ? formatNumberWithoutCurrency(campaign.real_conversions) + ' đơn' : '-'}</td>
                     <td>${formatPercent(campaign.ctr)}</td>

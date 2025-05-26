@@ -10,11 +10,15 @@ class UserSettingsModel extends Model
     protected $primaryKey = 'id';
     protected $useAutoIncrement = true;
     protected $returnType = 'array';
-    protected $allowedFields = ['user_id', 'mcc_id', 'telegram_chat_id', 'report_telegram_chat_id', 'created_at', 'updated_at'];
-    protected $useTimestamps = true;
-    protected $createdField = 'created_at';
-    protected $updatedField = 'updated_at';
-
+    protected $useSoftDeletes = false;
+    protected $allowedFields = [
+        'user_id', 
+        'telegram_chat_id', 
+        'report_telegram_chat_id',
+        'telegram_proxy',
+        'use_telegram_proxy'
+    ];
+    
     protected $validationRules = [
         'user_id' => 'required|integer',
         'mcc_id' => 'permit_empty|numeric',
