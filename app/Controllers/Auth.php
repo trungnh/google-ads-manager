@@ -60,7 +60,7 @@ class Auth extends Controller
         $userModel->updateUserLastLogin($user['id']);
         
         // Chuyển hướng đến trang chủ
-        return redirect()->to('/dashboard');
+        return redirect()->to('/adsaccounts');
     }
     
     /**

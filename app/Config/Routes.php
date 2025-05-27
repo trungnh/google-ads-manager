@@ -39,7 +39,7 @@ if (ENVIRONMENT === 'development') {
 }
 
 // Public routes
-$routes->get('/', 'PublicPages::index');
+$routes->get('/', 'Auth::login');
 $routes->get('homepage', 'PublicPages::index');
 $routes->get('privacy-policy', 'PublicPages::privacyPolicy');
 $routes->get('terms', 'PublicPages::terms');
