@@ -261,46 +261,68 @@ class OptimizeCampaigns extends BaseCommand
                     } 
                     // TH: Nhiều hơn 1 đơn
                     elseif ($realConversions > 1) {
-                        // Lấy campaign data từ DB
-                        $tmpCampaign = $this->campaignsDataModel->where('customer_id', $account['customer_id'])
-                            ->where('campaign_id', $campaign['campaign_id'])
-                            ->where('date', date('Y-m-d'))
-                            ->first();
-
-                        // Check tồn tại
-                        $lastCostConversion = $tmpCampaign['last_cost_conversion']?? 0;
-                        $lastCountConversion = $tmpCampaign['last_count_conversion']?? 0;
-                        $lastCountConversionValue = $tmpCampaign['last_count_conversion_value']?? 0;
-                        
-                        // Tính chi tiêu từ lần ra cuối cùng ra chuyển đổi
-                        $costExtendFromLastConversion = $tmpCampaign['cost'] - $lastCostConversion;
-                        $conversionsExtendFromLastConversion = $realConversions - $lastCountConversion;
-                        $conversionValueExtendFromLastConversion = $realConversionValue - $lastCountConversionValue;
-                        if ($conversionsExtendFromLastConversion == 0) {
-                            if ($costExtendFromLastConversion > $account['cpa_threshold']) {
-                                $shouldPause = true;
-                                $action = "Chi tiêu thêm (".number_format($costExtendFromLastConversion, 0, '', '.').") từ lần ra đơn cuối cùng - Không có đơn thực tế";
-                            }
-                        } else {
-                            $cpaExtendFromLastConversion = $costExtendFromLastConversion / $conversionsExtendFromLastConversion;
-                            $roasExtendFromLastConversion = $conversionValueExtendFromLastConversion / $costExtendFromLastConversion;
-                            if ($account['use_roas_threshold']) {
+                        $extendedCpaThreshold = $account['extended_cpa_threshold'] ?? 0;
+                        if ($extendedCpaThreshold == 0){
+                            // Chỉ check CPA
+                            if (isset($account['use_roas_threshold']) && $account['use_roas_threshold'] == 1) {
                                 // Check theo ROAS
                                 // Nếu ROAS thực tế thấp hơn ngưỡng
-                                if ($account['roas_threshold'] > 0 && $roasExtendFromLastConversion < $account['roas_threshold']) {
+                                if ($account['roas_threshold'] > 0 && $realRoas < $account['roas_threshold']) {
                                     $shouldPause = true;
-                                    $action = "Chi tiêu thêm (".number_format($costExtendFromLastConversion, 0, '', '.').") từ lần ra đơn cuối cùng - ROAS (".number_format($roasExtendFromLastConversion, 1, ',', '.').") thấp hơn ngưỡng (".number_format($account['roas_threshold'], 1, ',', '.').")";  
-                                }  
+                                    $action = "ROAS thực tế (".number_format($realRoas, 1, ',', '.').") thấp hơn ngưỡng (".number_format($account['roas_threshold'], 1, ',', '.').")";  
+                                }
                             } else {
                                 // Check theo CPA
                                 // Nếu CPA thực tế vượt ngưỡng
-                                $extendedCpaThreshold = $account['extended_cpa_threshold'] ?? 0;
-                                $extendedCpaThreshold = ($extendedCpaThreshold > 0)? $extendedCpaThreshold : $account['cpa_threshold'];
-                                if ($extendedCpaThreshold > 0 && $cpaExtendFromLastConversion > $extendedCpaThreshold) {
+                                if ($account['cpa_threshold'] > 0 && $realCpa > $account['cpa_threshold']) {
                                     $shouldPause = true;
-                                    $action = "Chi tiêu thêm (".number_format($costExtendFromLastConversion, 0, '', '.').") từ lần ra đơn cuối cùng - CPA (".number_format($cpaExtendFromLastConversion, 1, ',', '.').") vượt ngưỡng (".number_format($extendedCpaThreshold, 1, ',', '.').")";  
-                                } 
+                                    $action = "CPA thực tế (".number_format($realCpa, 0, ',', '.').") vượt ngưỡng (".number_format($account['cpa_threshold'], 1, ',', '.').")";
+                                }
                             }
+                        } else {
+                            // Check CPA giữa 2 lần chuyển đổi
+                            // Lấy campaign data từ DB
+                            $tmpCampaign = $this->campaignsDataModel->where('customer_id', $account['customer_id'])
+                                ->where('campaign_id', $campaign['campaign_id'])
+                                ->where('date', date('Y-m-d'))
+                                ->first();
+
+                            // Check tồn tại
+                            $lastCostConversion = $tmpCampaign['last_cost_conversion']?? 0;
+                            $lastCountConversion = $tmpCampaign['last_count_conversion']?? 0;
+                            $lastCountConversionValue = $tmpCampaign['last_count_conversion_value']?? 0;
+                            
+                            // Tính chi tiêu từ lần ra cuối cùng ra chuyển đổi
+                            $costExtendFromLastConversion = $tmpCampaign['cost'] - $lastCostConversion;
+                            $conversionsExtendFromLastConversion = $realConversions - $lastCountConversion;
+                            $conversionValueExtendFromLastConversion = $realConversionValue - $lastCountConversionValue;
+                            if ($conversionsExtendFromLastConversion == 0) {
+                                if ($costExtendFromLastConversion > $account['cpa_threshold']) {
+                                    $shouldPause = true;
+                                    $action = "Chi tiêu thêm (".number_format($costExtendFromLastConversion, 0, '', '.').") từ lần ra đơn cuối cùng - Không có đơn thực tế";
+                                }
+                            } else {
+                                $cpaExtendFromLastConversion = $costExtendFromLastConversion / $conversionsExtendFromLastConversion;
+                                $roasExtendFromLastConversion = $conversionValueExtendFromLastConversion / $costExtendFromLastConversion;
+                                if ($account['use_roas_threshold']) {
+                                    // Check theo ROAS
+                                    // Nếu ROAS thực tế thấp hơn ngưỡng
+                                    if ($account['roas_threshold'] > 0 && $roasExtendFromLastConversion < $account['roas_threshold']) {
+                                        $shouldPause = true;
+                                        $action = "Chi tiêu thêm (".number_format($costExtendFromLastConversion, 0, '', '.').") từ lần ra đơn cuối cùng - ROAS (".number_format($roasExtendFromLastConversion, 1, ',', '.').") thấp hơn ngưỡng (".number_format($account['roas_threshold'], 1, ',', '.').")";  
+                                    }  
+                                } else {
+                                    // Check theo CPA
+                                    // Nếu CPA thực tế vượt ngưỡng
+                                    $extendedCpaThreshold = $account['extended_cpa_threshold'] ?? 0;
+                                    $extendedCpaThreshold = ($extendedCpaThreshold > 0)? $extendedCpaThreshold : $account['cpa_threshold'];
+                                    if ($extendedCpaThreshold > 0 && $cpaExtendFromLastConversion > $extendedCpaThreshold) {
+                                        $shouldPause = true;
+                                        $action = "Chi tiêu thêm (".number_format($costExtendFromLastConversion, 0, '', '.').") từ lần ra đơn cuối cùng - CPA (".number_format($cpaExtendFromLastConversion, 1, ',', '.').") vượt ngưỡng (".number_format($extendedCpaThreshold, 1, ',', '.').")";  
+                                    } 
+                                }
+                            }
+
                         }
                     }
                     /* ============ Bật/tắt camp ============ */
