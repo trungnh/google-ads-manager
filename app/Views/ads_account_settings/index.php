@@ -133,62 +133,105 @@
                             </small>
                         </div>
                         <hr class="my-4">
-                        <h5 class="card-title mb-4 mt-4">Cài đặt Google Sheet (Chuyển đổi thực tế)</h5>
-
+                        <h5 class="card-title mb-4 mt-4">Cài đặt nguồn dữ liệu chuyển đổi thực tế</h5>
+                        
                         <div class="mb-3">
-                            <label for="gsheet1" class="form-label">URL Google Sheet (CSV)</label>
-                            <input type="text" class="form-control" id="gsheet1" name="gsheet1" 
-                                value="<?= isset($settings['gsheet1']) ? $settings['gsheet1'] : '' ?>"
-                                placeholder="https://docs.google.com/spreadsheets/d/.../export?format=csv">
-                        </div>
-                        <div class="mb-3">
-                            <label for="gsheet2" class="form-label">URL Google Sheet 2 (CSV)</label>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="use_pancake" name="use_pancake" 
+                                    <?= isset($settings['use_pancake']) && $settings['use_pancake'] ? 'checked' : '' ?>>
+                                <label class="form-check-label" for="use_pancake">Sử dụng Pancake POS</label>
+                            </div>
                             <small class="form-text text-muted">
-                                <i> - Đảm bảo thứ tự các cột giống nhau giữa 2 sheet</i>
+                                <i>Khi bật, hệ thống sẽ lấy dữ liệu chuyển đổi từ Pancake POS thay vì Google Sheet</i>
                             </small>
-                            <input type="text" class="form-control" id="gsheet2" name="gsheet2" 
-                                value="<?= isset($settings['gsheet2']) ? $settings['gsheet2'] : '' ?>"
-                                placeholder="https://docs.google.com/spreadsheets/d/.../export?format=csv">
                         </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="gsheet_date_col" class="form-label">Cột ngày chuyển đổi</label>
-                                    <input type="text" class="form-control" id="gsheet_date_col" name="gsheet_date_col" 
-                                        value="<?= isset($settings['gsheet_date_col']) ? $settings['gsheet_date_col'] : 'A' ?>"
-                                        placeholder="Ví dụ: A">
-                                    <div class="form-text">Nhập chữ cái của cột (A, B, C,...)</div>
-                                </div>
+                        
+                        <div id="pancake_settings" class="mb-4" style="display: <?= isset($settings['use_pancake']) && $settings['use_pancake'] ? 'block' : 'none' ?>">
+                            <div class="mb-3">
+                                <label for="pancake_shop_id" class="form-label">Shop ID</label>
+                                <input type="text" class="form-control" id="pancake_shop_id" name="pancake_shop_id" 
+                                    value="<?= isset($settings['pancake_shop_id']) ? $settings['pancake_shop_id'] : '' ?>">
+                                <small class="form-text text-muted">
+                                    <i>ID của cửa hàng trên Pancake POS</i>
+                                </small>
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="gsheet_phone_col" class="form-label">Cột số điện thoại</label>
-                                    <input type="text" class="form-control" id="gsheet_phone_col" name="gsheet_phone_col" 
-                                        value="<?= isset($settings['gsheet_phone_col']) ? $settings['gsheet_phone_col'] : 'C' ?>"
-                                        placeholder="Ví dụ: C">
-                                    <div class="form-text">Nhập chữ cái của cột (A, B, C,...)</div>
-                                </div>
+                            
+                            <div class="mb-3">
+                                <label for="pancake_api_key" class="form-label">API Key</label>
+                                <input type="text" class="form-control" id="pancake_api_key" name="pancake_api_key" 
+                                    value="<?= isset($settings['pancake_api_key']) ? $settings['pancake_api_key'] : '' ?>">
+                                <small class="form-text text-muted">
+                                    <i>API Key để truy cập Pancake POS API</i>
+                                </small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="pancake_product_id" class="form-label">Mã sản phẩm (product_display_id)</label>
+                                <input type="text" class="form-control" id="pancake_product_id" name="pancake_product_id" 
+                                    value="<?= isset($settings['pancake_product_id']) ? $settings['pancake_product_id'] : '' ?>">
+                                <small class="form-text text-muted">
+                                    <i>Mã sản phẩm để mapping đơn hàng với chiến dịch quảng cáo</i>
+                                </small>
                             </div>
                         </div>
+                        
+                        <div id="gsheet_settings" class="mb-4" style="display: <?= isset($settings['use_pancake']) && $settings['use_pancake'] ? 'none' : 'block' ?>">
+                            <h6 class="mb-3">Cài đặt Google Sheet</h6>
+                            <div class="mb-3">
+                                <label for="gsheet1" class="form-label">URL Google Sheet (CSV)</label>
+                                <input type="text" class="form-control" id="gsheet1" name="gsheet1" 
+                                    value="<?= isset($settings['gsheet1']) ? $settings['gsheet1'] : '' ?>"
+                                    placeholder="https://docs.google.com/spreadsheets/d/.../export?format=csv">
+                            </div>
+                            <div class="mb-3">
+                                <label for="gsheet2" class="form-label">URL Google Sheet 2 (CSV)</label>
+                                <small class="form-text text-muted">
+                                    <i> - Đảm bảo thứ tự các cột giống nhau giữa 2 sheet</i>
+                                </small>
+                                <input type="text" class="form-control" id="gsheet2" name="gsheet2" 
+                                    value="<?= isset($settings['gsheet2']) ? $settings['gsheet2'] : '' ?>"
+                                    placeholder="https://docs.google.com/spreadsheets/d/.../export?format=csv">
+                            </div>
 
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="gsheet_value_col" class="form-label">Cột giá trị chuyển đổi</label>
-                                    <input type="text" class="form-control" id="gsheet_value_col" name="gsheet_value_col" 
-                                        value="<?= isset($settings['gsheet_value_col']) ? $settings['gsheet_value_col'] : 'F' ?>"
-                                        placeholder="Ví dụ: F">
-                                    <div class="form-text">Nhập chữ cái của cột (A, B, C,...)</div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="gsheet_date_col" class="form-label">Cột ngày chuyển đổi</label>
+                                        <input type="text" class="form-control" id="gsheet_date_col" name="gsheet_date_col" 
+                                            value="<?= isset($settings['gsheet_date_col']) ? $settings['gsheet_date_col'] : 'A' ?>"
+                                            placeholder="Ví dụ: A">
+                                        <div class="form-text">Nhập chữ cái của cột (A, B, C,...)</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="gsheet_phone_col" class="form-label">Cột số điện thoại</label>
+                                        <input type="text" class="form-control" id="gsheet_phone_col" name="gsheet_phone_col" 
+                                            value="<?= isset($settings['gsheet_phone_col']) ? $settings['gsheet_phone_col'] : 'C' ?>"
+                                            placeholder="Ví dụ: C">
+                                        <div class="form-text">Nhập chữ cái của cột (A, B, C,...)</div>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="gsheet_campaign_col" class="form-label">Cột Campaign ID</label>
-                                    <input type="text" class="form-control" id="gsheet_campaign_col" name="gsheet_campaign_col" 
-                                        value="<?= isset($settings['gsheet_campaign_col']) ? $settings['gsheet_campaign_col'] : 'L' ?>"
-                                        placeholder="Ví dụ: L">
-                                    <div class="form-text">Nhập chữ cái của cột (A, B, C,...)</div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="gsheet_value_col" class="form-label">Cột giá trị chuyển đổi</label>
+                                        <input type="text" class="form-control" id="gsheet_value_col" name="gsheet_value_col" 
+                                            value="<?= isset($settings['gsheet_value_col']) ? $settings['gsheet_value_col'] : 'F' ?>"
+                                            placeholder="Ví dụ: F">
+                                        <div class="form-text">Nhập chữ cái của cột (A, B, C,...)</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="gsheet_campaign_col" class="form-label">Cột Campaign ID</label>
+                                        <input type="text" class="form-control" id="gsheet_campaign_col" name="gsheet_campaign_col" 
+                                            value="<?= isset($settings['gsheet_campaign_col']) ? $settings['gsheet_campaign_col'] : 'L' ?>"
+                                            placeholder="Ví dụ: L">
+                                        <div class="form-text">Nhập chữ cái của cột (A, B, C,...)</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -224,6 +267,17 @@
 
 <script>
 $(document).ready(function() {
+    // Toggle between Pancake POS and Google Sheet settings
+    $('#use_pancake').on('change', function() {
+        if($(this).is(':checked')) {
+            $('#pancake_settings').show();
+            $('#gsheet_settings').hide();
+        } else {
+            $('#pancake_settings').hide();
+            $('#gsheet_settings').show();
+        }
+    });
+    
     $('#settingsForm').on('submit', function(e) {
         e.preventDefault();
         
@@ -248,6 +302,10 @@ $(document).ready(function() {
             extended_cpa_threshold: $('#extended_cpa_threshold').val(),
             default_paused_campaigns: $('#default_paused_campaigns').is(':checked') ? 'true' : 'false',
             exclude_campaign_ids: $('#exclude_campaign_ids').val(),
+            use_pancake: $('#use_pancake').is(':checked') ? 'true' : 'false',
+            pancake_shop_id: $('#pancake_shop_id').val(),
+            pancake_api_key: $('#pancake_api_key').val(),
+            pancake_product_id: $('#pancake_product_id').val(),
         };
         
         $.ajax({
@@ -269,4 +327,4 @@ $(document).ready(function() {
 });
 </script>
 
-<?= $this->include('templates/footer') ?> 
+<?= $this->include('templates/footer') ?>

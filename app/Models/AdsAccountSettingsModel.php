@@ -31,6 +31,10 @@ class AdsAccountSettingsModel extends Model
         'default_paused_campaigns',
         'exclude_campaign_ids',
         'customer_id',
+        'pancake_shop_id',
+        'pancake_api_key',
+        'pancake_product_id',
+        'use_pancake',
     ];
     protected $useTimestamps = true;
     protected $createdField = 'created_at';
@@ -55,6 +59,10 @@ class AdsAccountSettingsModel extends Model
         'default_paused_campaigns' => 'permit_empty|in_list[0,1]',
         'exclude_campaign_ids' => 'permit_empty|string',
         'customer_id' => 'permit_empty|string',
+        'pancake_shop_id' => 'permit_empty|string',
+        'pancake_api_key' => 'permit_empty|string',
+        'pancake_product_id' => 'permit_empty|string',
+        'use_pancake' => 'permit_empty|in_list[0,1]',
     ];
 
     public function getSettingsByAccountId($accountId)
@@ -92,7 +100,11 @@ class AdsAccountSettingsModel extends Model
             'use_roas_threshold' => ($data['use_roas_threshold'] === 'true' || $data['use_roas_threshold'] === true || $data['use_roas_threshold'] === 1) ? 1 : 0,
             'extended_cpa_threshold' => $data['extended_cpa_threshold']?? 0,
             'default_paused_campaigns' => ($data['default_paused_campaigns'] === 'true' || $data['default_paused_campaigns'] === true || $data['default_paused_campaigns'] === 1) ? 1 : 0,
-            'exclude_campaign_ids' => $data['exclude_campaign_ids']?? null
+            'exclude_campaign_ids' => $data['exclude_campaign_ids']?? null,
+            'pancake_shop_id' => $data['pancake_shop_id'] ?? null,
+            'pancake_api_key' => $data['pancake_api_key'] ?? null,
+            'pancake_product_id' => $data['pancake_product_id'] ?? null,
+            'use_pancake' => ($data['use_pancake'] === 'true' || $data['use_pancake'] === true || $data['use_pancake'] === 1) ? 1 : 0
         ];
 
         // Debug log
@@ -115,4 +127,4 @@ class AdsAccountSettingsModel extends Model
                     ->where('auto_optimize', 1)
                     ->findAll();
     }
-} 
+}

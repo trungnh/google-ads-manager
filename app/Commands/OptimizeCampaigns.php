@@ -6,10 +6,12 @@ use CodeIgniter\CLI\BaseCommand;
 use CodeIgniter\CLI\CLI;
 use App\Services\GoogleAdsService;
 use App\Services\GoogleSheetService;
+use App\Services\PancakeService;
 use App\Services\TelegramService;
 use App\Models\AdsAccountSettingsModel;
 use App\Models\GoogleTokenModel;
 use App\Models\UserSettingsModel;
+use App\Models\UserModel;
 use App\Models\AdsAccountModel;
 use App\Models\OptimizeLogsModel;
 use App\Models\CampaignsDataModel;
@@ -25,10 +27,12 @@ class OptimizeCampaigns extends BaseCommand
     protected $adsAccountSettingsModel;
     protected $googleTokenModel;
     protected $userSettingsModel;
+    protected $user;
     protected $telegramService;
     protected $adsAccountsModel;
     protected $optimizeLogsModel;
     protected $campaignsDataModel;
+    protected $pancakeService;
 
     public function __construct()
     {
@@ -37,10 +41,12 @@ class OptimizeCampaigns extends BaseCommand
         $this->adsAccountSettingsModel = new AdsAccountSettingsModel();
         $this->googleTokenModel = new GoogleTokenModel();
         $this->userSettingsModel = new UserSettingsModel();
+        $this->user = new UserModel();
         $this->telegramService = new TelegramService();
         $this->adsAccountsModel = new AdsAccountModel();
         $this->optimizeLogsModel = new OptimizeLogsModel();
         $this->campaignsDataModel = new CampaignsDataModel();
+        $this->pancakeService = new PancakeService();
     }
 
     public function run(array $params)
@@ -90,6 +96,11 @@ class OptimizeCampaigns extends BaseCommand
                 CLI::write($message, 'green');
                 
                 try {
+                    $userInstance = $this->user->where('id', $account['user_id'])->first();
+                    if ($userInstance['status'] != 'active') {
+                        continue;
+                    }
+
                     // Lấy MCC ID từ user settings
                     $userSettings = $this->userSettingsModel->where('user_id', $account['user_id'])->first();
                     $mccId = $userSettings['mcc_id'] ?? null;
@@ -116,7 +127,7 @@ class OptimizeCampaigns extends BaseCommand
                     $message = "Lỗi khi tối ưu tài khoản {$accountName}: " . $e->getMessage();
                     CLI::write($message, 'red');
                     log_message('error', $message);
-                    $this->sendTelegramMessage("❌ " . $message, $telegramChatIds);
+                    //$this->sendTelegramMessage("❌ " . $message, $telegramChatIds);
                     $totalErrors++;
                 }
             }
@@ -173,16 +184,26 @@ class OptimizeCampaigns extends BaseCommand
             }
 
             try {
-                $gsheetUrl = $account['gsheet1'] ?? null;
-                $gsheetUrl2 = $account['gsheet2'] ?? null;
-                if (empty($gsheetUrl) && empty($gsheetUrl2)) {
-                    return;
-                }
-                if (!empty($campaigns) && !empty($gsheetUrl)) {
-                    $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, date('Y-m-d'), date('Y-m-d'), $account);
-                }
-                if (!empty($campaigns) && !empty($gsheetUrl2)) {
-                    $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl2, date('Y-m-d'), date('Y-m-d'), $account);
+                // Xử lý dữ liệu chuyển đổi thực tế
+                if (!empty($campaigns)) {
+                    // Nếu sử dụng Pancake POS
+                     if (!empty($account['use_pancake'])) {
+                         $campaigns = $this->pancakeService->processRealConversions($campaigns, $account, date('Y-m-d'), date('Y-m-d'));
+                     } 
+                    // Nếu không sử dụng Pancake POS, sử dụng Google Sheet
+                    else {
+                        $gsheetUrl = $account['gsheet1'] ?? null;
+                        $gsheetUrl2 = $account['gsheet2'] ?? null;
+                        if (empty($gsheetUrl) && empty($gsheetUrl2)) {
+                            return;
+                        }
+                        if (!empty($gsheetUrl)) {
+                            $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, date('Y-m-d'), date('Y-m-d'), $account);
+                        }
+                        if (!empty($gsheetUrl2)) {
+                            $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl2, date('Y-m-d'), date('Y-m-d'), $account);
+                        }
+                    }
                 }
             } catch (\Exception $e) {
                 log_message('error', 'Lỗi tối ưu chiến dịch - xử lý đơn thực tế - ' . $account['customer_id'] . ': ' . $e->getMessage());
@@ -606,4 +627,4 @@ class OptimizeCampaigns extends BaseCommand
             $this->telegramService->sendMessage($message, $telegramChatId);
         }
     }
-} 
+}

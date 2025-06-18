@@ -74,7 +74,11 @@ class AdsAccountSettings extends BaseController
                     'use_roas_threshold' => 0,
                     'extended_cpa_threshold' => 0,
                     'default_paused_campaigns' => 0,
-                    'exclude_campaign_ids' => null
+                    'exclude_campaign_ids' => null,
+                    'pancake_shop_id' => '',
+                    'pancake_api_key' => '',
+                    'pancake_product_id' => '',
+                    'use_pancake' => 0
                 ];
                 log_message('info', 'Creating default settings for account: ' . $customerId);
                 $this->adsAccountSettingsModel->insert($settings);
@@ -177,6 +181,10 @@ class AdsAccountSettings extends BaseController
                 'extended_cpa_threshold' => $this->request->getPost('extended_cpa_threshold'),
                 'default_paused_campaigns' => $this->request->getPost('default_paused_campaigns'),
                 'exclude_campaign_ids' => $this->request->getPost('exclude_campaign_ids'),
+                'pancake_shop_id' => $this->request->getPost('pancake_shop_id'),
+                'pancake_api_key' => $this->request->getPost('pancake_api_key'),
+                'pancake_product_id' => $this->request->getPost('pancake_product_id'),
+                'use_pancake' => $this->request->getPost('use_pancake'),
                 'account_id' => $account['id'],
             ];
 
@@ -207,4 +215,4 @@ class AdsAccountSettings extends BaseController
             ]);
         }
     }
-} 
+}

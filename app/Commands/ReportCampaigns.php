@@ -6,6 +6,7 @@ use CodeIgniter\CLI\BaseCommand;
 use CodeIgniter\CLI\CLI;
 use App\Services\GoogleAdsService;
 use App\Services\GoogleSheetService;
+use App\Services\PancakeService;
 use App\Services\TelegramService;
 use App\Models\AdsAccountSettingsModel;
 use App\Models\GoogleTokenModel;
@@ -31,6 +32,7 @@ class ReportCampaigns extends BaseCommand
     protected $optimizeLogsModel;
     protected $campaignsDataModel;
     protected $reportsModel;
+    protected $pancakeService;
 
     public function __construct()
     {
@@ -44,6 +46,7 @@ class ReportCampaigns extends BaseCommand
         $this->optimizeLogsModel = new OptimizeLogsModel();
         $this->campaignsDataModel = new CampaignsDataModel();
         $this->reportsModel = new ReportsModel();
+        $this->pancakeService = new PancakeService();
     }
 
     public function run(array $params)
@@ -146,17 +149,26 @@ class ReportCampaigns extends BaseCommand
                     }
                 }
             }
-            // Lấy dữ liệu chuyển đổi thực tế từ Google Sheet
-            $gsheetUrl = $settings['gsheet1'] ?? null;
-            $gsheetUrl2 = $settings['gsheet2'] ?? null;
-            if (empty($gsheetUrl) && empty($gsheetUrl2)) {
-                return;
-            }   
-            if (!empty($campaigns) && !empty($gsheetUrl)) {
-                $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, date('Y-m-d'), date('Y-m-d'), $settings);
-            }
-            if (!empty($campaigns) && !empty($gsheetUrl2)) {
-                $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl2, date('Y-m-d'), date('Y-m-d'), $settings);
+            // Xử lý dữ liệu chuyển đổi thực tế
+            if (!empty($campaigns)) {
+                // Nếu sử dụng Pancake POS
+                 if (!empty($settings['use_pancake'])) {
+                     $campaigns = $this->pancakeService->processRealConversions($campaigns, $settings, date('Y-m-d'), date('Y-m-d'));
+                 } 
+                // Nếu không sử dụng Pancake POS, sử dụng Google Sheet
+                else {
+                    $gsheetUrl = $settings['gsheet1'] ?? null;
+                    $gsheetUrl2 = $settings['gsheet2'] ?? null;
+                    if (empty($gsheetUrl) && empty($gsheetUrl2)) {
+                        return;
+                    }   
+                    if (!empty($gsheetUrl)) {
+                        $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, date('Y-m-d'), date('Y-m-d'), $settings);
+                    }
+                    if (!empty($gsheetUrl2)) {
+                        $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl2, date('Y-m-d'), date('Y-m-d'), $settings);
+                    }
+                }
             }
         } catch (\Exception $e) {
             log_message('error', 'Lỗi tính toán real conversions: ' . $account['customer_id'] . ' - ' . $e->getMessage());

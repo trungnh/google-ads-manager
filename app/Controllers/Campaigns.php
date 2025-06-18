@@ -9,6 +9,7 @@ use App\Models\CampaignsDataModel;
 use App\Services\GoogleAdsService;
 use App\Models\AdsAccountSettingsModel;
 use App\Services\GoogleSheetService;
+use App\Services\PancakeService;
 use Exception;
 use DateTime;
 
@@ -21,6 +22,7 @@ class Campaigns extends BaseController
     protected $campaignsDataModel;
     protected $adsAccountSettingsModel;
     protected $googleSheetService;
+    protected $pancakeService;
 
     public function __construct()
     {
@@ -31,6 +33,7 @@ class Campaigns extends BaseController
         $this->campaignsDataModel = new CampaignsDataModel();
         $this->adsAccountSettingsModel = new AdsAccountSettingsModel();
         $this->googleSheetService = new GoogleSheetService();
+        $this->pancakeService = new PancakeService();
     }
 
     public function index($customerId)
@@ -99,13 +102,23 @@ class Campaigns extends BaseController
                     $today
                 );
 
-                $gsheetUrl = $settings['gsheet1'] ?? null;
-                if (!empty($campaigns) && !empty($gsheetUrl)) {
-                    $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, $today, $today, $settings);
-                }
-                $gsheetUrl2 = $settings['gsheet2'] ?? null;
-                if (!empty($campaigns) && !empty($gsheetUrl2)) {
-                    $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl2, $today, $today, $settings);
+                // Xử lý dữ liệu chuyển đổi thực tế
+                if (!empty($campaigns)) {
+                    // Nếu sử dụng Pancake POS
+                    if (!empty($settings['use_pancake'])) {
+                $campaigns = $this->pancakeService->processRealConversions($campaigns, $settings, $today, $today);
+            } 
+                    // Nếu không sử dụng Pancake POS, sử dụng Google Sheet
+                    else {
+                        $gsheetUrl = $settings['gsheet1'] ?? null;
+                        if (!empty($gsheetUrl)) {
+                            $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, $today, $today, $settings);
+                        }
+                        $gsheetUrl2 = $settings['gsheet2'] ?? null;
+                        if (!empty($gsheetUrl2)) {
+                            $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl2, $today, $today, $settings);
+                        }
+                    }
                 }
 
                 $this->campaignsDataModel->saveCampaignsData($customerId, $campaigns);
@@ -197,13 +210,23 @@ class Campaigns extends BaseController
                     $today
                 );
 
-                $gsheetUrl = $settings['gsheet1'] ?? null;
-                if (!empty($campaigns) && !empty($gsheetUrl)) {
-                    $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, $today, $today, $settings);
-                }
-                $gsheetUrl2 = $settings['gsheet2'] ?? null;
-                if (!empty($campaigns) && !empty($gsheetUrl2)) {
-                    $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl2, $today, $today, $settings);
+                // Xử lý dữ liệu chuyển đổi thực tế
+                if (!empty($campaigns)) {
+                    // Nếu sử dụng Pancake POS
+                    if (!empty($settings['use_pancake'])) {
+                        $campaigns = $this->pancakeService->processRealConversions($campaigns, $settings, $today, $today);
+                    } 
+                    // Nếu không sử dụng Pancake POS, sử dụng Google Sheet
+                    else {
+                        $gsheetUrl = $settings['gsheet1'] ?? null;
+                        if (!empty($gsheetUrl)) {
+                            $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, $today, $today, $settings);
+                        }
+                        $gsheetUrl2 = $settings['gsheet2'] ?? null;
+                        if (!empty($gsheetUrl2)) {
+                            $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl2, $today, $today, $settings);
+                        }
+                    }
                 }
 
                 $this->campaignsDataModel->saveCampaignsData($customerId, $campaigns);
@@ -330,12 +353,21 @@ class Campaigns extends BaseController
                 $startDate,
                 $endDate
             );
-            // Xử lý dữ liệu chuyển đổi thực tế từ Google Sheet
-            if (!empty($campaigns) && !empty($gsheetUrl)) {
-                $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, $startDate, $endDate, $settings);
-            }
-            if (!empty($campaigns) && !empty($gsheetUrl2)) {
-                $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl2, $startDate, $endDate, $settings);
+            // Xử lý dữ liệu chuyển đổi thực tế
+            if (!empty($campaigns)) {
+                // Nếu sử dụng Pancake POS
+                if (!empty($settings['use_pancake'])) {
+                    $campaigns = $this->pancakeService->processRealConversions($campaigns, $settings, $startDate, $endDate);
+                } 
+                // Nếu không sử dụng Pancake POS, sử dụng Google Sheet
+                else {
+                    if (!empty($gsheetUrl)) {
+                        $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, $startDate, $endDate, $settings);
+                    }
+                    if (!empty($gsheetUrl2)) {
+                        $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl2, $startDate, $endDate, $settings);
+                    }
+                }
             }
             // Chỉ lưu vào database nếu ngày bắt đầu và kết thúc là cùng ngày
             if ($startDate === $endDate) {
@@ -484,12 +516,21 @@ class Campaigns extends BaseController
                 $startDate,
                 $endDate
             );
-            // Xử lý dữ liệu chuyển đổi thực tế từ Google Sheet
-            if (!empty($campaigns) && !empty($gsheetUrl)) {
-                $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, $startDate, $endDate, $settings);
-            }
-            if (!empty($campaigns) && !empty($gsheetUrl2)) {
-                $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl2, $startDate, $endDate, $settings);
+            // Xử lý dữ liệu chuyển đổi thực tế
+            if (!empty($campaigns)) {
+                // Nếu sử dụng Pancake POS
+                if (!empty($settings['use_pancake'])) {
+                    $campaigns = $this->pancakeService->processRealConversions($campaigns, $settings, $startDate, $endDate);
+                } 
+                // Nếu không sử dụng Pancake POS, sử dụng Google Sheet
+                else {
+                    if (!empty($gsheetUrl)) {
+                        $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, $startDate, $endDate, $settings);
+                    }
+                    if (!empty($gsheetUrl2)) {
+                        $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl2, $startDate, $endDate, $settings);
+                    }
+                }
             }
             // Chỉ lưu vào database nếu ngày bắt đầu và kết thúc là cùng ngày
             if ($startDate === $endDate) {
