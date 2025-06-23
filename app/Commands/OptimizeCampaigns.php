@@ -164,7 +164,7 @@ class OptimizeCampaigns extends BaseCommand
 
             // Lấy dữ liệu chiến dịch realtime từ Google Ads
             try {
-                $campaigns = $this->googleAdsService->getCampaigns($account['customer_id'], $accessToken, $mccId, false, date('Y-m-d'), date('Y-m-d'));
+                $campaigns = $this->googleAdsService->getCampaignsWithRealConv($account, $account['customer_id'], $accessToken, $mccId, false, date('Y-m-d'), date('Y-m-d'));
                 if (empty($campaigns)) {
                     CLI::write("Không tìm thấy chiến dịch nào cho tài khoản {$account['customer_id']}", 'yellow');
                     return [
@@ -177,37 +177,10 @@ class OptimizeCampaigns extends BaseCommand
                     CLI::write("Token không hợp lệ, đang thử refresh...", 'yellow');
                     // Thử refresh token và gọi lại API
                     $newToken = $this->ensureValidToken($account['user_id']);
-                    $campaigns = $this->googleAdsService->getCampaigns($account['customer_id'], $newToken['access_token'], $mccId, false, date('Y-m-d'), date('Y-m-d'));
+                    $campaigns = $this->googleAdsService->getCampaignsWithRealConv($account, $account['customer_id'], $newToken, $mccId, false, date('Y-m-d'), date('Y-m-d'));
                 } else {
                     throw $e;
                 }
-            }
-
-            try {
-                // Xử lý dữ liệu chuyển đổi thực tế
-                if (!empty($campaigns)) {
-                    // Nếu sử dụng Pancake POS
-                     if (!empty($account['use_pancake'])) {
-                         $campaigns = $this->pancakeService->processRealConversions($campaigns, $account, date('Y-m-d'), date('Y-m-d'));
-                     } 
-                    // Nếu không sử dụng Pancake POS, sử dụng Google Sheet
-                    else {
-                        $gsheetUrl = $account['gsheet1'] ?? null;
-                        $gsheetUrl2 = $account['gsheet2'] ?? null;
-                        if (empty($gsheetUrl) && empty($gsheetUrl2)) {
-                            return;
-                        }
-                        if (!empty($gsheetUrl)) {
-                            $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, date('Y-m-d'), date('Y-m-d'), $account);
-                        }
-                        if (!empty($gsheetUrl2)) {
-                            $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl2, date('Y-m-d'), date('Y-m-d'), $account);
-                        }
-                    }
-                }
-            } catch (\Exception $e) {
-                log_message('error', 'Lỗi tối ưu chiến dịch - xử lý đơn thực tế - ' . $account['customer_id'] . ': ' . $e->getMessage());
-                $this->sendTelegramMessage("❌Lỗi tối ưu chiến dịch - xử lý đơn thực tế - {$account['customer_id']}: " . $e->getMessage(), $telegramChatIds);
             }
 
             try {

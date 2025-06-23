@@ -37,7 +37,7 @@
                     <h5 class="card-title mb-0">Cài đặt tối ưu hóa tự động</h5>
                 </div>
                 <div class="card-body">
-                    <form id="settingsForm">
+                    <form id="settingsForm" method="post">
                         <div class="mb-3">
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" id="auto_optimize" name="auto_optimize" 
@@ -99,8 +99,7 @@
                                 value="<?= isset($settings['extended_cpa_threshold']) ? $settings['extended_cpa_threshold'] : '' ?>">
                             <small class="form-text text-muted">
                                 <i>Nếu chi tiêu thêm hoặc CPA từ lần ra đơn gần nhất > ngưỡng này thì tạm dừng chiến dịch 
-                                    <br> Mặc định nêu skhoong điền sẽ = <strong>Ngưỡng CPA</strong>
-                                    <br>(Không dùng được khi bật ROAS bên dưới)</i>
+                                    <br>Nếu để = 0 thì sẽ check theo CPA trung bình thực tế</strong>
                             </small>
                         </div>
 
@@ -172,6 +171,31 @@
                                 <small class="form-text text-muted">
                                     <i>Mã sản phẩm để mapping đơn hàng với chiến dịch quảng cáo</i>
                                 </small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label style="display: block;" for="pancake_exclude_tags" class="form-label">Loại trừ thẻ đơn hàng</label>
+                                <div class="input-group mb-3" style="display: none;" >
+                                    <input type="text" class="form-control" id="pancake_exclude_tags" name="pancake_exclude_tags" 
+
+                                        value="<?= isset($settings['pancake_exclude_tags']) ? $settings['pancake_exclude_tags'] : '' ?>" readonly>
+
+                                    <!-- Thêm hidden input để đảm bảo giá trị được gửi đi -->
+                                    <input type="hidden" id="pancake_exclude_tags_hidden" name="pancake_exclude_tags_hidden" 
+                                        value="<?= isset($settings['pancake_exclude_tags']) ? $settings['pancake_exclude_tags'] : '' ?>">
+                                    <button class="btn btn-outline-secondary" type="button" id="load_tags_button">Load các thẻ đơn hàng</button>
+                                </div>
+                                <small class="form-text text-muted">
+                                    <i>Các thẻ đơn hàng cần loại trừ khi tính toán chuyển đổi thực tế</i>
+                                </small>
+                                <div id="tags_container" class="mt-2" style="display: none;">
+                                    <div class="card">
+                                        <div class="card-header">Danh sách thẻ</div>
+                                        <div class="card-body">
+                                            <div id="tags_list" class="d-flex flex-wrap gap-2"></div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         
@@ -267,60 +291,361 @@
 
 <script>
 $(document).ready(function() {
-    // Toggle between Pancake POS and Google Sheet settings
-    $('#use_pancake').on('change', function() {
-        if($(this).is(':checked')) {
-            $('#pancake_settings').show();
+    // Xử lý sự kiện khi checkbox use_pancake thay đổi
+    <?php if(isset($settings['pancake_shop_id']) && $settings['pancake_api_key']): ?>
+        loadTags();
+    <?php endif;?>
+    $('#use_pancake').change(function() {
+        var isChecked = $(this).is(':checked');
+        console.log('use_pancake changed:', isChecked);
+        
+        // Hiển thị hoặc ẩn các trường Pancake dựa trên trạng thái checkbox
+        if (isChecked) {
             $('#gsheet_settings').hide();
+            $('#pancake_settings').show();
+            
+            // Nếu đã có danh sách thẻ, cập nhật giá trị
+            if ($('#tags_list').children().length > 0) {
+                // Đảm bảo các checkbox được gắn sự kiện change
+                $('.tag-checkbox').off('change').on('change', function() {
+                    console.log('Tag checkbox changed');
+                    updateSelectedTags();
+                });
+                
+                // Cập nhật giá trị
+                updateSelectedTags();
+                
+                console.log('Tags updated after use_pancake checked');
+                console.log('pancake_exclude_tags:', $('#pancake_exclude_tags').val());
+                console.log('pancake_exclude_tags_hidden:', $('#pancake_exclude_tags_hidden').val());
+            } else {
+                console.log('No tags loaded yet, consider loading tags');
+            }
         } else {
-            $('#pancake_settings').hide();
             $('#gsheet_settings').show();
+            $('#pancake_settings').hide();
+            // Xóa giá trị khi không sử dụng Pancake
+            $('#pancake_exclude_tags').val('');
+            $('#pancake_exclude_tags_hidden').val('');
+            console.log('use_pancake unchecked, cleared tag values');
         }
+        
+        console.log('use_pancake changed to:', isChecked);
     });
     
+    // Xử lý nút load thẻ đơn hàng
+    $('#load_tags_button').click(function() {
+        loadTags();
+    });
+
+    function loadTags() {
+        var shopId = $('#pancake_shop_id').val();
+        var apiKey = $('#pancake_api_key').val();
+        
+        if (!shopId || !apiKey) {
+            alert('Vui lòng nhập Shop ID và API Key trước khi tải thẻ đơn hàng');
+            return;
+        }
+        
+        // Hiển thị thông báo đang tải
+        $('#tags_list').html('<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Đang tải...</span></div>');
+        $('#tags_container').show();
+        
+        // Gọi API để lấy danh sách đơn hàng và trích xuất thẻ
+        $.ajax({
+            url: '<?= base_url('adsaccounts/settings/get_pancake_tags') ?>',
+            method: 'POST',
+            data: {
+                shop_id: shopId,
+                api_key: apiKey
+            },
+            success: function(response) {
+                if (response.success) {
+                    console.log('Tags loaded successfully:', response.tags);
+                    displayTags(response.tags);
+                    
+                    // Đảm bảo các sự kiện được gắn kết đúng cách
+                    setTimeout(function() {
+                        // Gắn sự kiện cho các checkbox
+                        $('.tag-checkbox').on('change', function() {
+                            console.log('Tag checkbox changed');
+                            updateSelectedTags();
+                        });
+                        
+                        // Gọi updateSelectedTags để cập nhật giá trị ban đầu
+                        updateSelectedTags();
+                    }, 100);
+                } else {
+                    $('#tags_list').html('<div class="alert alert-danger">Lỗi: ' + response.message + '</div>');
+                }
+            },
+            error: function() {
+                $('#tags_list').html('<div class="alert alert-danger">Có lỗi xảy ra khi tải thẻ đơn hàng</div>');
+            }
+        });
+    }
+    
+    // Hiển thị danh sách thẻ và cho phép chọn
+    function displayTags(tags) {
+        if (!tags || tags.length === 0) {
+            $('#tags_list').html('<div class="alert alert-info">Không tìm thấy thẻ nào</div>');
+            return;
+        }
+        
+        var tagsHtml = '';
+        // Lấy giá trị hiện tại của trường pancake_exclude_tags
+        var currentTagsValue = $('#pancake_exclude_tags').val() || '';
+        console.log('Current pancake_exclude_tags value:', currentTagsValue);
+        
+        // Đảm bảo giá trị không rỗng trước khi split
+        var currentTags = currentTagsValue ? currentTagsValue.split(',').map(function(tag) {
+            return tag.trim();
+        }).filter(function(tag) {
+            return tag !== '';
+        }) : [];
+        
+        console.log('Parsed current tags:', currentTags);
+        
+        // Tạo các checkbox cho từng thẻ
+        tags.forEach(function(tag) {
+            // Kiểm tra xem tag.id có trong danh sách currentTags không
+            var tagIdStr = tag.id.toString();
+            var isChecked = currentTags.includes(tagIdStr);
+            console.log('Tag ID:', tagIdStr, 'Is checked:', isChecked);
+            
+            var checkedAttr = isChecked ? 'checked="checked"' : '';
+            tagsHtml += '<div class="form-check form-check-inline">' +
+                        '<input class="form-check-input tag-checkbox" type="checkbox" id="tag_' + tag.id + '" ' +
+                        'value="' + tag.id + '" ' + checkedAttr + '>' +
+                        '<label class="form-check-label" for="tag_' + tag.id + '">' + tag.name + '</label>' +
+                        '</div>';
+        });
+        
+        $('#tags_list').html(tagsHtml);
+        
+        // Xử lý sự kiện khi chọn/bỏ chọn thẻ
+        $('.tag-checkbox').change(function() {
+            updateSelectedTags();
+        });
+        
+        // Đảm bảo giá trị pancake_exclude_tags được cập nhật sau khi hiển thị các thẻ
+        // Điều này giúp đồng bộ giá trị của trường input với các checkbox đã chọn
+        setTimeout(function() {
+            updateSelectedTags();
+            console.log('Tags displayed and pancake_exclude_tags updated');
+        }, 100);
+    }
+    
+    // Cập nhật danh sách thẻ đã chọn vào input
+    function updateSelectedTags() {
+        var selectedTags = [];
+        
+        // Kiểm tra xem có checkbox nào không
+        var checkboxes = $('.tag-checkbox:checked');
+        console.log('Number of checked checkboxes:', checkboxes.length);
+        
+        // Thu thập giá trị từ các checkbox đã chọn
+        checkboxes.each(function() {
+            var tagValue = $(this).val();
+            console.log('Adding checked tag:', tagValue);
+            selectedTags.push(tagValue);
+        });
+        
+        var tagsValue = selectedTags.join(',');
+        
+        // Cập nhật cả input thông thường và hidden input
+        $('#pancake_exclude_tags').val(tagsValue);
+        $('#pancake_exclude_tags_hidden').val(tagsValue);
+        
+        // Đảm bảo giá trị được cập nhật trong DOM
+        document.getElementById('pancake_exclude_tags').setAttribute('value', tagsValue);
+        document.getElementById('pancake_exclude_tags_hidden').setAttribute('value', tagsValue);
+        
+        console.log('updateSelectedTags called, new value:', tagsValue);
+        console.log('DOM input value after update:', document.getElementById('pancake_exclude_tags').value);
+        console.log('DOM hidden input value after update:', document.getElementById('pancake_exclude_tags_hidden').value);
+        console.log('DOM input attribute value after update:', $('#pancake_exclude_tags').attr('value'));
+        
+        return tagsValue; // Trả về giá trị để có thể sử dụng ở nơi khác
+    }
+    
+    // Xử lý sự kiện khi form được submit
     $('#settingsForm').on('submit', function(e) {
         e.preventDefault();
         
-        // Debug log for checkbox state
-        console.log('Checkbox checked:', $('#auto_optimize').is(':checked'));
+        console.log('Form submitted');
         
-        const formData = {
-            auto_optimize: $('#auto_optimize').is(':checked') ? 'true' : 'false',
-            cost_threshold: $('#cost_threshold').val(),
-            cpa_threshold: $('#cpa_threshold').val(),
-            roas_threshold: $('#roas_threshold').val(),
-            increase_budget: $('#increase_budget').val(),
-            gsheet1: $('#gsheet1').val(),
-            gsheet_date_col: $('#gsheet_date_col').val().toUpperCase(),
-            gsheet_phone_col: $('#gsheet_phone_col').val().toUpperCase(),
-            gsheet_value_col: $('#gsheet_value_col').val().toUpperCase(),
-            gsheet_campaign_col: $('#gsheet_campaign_col').val().toUpperCase(),
-            gsheet2: $('#gsheet2').val(),
-            order: $('#order').val(),
-            auto_on_off: $('#auto_on_off').is(':checked') ? 'true' : 'false',
-            use_roas_threshold: $('#use_roas_threshold').is(':checked')? 'true' : 'false',
-            extended_cpa_threshold: $('#extended_cpa_threshold').val(),
-            default_paused_campaigns: $('#default_paused_campaigns').is(':checked') ? 'true' : 'false',
-            exclude_campaign_ids: $('#exclude_campaign_ids').val(),
-            use_pancake: $('#use_pancake').is(':checked') ? 'true' : 'false',
-            pancake_shop_id: $('#pancake_shop_id').val(),
-            pancake_api_key: $('#pancake_api_key').val(),
-            pancake_product_id: $('#pancake_product_id').val(),
+        // Cập nhật giá trị pancake_exclude_tags trước khi thu thập dữ liệu form
+        if ($('#use_pancake').is(':checked')) {
+            // Cập nhật lại giá trị từ các checkbox đã chọn
+            var selectedTags = [];
+            var checkedBoxes = $('.tag-checkbox:checked');
+            
+            console.log('Number of checked tag checkboxes:', checkedBoxes.length);
+            
+            checkedBoxes.each(function() {
+                var tagValue = $(this).val();
+                console.log('Adding checked tag to selection:', tagValue);
+                selectedTags.push(tagValue);
+            });
+            
+            var tagsValue = selectedTags.join(',');
+            console.log('Setting pancake_exclude_tags to:', tagsValue);
+            
+            // Cập nhật cả hai trường input
+            $('#pancake_exclude_tags').val(tagsValue);
+            $('#pancake_exclude_tags_hidden').val(tagsValue);
+            
+            // Cập nhật thuộc tính value
+            $('#pancake_exclude_tags').attr('value', tagsValue);
+            $('#pancake_exclude_tags_hidden').attr('value', tagsValue);
+        } else {
+            // Xóa giá trị nếu không sử dụng Pancake
+            $('#pancake_exclude_tags').val('');
+            $('#pancake_exclude_tags_hidden').val('');
+            console.log('use_pancake is not checked, clearing tag values');
+        }
+        
+        // Kiểm tra giá trị sau khi cập nhật
+        console.log('pancake_exclude_tags value before form data collection:', $('#pancake_exclude_tags').val());
+        console.log('pancake_exclude_tags_hidden value before form data collection:', $('#pancake_exclude_tags_hidden').val());
+        
+        // Tạo một object mới để gửi dữ liệu
+        var formData = {};
+        
+        // Thu thập tất cả các trường form
+        $('#settingsForm').find('input, select, textarea').each(function() {
+            var input = $(this);
+            var name = input.attr('name');
+            
+            // Bỏ qua các trường không có name
+            if (!name) return;
+            
+            // Xử lý checkbox
+            if (input.attr('type') === 'checkbox') {
+                formData[name] = input.is(':checked') ? 'true' : 'false';
+            } 
+            // Xử lý các trường khác
+            else {
+                formData[name] = input.val();
+                console.log('Field:', name, 'Value:', input.val());
+            }
+        });
+        
+        // Thêm account_id vào formData
+        formData.account_id = '<?= $account['id'] ?>';
+        
+        // Cập nhật lại giá trị của pancake_exclude_tags trước khi gửi
+        var excludeTags = '';
+        if ($('#use_pancake').is(':checked')) {
+            // Cập nhật lại giá trị từ các checkbox đã chọn
+            var checkedBoxes = $('.tag-checkbox:checked');
+            console.log('Number of checked tag checkboxes:', checkedBoxes.length);
+            
+            var selectedTags = [];
+            checkedBoxes.each(function() {
+                var tagValue = $(this).val();
+                console.log('Adding checked tag to selection:', tagValue);
+                selectedTags.push(tagValue);
+            });
+            
+            excludeTags = selectedTags.join(',');
+            console.log('Final pancake_exclude_tags value:', excludeTags);
+            
+            // Cập nhật giá trị vào cả hai input
+            $('#pancake_exclude_tags').val(excludeTags);
+            $('#pancake_exclude_tags_hidden').val(excludeTags);
+            
+            // Cập nhật thuộc tính value
+            $('#pancake_exclude_tags').attr('value', excludeTags);
+            $('#pancake_exclude_tags_hidden').attr('value', excludeTags);
+        }
+        
+        // Kiểm tra giá trị trong DOM sau khi cập nhật
+        console.log('DOM value of pancake_exclude_tags:', $('#pancake_exclude_tags').val());
+        console.log('DOM attribute value of pancake_exclude_tags:', $('#pancake_exclude_tags').attr('value'));
+        console.log('DOM property value of pancake_exclude_tags:', document.getElementById('pancake_exclude_tags').value);
+        
+        // Tạo một object mới để gửi dữ liệu
+        var dataToSend = {
+            // Đảm bảo các trường checkbox được gửi đi đúng cách
+            'auto_optimize': $('#auto_optimize').is(':checked') ? 'true' : 'false',
+            'auto_on_off': $('#auto_on_off').is(':checked') ? 'true' : 'false',
+            'use_roas_threshold': $('#use_roas_threshold').is(':checked') ? 'true' : 'false',
+            'default_paused_campaigns': $('#default_paused_campaigns').is(':checked') ? 'true' : 'false',
+            'use_pancake': $('#use_pancake').is(':checked') ? 'true' : 'false',
+            
+            // Đảm bảo trường account_id được gửi đi
+            'account_id': '<?= $account['id'] ?>',
+            
+            // Thêm các trường khác từ form
+            'cost_threshold': $('#cost_threshold').val() || '0',
+            'cpa_threshold': $('#cpa_threshold').val() || '0',
+            'roas_threshold': $('#roas_threshold').val() || '0',
+            'extended_cpa_threshold': $('#extended_cpa_threshold').val() || '0',
+            'increase_budget': $('#increase_budget').val() || '0',
+            'gsheet1': $('#gsheet1').val(),
+            'gsheet2': $('#gsheet2').val(),
+            'gsheet_date_col': $('#gsheet_date_col').val().toUpperCase(),
+            'gsheet_phone_col': $('#gsheet_phone_col').val().toUpperCase(),
+            'gsheet_value_col': $('#gsheet_value_col').val().toUpperCase(),
+            'gsheet_campaign_col': $('#gsheet_campaign_col').val().toUpperCase(),
+            'order': $('#order').val() || '0',
+            'exclude_campaign_ids': $('#exclude_campaign_ids').val(),
+            'pancake_shop_id': $('#pancake_shop_id').val(),
+            'pancake_api_key': $('#pancake_api_key').val(),
+            'pancake_product_id': $('#pancake_product_id').val()
         };
         
+        // Thêm trường pancake_exclude_tags nếu use_pancake được chọn
+        if ($('#use_pancake').is(':checked')) {
+            dataToSend.pancake_exclude_tags = excludeTags;
+        }
+        
+        // Log dữ liệu để kiểm tra
+        console.log('Data to send:', dataToSend);
+        
+        // Kiểm tra lại giá trị pancake_exclude_tags trước khi gửi
+        console.log('Final check before sending:');
+        console.log('- use_pancake:', dataToSend.use_pancake);
+        console.log('- pancake_exclude_tags:', dataToSend.pancake_exclude_tags);
+        console.log('- account_id:', dataToSend.account_id);
+        
+        // Gửi form bằng AJAX
         $.ajax({
             url: '<?= base_url('adsaccounts/settings/update/' . $account['customer_id']) ?>',
             method: 'POST',
-            data: formData,
+            data: dataToSend, // Sử dụng object JavaScript
+            dataType: 'json',
+            beforeSend: function(xhr) {
+                console.log('Sending request to:', this.url);
+                console.log('With data:', this.data);
+            },
             success: function(response) {
+                console.log('Response received:', response);
                 if (response.success) {
                     alert('Cài đặt đã được lưu thành công!');
+                    // Thêm log để xác nhận các giá trị đã được lưu
+                    console.log('Settings saved successfully. Refreshing page to verify...');
+                    // Tải lại trang sau 1 giây để hiển thị các giá trị đã lưu
+                    // setTimeout(function() {
+                    //     location.reload();
+                    // }, 1000);
                 } else {
                     alert('Lỗi: ' + response.message);
                 }
             },
-            error: function() {
-                alert('Có lỗi xảy ra khi lưu cài đặt');
+            error: function(xhr, status, error) {
+                console.error('AJAX error:', status, error);
+                console.log('Response text:', xhr.responseText);
+                // Thử phân tích phản hồi JSON nếu có
+                try {
+                    var jsonResponse = JSON.parse(xhr.responseText);
+                    console.log('Parsed error response:', jsonResponse);
+                } catch (e) {
+                    console.log('Could not parse error response as JSON');
+                }
+                alert('Có lỗi xảy ra khi lưu cài đặt: ' + error);
             }
         });
     });

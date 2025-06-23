@@ -2,12 +2,54 @@
 
 namespace App\Services;
 
+use App\Services\GoogleSheetService;
+use App\Services\PancakeService;
 use Exception;
 
 class GoogleAdsService
 {
     protected $apiVersion = 'v19';
     protected $baseUrl = 'https://googleads.googleapis.com/';
+
+    protected $googleSheetService;
+    protected $pancakeService;
+
+    public function __construct()
+    {
+        $this->googleSheetService = new GoogleSheetService();
+        $this->pancakeService = new PancakeService();
+    }
+
+    public function getCampaignsWithRealConv($settings, $customerId, $accessToken, $mccId, $showPaused, $startDate, $endDate) 
+    {
+        // Lấy danh sách chiến dịch từ API
+        $campaigns = $this->getCampaigns(
+            $customerId, 
+            $accessToken, 
+            $mccId, 
+            $showPaused,
+            $startDate,
+            $endDate
+        );
+        // Xử lý dữ liệu chuyển đổi thực tế
+        if (!empty($campaigns)) {
+            // Nếu sử dụng Pancake POS
+            if (!empty($settings['use_pancake'])) {
+                $campaigns = $this->pancakeService->processRealConversions($campaigns, $settings, $startDate, $endDate);
+            } 
+            // Nếu không sử dụng Pancake POS, sử dụng Google Sheet
+            else {
+                if (!empty($gsheetUrl)) {
+                    $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, $startDate, $endDate, $settings);
+                }
+                if (!empty($gsheetUrl2)) {
+                    $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl2, $startDate, $endDate, $settings);
+                }
+            }
+        }
+
+        return $campaigns;
+    }
     
     public function getAccessibleAccounts($accessToken, $mccId = null)
     {
@@ -434,7 +476,7 @@ class GoogleAdsService
                     }
                 }
             }
-
+            
             return $campaigns;
         } catch (Exception $e) {
             log_message('error', 'Error in GoogleAdsService::getCampaigns: ' . $e->getMessage());

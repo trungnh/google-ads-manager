@@ -93,33 +93,8 @@ class Campaigns extends BaseController
                     return redirect()->to('/adsaccounts');
                 }
 
-                $campaigns = $this->googleAdsService->getCampaigns(
-                    $customerId, 
-                    $tokenData['access_token'], 
-                    $mccId, 
-                    $showPaused,
-                    $today,
-                    $today
-                );
 
-                // Xử lý dữ liệu chuyển đổi thực tế
-                if (!empty($campaigns)) {
-                    // Nếu sử dụng Pancake POS
-                    if (!empty($settings['use_pancake'])) {
-                $campaigns = $this->pancakeService->processRealConversions($campaigns, $settings, $today, $today);
-            } 
-                    // Nếu không sử dụng Pancake POS, sử dụng Google Sheet
-                    else {
-                        $gsheetUrl = $settings['gsheet1'] ?? null;
-                        if (!empty($gsheetUrl)) {
-                            $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, $today, $today, $settings);
-                        }
-                        $gsheetUrl2 = $settings['gsheet2'] ?? null;
-                        if (!empty($gsheetUrl2)) {
-                            $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl2, $today, $today, $settings);
-                        }
-                    }
-                }
+                $campaigns = $this->googleAdsService->getCampaignsWithRealConv($settings, $customerId, $tokenData['access_token'], $mccId, $showPaused, $today, $today);
 
                 $this->campaignsDataModel->saveCampaignsData($customerId, $campaigns);
             }
@@ -201,34 +176,7 @@ class Campaigns extends BaseController
                     return redirect()->to('/adsaccounts/admin_view');
                 }
 
-                $campaigns = $this->googleAdsService->getCampaigns(
-                    $customerId, 
-                    $tokenData['access_token'], 
-                    $mccId, 
-                    $showPaused,
-                    $today,
-                    $today
-                );
-
-                // Xử lý dữ liệu chuyển đổi thực tế
-                if (!empty($campaigns)) {
-                    // Nếu sử dụng Pancake POS
-                    if (!empty($settings['use_pancake'])) {
-                        $campaigns = $this->pancakeService->processRealConversions($campaigns, $settings, $today, $today);
-                    } 
-                    // Nếu không sử dụng Pancake POS, sử dụng Google Sheet
-                    else {
-                        $gsheetUrl = $settings['gsheet1'] ?? null;
-                        if (!empty($gsheetUrl)) {
-                            $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, $today, $today, $settings);
-                        }
-                        $gsheetUrl2 = $settings['gsheet2'] ?? null;
-                        if (!empty($gsheetUrl2)) {
-                            $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl2, $today, $today, $settings);
-                        }
-                    }
-                }
-
+                $campaigns = $this->googleAdsService->getCampaignsWithRealConv($settings, $customerId, $tokenData['access_token'], $mccId, $showPaused, $today, $today);
                 $this->campaignsDataModel->saveCampaignsData($customerId, $campaigns);
             }
 
@@ -302,8 +250,6 @@ class Campaigns extends BaseController
             }
 
             $settings = $this->adsAccountSettingsModel->getSettingsByCustomerId($customerId);
-            $gsheetUrl = $settings['gsheet1'] ?? null;
-            $gsheetUrl2 = $settings['gsheet2'] ?? null;
             // Lấy access token
             $tokenData = $this->googleTokenModel->getValidToken($userId);
             if (empty($tokenData) || empty($tokenData['access_token'])) {
@@ -345,30 +291,8 @@ class Campaigns extends BaseController
             }
             
             // Lấy danh sách chiến dịch từ API
-            $campaigns = $this->googleAdsService->getCampaigns(
-                $customerId, 
-                $tokenData['access_token'], 
-                $mccId, 
-                $showPaused,
-                $startDate,
-                $endDate
-            );
-            // Xử lý dữ liệu chuyển đổi thực tế
-            if (!empty($campaigns)) {
-                // Nếu sử dụng Pancake POS
-                if (!empty($settings['use_pancake'])) {
-                    $campaigns = $this->pancakeService->processRealConversions($campaigns, $settings, $startDate, $endDate);
-                } 
-                // Nếu không sử dụng Pancake POS, sử dụng Google Sheet
-                else {
-                    if (!empty($gsheetUrl)) {
-                        $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, $startDate, $endDate, $settings);
-                    }
-                    if (!empty($gsheetUrl2)) {
-                        $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl2, $startDate, $endDate, $settings);
-                    }
-                }
-            }
+            $campaigns = $this->googleAdsService->getCampaignsWithRealConv($settings, $customerId, $tokenData['access_token'], $mccId, $showPaused, $startDate, $endDate);
+
             // Chỉ lưu vào database nếu ngày bắt đầu và kết thúc là cùng ngày
             if ($startDate === $endDate) {
                 $this->campaignsDataModel->saveCampaignsData($customerId, $campaigns, $startDate);
@@ -465,8 +389,6 @@ class Campaigns extends BaseController
             }
 
             $settings = $this->adsAccountSettingsModel->getSettingsByCustomerId($customerId);
-            $gsheetUrl = $settings['gsheet1'] ?? null;
-            $gsheetUrl2 = $settings['gsheet2'] ?? null;
             // Lấy access token
             $tokenData = $this->googleTokenModel->getValidToken($userId);
             if (empty($tokenData) || empty($tokenData['access_token'])) {
@@ -508,30 +430,8 @@ class Campaigns extends BaseController
             }
             
             // Lấy danh sách chiến dịch từ API
-            $campaigns = $this->googleAdsService->getCampaigns(
-                $customerId, 
-                $tokenData['access_token'], 
-                $mccId, 
-                $showPaused,
-                $startDate,
-                $endDate
-            );
-            // Xử lý dữ liệu chuyển đổi thực tế
-            if (!empty($campaigns)) {
-                // Nếu sử dụng Pancake POS
-                if (!empty($settings['use_pancake'])) {
-                    $campaigns = $this->pancakeService->processRealConversions($campaigns, $settings, $startDate, $endDate);
-                } 
-                // Nếu không sử dụng Pancake POS, sử dụng Google Sheet
-                else {
-                    if (!empty($gsheetUrl)) {
-                        $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, $startDate, $endDate, $settings);
-                    }
-                    if (!empty($gsheetUrl2)) {
-                        $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl2, $startDate, $endDate, $settings);
-                    }
-                }
-            }
+            $campaigns = $this->googleAdsService->getCampaignsWithRealConv($settings, $customerId, $tokenData['access_token'], $mccId, $showPaused, $startDate, $endDate);
+
             // Chỉ lưu vào database nếu ngày bắt đầu và kết thúc là cùng ngày
             if ($startDate === $endDate) {
                 $this->campaignsDataModel->saveCampaignsData($customerId, $campaigns, $startDate);

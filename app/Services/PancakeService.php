@@ -99,6 +99,15 @@ class PancakeService
         // Kiểm tra cài đặt Pancake POS
         if (empty($settings['pancake_shop_id']) || empty($settings['pancake_api_key'])) {
             log_message('error', 'Pancake POS: Missing shop ID or API key in settings');
+            // Nếu không có dữ liệu chuyển đổi, đặt giá trị mặc định
+            foreach ($campaigns as &$tmpCampaign) {   
+                $tmpCampaign['real_conversions'] = 0;
+                $tmpCampaign['real_conversion_value'] = 0;
+                $tmpCampaign['real_conversion_rate'] = 0;
+                $tmpCampaign['real_cpa'] = 0;
+                $tmpCampaign['real_roas'] = 0;
+            }
+
             return $campaigns;
         }
 
@@ -116,6 +125,15 @@ class PancakeService
 
         if (empty($orders)) {
             log_message('info', 'Pancake POS: No orders found for the specified date range');
+            // Nếu không có dữ liệu chuyển đổi, đặt giá trị mặc định
+            foreach ($campaigns as &$tmpCampaign) {   
+                $tmpCampaign['real_conversions'] = 0;
+                $tmpCampaign['real_conversion_value'] = 0;
+                $tmpCampaign['real_conversion_rate'] = 0;
+                $tmpCampaign['real_cpa'] = 0;
+                $tmpCampaign['real_roas'] = 0;
+            }
+
             return $campaigns;
         }
 
@@ -127,7 +145,6 @@ class PancakeService
         $productId = $settings['pancake_product_id'] ?? null;
 
         // Xử lý từng đơn hàng
-        $count = 0;
         foreach ($orders as $order) {
             // Kiểm tra xem đơn hàng đã được xử lý chưa
             $orderId = $order['id'] ?? '';
@@ -143,6 +160,12 @@ class PancakeService
 
             // Kiểm tra sản phẩm nếu có cấu hình product_id
             if (!empty($productId) && !$this->orderContainsProduct($order, $productId)) {
+                continue;
+            }
+            
+            // Kiểm tra thẻ đơn hàng nếu có cấu hình exclude_tags
+            $excludeTags = isset($settings['pancake_exclude_tags']) ? $settings['pancake_exclude_tags'] : '';
+            if (!empty($excludeTags) && $this->orderContainsExcludedTag($order, $excludeTags)) {
                 continue;
             }
 
@@ -247,6 +270,7 @@ class PancakeService
      */
     private function orderContainsProduct($order, $productId)
     {
+        $productId = trim($productId);
         // Kiểm tra xem đơn hàng có chứa thông tin sản phẩm không
         if (!isset($order['items']) || !is_array($order['items'])) {
             return false;
@@ -265,5 +289,109 @@ class PancakeService
         }
 
         return false;
+    }
+
+    /**
+     * Kiểm tra xem đơn hàng có chứa thẻ cần loại trừ không
+     * 
+     * @param array $order Thông tin đơn hàng
+     * @param string $excludeTagsString Chuỗi chứa các thẻ cần loại trừ, phân cách bằng dấu phẩy
+     * @return bool True nếu đơn hàng chứa ít nhất một thẻ cần loại trừ, ngược lại là False
+     */
+    private function orderContainsExcludedTag($order, $excludeTagsString)
+    {
+        // Nếu không có thẻ cần loại trừ, trả về false
+        if (empty($excludeTagsString)) {
+            return false;
+        }
+
+        // Chuyển chuỗi thẻ cần loại trừ thành mảng và loại bỏ khoảng trắng
+        $excludeTags = array_map('trim', explode(',', $excludeTagsString));
+        
+        // Kiểm tra xem đơn hàng có chứa thông tin khách hàng không
+        if (!isset($order['tags']) || !is_array($order['tags'])) {
+            return false;
+        }
+
+        // Kiểm tra xem đơn hàng có thẻ không (một số API có thể trả về thẻ ở cấp đơn hàng)
+        if (isset($order['tags'])) {
+            $orderTags = $order['tags'];
+
+            foreach ($orderTags as $tag) {
+                if (in_array($tag['id'], $excludeTags)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+    
+    /**
+     * Lấy danh sách thẻ từ Pancake POS API
+     * 
+     * @param string $shopId ID của shop trên Pancake
+     * @param string $apiKey API key để xác thực với Pancake API
+     * @return array|bool Mảng danh sách thẻ hoặc false nếu có lỗi
+     */
+    public function getTags($shopId, $apiKey)
+    {
+        if (empty($shopId) || empty($apiKey)) {
+            log_message('error', 'Pancake POS API: Missing shop ID or API key');
+            return false;
+        }
+
+        // Build API URL để lấy danh sách thẻ
+        $url = $this->apiEnpoint . $this->apiVersion . "/shops/{$shopId}/orders/tags?api_key={$apiKey}";
+
+        try {
+            // Initialize cURL session
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+            curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+            
+            // Execute cURL request
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            
+            // Check for cURL errors
+            if (curl_errno($ch)) {
+                $error = curl_error($ch);
+                curl_close($ch);
+                log_message('error', 'Pancake POS API cURL Error: ' . $error);
+                return false;
+            }
+            
+            curl_close($ch);
+            
+            // Check HTTP response code
+            if ($httpCode != 200) {
+                log_message('error', 'Pancake POS API HTTP Error: ' . $httpCode . ' - Response: ' . $response);
+                return false;
+            }
+            
+            // Parse JSON response
+            $data = json_decode($response, true);
+            
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                log_message('error', 'Pancake POS API JSON Error: ' . json_last_error_msg() . ' - Response: ' . $response);
+                return false;
+            }
+            
+            // Kiểm tra cấu trúc dữ liệu trả về
+            if (!isset($data['data']) || !is_array($data['data'])) {
+                log_message('error', 'Pancake POS API Invalid Response Structure: ' . $response);
+                return false;
+            }
+            
+            // Trả về danh sách thẻ
+            return $data['data'];
+            
+        } catch (Exception $e) {
+            log_message('error', 'Pancake POS API Exception: ' . $e->getMessage());
+            return false;
+        }
     }
 }

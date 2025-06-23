@@ -118,26 +118,6 @@ class ReportCampaigns extends BaseCommand
 
         // Lấy dữ liệu chiến dịch realtime từ Google Ads
         try {
-            $campaigns = $this->googleAdsService->getCampaigns($account['customer_id'], $accessToken, $mccId, true, date('Y-m-d'), date('Y-m-d'));
-            if (empty($campaigns)) {
-                CLI::write("Không tìm thấy chiến dịch nào cho tài khoản {$account['customer_id']}", 'yellow');
-                return false;
-            }
-        } catch (\Exception $e) {
-            if (strpos($e->getMessage(), '401') !== false) {
-                CLI::write("Token không hợp lệ, đang thử refresh...", 'yellow');
-                // Thử refresh token và gọi lại API
-                $newToken = $this->ensureValidToken($account['user_id']);
-                $campaigns = $this->googleAdsService->getCampaigns($account['customer_id'], $newToken['access_token'], $mccId, true, date('Y-m-d'), date('Y-m-d'));
-            } else {
-                log_message('error', 'Lỗi tài khoản: ' . $account['customer_id'] . ' - ' . $e->getMessage());
-                foreach($telegramChatIds as $telegramChatId){
-                    $this->telegramService->sendMessage("❌ Lỗi tài khoản - " . $account['customer_id'], $telegramChatId);
-                }
-                return;
-            }
-        }
-        try {
             $settings = $this->adsAccountSettingsModel->getSettingsByAccountId($account['id']);
             // Check trường hợp ads account thuộc nhiều user khác nhau. Chỉ check 1 setting duy nhất
             if (!$settings) {
@@ -149,33 +129,26 @@ class ReportCampaigns extends BaseCommand
                     }
                 }
             }
-            // Xử lý dữ liệu chuyển đổi thực tế
-            if (!empty($campaigns)) {
-                // Nếu sử dụng Pancake POS
-                 if (!empty($settings['use_pancake'])) {
-                     $campaigns = $this->pancakeService->processRealConversions($campaigns, $settings, date('Y-m-d'), date('Y-m-d'));
-                 } 
-                // Nếu không sử dụng Pancake POS, sử dụng Google Sheet
-                else {
-                    $gsheetUrl = $settings['gsheet1'] ?? null;
-                    $gsheetUrl2 = $settings['gsheet2'] ?? null;
-                    if (empty($gsheetUrl) && empty($gsheetUrl2)) {
-                        return;
-                    }   
-                    if (!empty($gsheetUrl)) {
-                        $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, date('Y-m-d'), date('Y-m-d'), $settings);
-                    }
-                    if (!empty($gsheetUrl2)) {
-                        $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl2, date('Y-m-d'), date('Y-m-d'), $settings);
-                    }
-                }
+
+            $campaigns = $this->googleAdsService->getCampaignsWithRealConv($settings, $account['customer_id'], $accessToken, $mccId, true, date('Y-m-d'), date('Y-m-d'));
+
+            if (empty($campaigns)) {
+                CLI::write("Không tìm thấy chiến dịch nào cho tài khoản {$account['customer_id']}", 'yellow');
+                return false;
             }
         } catch (\Exception $e) {
-            log_message('error', 'Lỗi tính toán real conversions: ' . $account['customer_id'] . ' - ' . $e->getMessage());
-            foreach($telegramChatIds as $telegramChatId){
-                $this->telegramService->sendMessage("❌ Lỗi tính toán real conversions - " . $account['customer_id'], $telegramChatId);
+            if (strpos($e->getMessage(), '401') !== false) {
+                CLI::write("Token không hợp lệ, đang thử refresh...", 'yellow');
+                // Thử refresh token và gọi lại API
+                $newToken = $this->ensureValidToken($account['user_id']);
+                $campaigns = $this->googleAdsService->getCampaignsWithRealConv($settings, $account['customer_id'], $newToken, $mccId, true, date('Y-m-d'), date('Y-m-d'));
+            } else {
+                log_message('error', 'Lỗi tài khoản: ' . $account['customer_id'] . ' - ' . $e->getMessage());
+                foreach($telegramChatIds as $telegramChatId){
+                    $this->telegramService->sendMessage("❌ Lỗi tài khoản - " . $account['customer_id'], $telegramChatId);
+                }
+                return;
             }
-            return;
         }
 
         try {
@@ -287,7 +260,7 @@ class ReportCampaigns extends BaseCommand
         } catch (\Exception $e) {
             log_message('error', 'Lỗi report tổng conversions: ' . $account['customer_id'] . ' - ' . $e->getMessage());
             foreach($telegramChatIds as $telegramChatId){
-                $this->telegramService->sendMessage("❌ Lỗi report tổng conversions - " . $account['customer_id'], $telegramChatId);
+                $this->telegramService->sendMessage("❌ Lỗi report tổng conversions - " . $account['customer_id'] . ': ' . $e->getMessage(), $telegramChatId);
             }
             return;
         }

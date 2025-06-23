@@ -34,6 +34,7 @@ class AdsAccountSettingsModel extends Model
         'pancake_shop_id',
         'pancake_api_key',
         'pancake_product_id',
+        'pancake_exclude_tags',
         'use_pancake',
     ];
     protected $useTimestamps = true;
@@ -62,6 +63,7 @@ class AdsAccountSettingsModel extends Model
         'pancake_shop_id' => 'permit_empty|string',
         'pancake_api_key' => 'permit_empty|string',
         'pancake_product_id' => 'permit_empty|string',
+        'pancake_exclude_tags' => 'permit_empty|string',
         'use_pancake' => 'permit_empty|in_list[0,1]',
     ];
 
@@ -77,46 +79,71 @@ class AdsAccountSettingsModel extends Model
 
     public function saveSettings($customerId, $data)
     {
-        // Debug log
-        log_message('info', 'Saving settings for account: ' . $customerId);
-        log_message('info', 'Input data: ' . json_encode($data));
+        try {
+            // Debug log
+            log_message('info', 'Saving settings for account: ' . $customerId);
+            log_message('info', 'Input data: ' . json_encode($data));
+            
+            // Kiểm tra dữ liệu đầu vào
+            if (empty($data['account_id'])) {
+                log_message('error', 'Missing account_id in saveSettings');
+                return false;
+            }
+            
+            // Chuẩn hóa dữ liệu
+            $settings = [
+                'customer_id' => $customerId,
+                'account_id' => $data['account_id'],
+                'auto_optimize' => ($data['auto_optimize'] === 'true' || $data['auto_optimize'] === true || $data['auto_optimize'] === 1) ? 1 : 0,
+                'cpa_threshold' => $data['cpa_threshold'] ?? 0,
+                'roas_threshold' => $data['roas_threshold'] ?? 0,
+                'increase_budget' => ($data['increase_budget'] === 'true' || $data['increase_budget'] === true || $data['increase_budget'] === 1) ? 1 : 0,
+                'gsheet1' => $data['gsheet1'] ?? null,
+                'gsheet_date_col' => strtoupper($data['gsheet_date_col'] ?? ''),
+                'gsheet_phone_col' => strtoupper($data['gsheet_phone_col'] ?? ''),
+                'gsheet_value_col' => strtoupper($data['gsheet_value_col'] ?? ''),
+                'gsheet_campaign_col' => strtoupper($data['gsheet_campaign_col'] ?? ''),
+                'gsheet2' => $data['gsheet2'] ?? null,
+                'cost_threshold' => $data['cost_threshold'] ?? 0,
+                'auto_on_off' => ($data['auto_on_off'] === 'true' || $data['auto_on_off'] === true || $data['auto_on_off'] === 1) ? 1 : 0,
+                'use_roas_threshold' => ($data['use_roas_threshold'] === 'true' || $data['use_roas_threshold'] === true || $data['use_roas_threshold'] === 1) ? 1 : 0,
+                'extended_cpa_threshold' => $data['extended_cpa_threshold'] ?? 0,
+                'default_paused_campaigns' => ($data['default_paused_campaigns'] === 'true' || $data['default_paused_campaigns'] === true || $data['default_paused_campaigns'] === 1) ? 1 : 0,
+                'exclude_campaign_ids' => $data['exclude_campaign_ids'] ?? null,
+                'pancake_shop_id' => $data['pancake_shop_id'] ?? null,
+                'pancake_api_key' => $data['pancake_api_key'] ?? null,
+                'pancake_product_id' => $data['pancake_product_id'] ?? null,
+                'pancake_exclude_tags' => $data['pancake_exclude_tags'] ?? null,
+                'use_pancake' => ($data['use_pancake'] === 'true' || $data['use_pancake'] === true || $data['use_pancake'] === 1) ? 1 : 0
+            ];
 
-        // Chuẩn hóa dữ liệu
-        $settings = [
-            'customer_id' => $customerId,
-            'account_id' => $data['account_id'],
-            'auto_optimize' => ($data['auto_optimize'] === 'true' || $data['auto_optimize'] === true || $data['auto_optimize'] === 1) ? 1 : 0,
-            'cpa_threshold' => $data['cpa_threshold'] ?? 0,
-            'roas_threshold' => $data['roas_threshold'] ?? 0,
-            'increase_budget' => $data['increase_budget'] ?? 0,
-            'gsheet1' => $data['gsheet1'] ?? null,
-            'gsheet_date_col' => strtoupper($data['gsheet_date_col'] ?? ''),
-            'gsheet_phone_col' => strtoupper($data['gsheet_phone_col'] ?? ''),
-            'gsheet_value_col' => strtoupper($data['gsheet_value_col'] ?? ''),
-            'gsheet_campaign_col' => strtoupper($data['gsheet_campaign_col'] ?? ''),
-            'gsheet2' => $data['gsheet2'] ?? null,
-            'cost_threshold' => $data['cost_threshold'] ?? 0,
-            'auto_on_off' => ($data['auto_on_off'] === 'true' || $data['auto_on_off'] === true || $data['auto_on_off'] === 1) ? 1 : 0,
-            'use_roas_threshold' => ($data['use_roas_threshold'] === 'true' || $data['use_roas_threshold'] === true || $data['use_roas_threshold'] === 1) ? 1 : 0,
-            'extended_cpa_threshold' => $data['extended_cpa_threshold']?? 0,
-            'default_paused_campaigns' => ($data['default_paused_campaigns'] === 'true' || $data['default_paused_campaigns'] === true || $data['default_paused_campaigns'] === 1) ? 1 : 0,
-            'exclude_campaign_ids' => $data['exclude_campaign_ids']?? null,
-            'pancake_shop_id' => $data['pancake_shop_id'] ?? null,
-            'pancake_api_key' => $data['pancake_api_key'] ?? null,
-            'pancake_product_id' => $data['pancake_product_id'] ?? null,
-            'use_pancake' => ($data['use_pancake'] === 'true' || $data['use_pancake'] === true || $data['use_pancake'] === 1) ? 1 : 0
-        ];
+            // Debug log
+            log_message('info', 'Processed settings: ' . json_encode($settings));
 
-        // Debug log
-        log_message('info', 'Processed settings: ' . json_encode($settings));
+            // Kiểm tra xem đã có settings chưa
+            $existing = $this->where('customer_id', $customerId)->first();
+            log_message('info', 'Existing settings: ' . ($existing ? json_encode($existing) : 'None'));
 
-        // Kiểm tra xem đã có settings chưa
-        $existing = $this->where('customer_id', $customerId)->first();
-
-        if ($existing) {
-            return $this->update($existing['id'], $settings);
-        } else {
-            return $this->insert($settings);
+            $result = false;
+            if ($existing) {
+                log_message('info', 'Updating existing settings with ID: ' . $existing['id']);
+                $result = $this->update($existing['id'], $settings);
+                log_message('info', 'Update result: ' . ($result ? 'Success' : 'Failed'));
+            } else {
+                log_message('info', 'Inserting new settings');
+                $result = $this->insert($settings);
+                log_message('info', 'Insert result: ' . ($result ? 'Success' : 'Failed'));
+            }
+            
+            if (!$result) {
+                log_message('error', 'Database operation failed. Last error: ' . print_r($this->db->error(), true));
+            }
+            
+            return $result;
+        } catch (\Exception $e) {
+            log_message('error', 'Exception in saveSettings: ' . $e->getMessage());
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
+            return false;
         }
     }
 

@@ -45,6 +45,10 @@ body {
     color: var(--text-light);
 }
 
+input[readonly]{
+    background-color: #eeeeee;
+  }
+
 /* Navbar styling */
 .navbar {
     background: linear-gradient(87deg, #825ee4 0, #5e72e4 100%) !important;

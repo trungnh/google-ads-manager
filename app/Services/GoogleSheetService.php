@@ -82,6 +82,15 @@ class GoogleSheetService
         }
 
         if (empty($gsheetUrl)) {
+            // Nếu không có dữ liệu chuyển đổi, đặt giá trị mặc định
+            foreach ($campaigns as &$tmpCampaign) {   
+                $tmpCampaign['real_conversions'] = 0;
+                $tmpCampaign['real_conversion_value'] = 0;
+                $tmpCampaign['real_conversion_rate'] = 0;
+                $tmpCampaign['real_cpa'] = 0;
+                $tmpCampaign['real_roas'] = 0;
+            }
+            
             return $campaigns;
         }
 

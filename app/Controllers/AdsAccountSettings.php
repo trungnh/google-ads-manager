@@ -145,19 +145,44 @@ class AdsAccountSettings extends BaseController
 
     public function update($customerId)
     {
-        if (!session()->get('isLoggedIn')) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Unauthorized']);
+        // Kiểm tra quyền truy cập
+        $userId = session()->get('id');
+        $account = $this->adsAccountModel
+            ->where('user_id', $userId)
+            ->where('customer_id', $customerId)
+            ->first();
+
+        if (!$account) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Bạn không có quyền truy cập tài khoản này'
+            ]);
         }
 
         try {
             log_message('info', 'Updating settings for account: ' . $customerId);
             log_message('info', 'POST data: ' . json_encode($this->request->getPost()));
+            log_message('info', 'Request method: ' . $this->request->getMethod());
+            log_message('info', 'Content-Type: ' . $this->request->getHeaderLine('Content-Type'));
+            
             $order = $this->request->getPost('order') ?? 0;
             $userId = session()->get('id');
+            
+            // Kiểm tra tài khoản
             $account = $this->adsAccountModel
                 ->where('user_id', $userId)
                 ->where('customer_id', $customerId)
                 ->first();
+                
+            if (!$account) {
+                log_message('error', 'Account not found for customer ID: ' . $customerId . ' and user ID: ' . $userId);
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Không tìm thấy tài khoản'
+                ]);
+            }
+            
+            log_message('info', 'Account found: ' . json_encode($account));
 
             // Debug log for auto_optimize value
             $autoOptimizeValue = $this->request->getPost('auto_optimize');
@@ -184,6 +209,7 @@ class AdsAccountSettings extends BaseController
                 'pancake_shop_id' => $this->request->getPost('pancake_shop_id'),
                 'pancake_api_key' => $this->request->getPost('pancake_api_key'),
                 'pancake_product_id' => $this->request->getPost('pancake_product_id'),
+                'pancake_exclude_tags' => $this->request->getPost('pancake_exclude_tags'),
                 'use_pancake' => $this->request->getPost('use_pancake'),
                 'account_id' => $account['id'],
             ];
@@ -209,9 +235,61 @@ class AdsAccountSettings extends BaseController
 
         } catch (\Exception $e) {
             log_message('error', 'Error in AdsAccountSettings::update: ' . $e->getMessage());
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
             return $this->response->setJSON([
                 'success' => false,
                 'message' => 'Lỗi khi cập nhật cài đặt: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    public function getPancakeTags()
+    {
+        if (!session()->get('isLoggedIn')) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Unauthorized']);
+        }
+
+        try {
+            $shopId = $this->request->getPost('shop_id');
+            $apiKey = $this->request->getPost('api_key');
+
+            if (empty($shopId) || empty($apiKey)) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Shop ID và API Key không được để trống'
+                ]);
+            }
+
+            // Khởi tạo service Pancake
+            $pancakeService = new \App\Services\PancakeService();
+            
+            // Lấy danh sách thẻ từ Pancake POS
+            $tags = $pancakeService->getTags($shopId, $apiKey);
+            
+            if ($tags === false) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Không thể kết nối đến Pancake POS API. Vui lòng kiểm tra Shop ID và API Key.'
+                ]);
+            }
+
+            $rsTags = [];
+            foreach ($tags as $tag) {
+                if ($tag['is_system_tag'] == false) {
+                    $rsTags[] = $tag;
+                }
+            }
+            
+            return $this->response->setJSON([
+                'success' => true,
+                'tags' => $rsTags
+            ]);
+
+        } catch (\Exception $e) {
+            log_message('error', 'Error in AdsAccountSettings::getPancakeTags: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Lỗi khi lấy danh sách thẻ: ' . $e->getMessage()
             ]);
         }
     }
