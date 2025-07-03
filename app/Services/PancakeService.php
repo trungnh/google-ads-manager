@@ -110,6 +110,10 @@ class PancakeService
 
             return $campaigns;
         }
+        
+        // Kiểm tra cài đặt quy đổi USD
+        $useUsd = isset($settings['pancake_use_usd']) && $settings['pancake_use_usd'];
+        $usdRate = isset($settings['pancake_usd_rate']) && is_numeric($settings['pancake_usd_rate']) ? (float)$settings['pancake_usd_rate'] : 27000;
 
         // Thêm thời gian vào ngày để lấy dữ liệu cả ngày
         $startDateTime = $startDate . ' 00:00:00';
@@ -235,7 +239,16 @@ class PancakeService
             if (isset($campaignData[$campaignId])) {
                 // Số lượng chuyển đổi là số lượng số điện thoại duy nhất
                 $processedCampaign['real_conversions'] = count($campaignData[$campaignId]['unique_phones']);
-                $processedCampaign['real_conversion_value'] = $campaignData[$campaignId]['total_value'];
+                
+                // Tính toán giá trị chuyển đổi, áp dụng quy đổi USD nếu được bật
+                $totalValue = $campaignData[$campaignId]['total_value'];
+                if ($useUsd && $usdRate > 0) {
+                    // Quy đổi từ VND sang USD theo tỷ giá
+                    $totalValue = $totalValue / $usdRate;
+                    log_message('info', 'Converting value from VND to USD: ' . $campaignData[$campaignId]['total_value'] . ' VND = ' . $totalValue . ' USD (rate: ' . $usdRate . ')');
+                }
+                $processedCampaign['real_conversion_value'] = $totalValue;
+                
                 $processedCampaign['real_conversion_rate'] = isset($campaign['clicks']) && $campaign['clicks'] > 0 
                     ? ($processedCampaign['real_conversions'] / $campaign['clicks']) 
                     : 0;

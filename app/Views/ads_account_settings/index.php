@@ -197,6 +197,26 @@
                                     </div>
                                 </div>
                             </div>
+                            
+                            <div class="mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="pancake_use_usd" name="pancake_use_usd" 
+                                        <?= isset($settings['pancake_use_usd']) && $settings['pancake_use_usd'] ? 'checked' : '' ?>>
+                                    <label class="form-check-label" for="pancake_use_usd">Tính toán bằng USD</label>
+                                </div>
+                                <small class="form-text text-muted">
+                                    <i>Khi bật, giá trị real_conversion_value sẽ được quy đổi từ VND sang USD theo tỷ giá</i>
+                                </small>
+                            </div>
+                            
+                            <div class="mb-3" id="pancake_usd_rate_container" style="display: <?= isset($settings['pancake_use_usd']) && $settings['pancake_use_usd'] ? 'block' : 'none' ?>">
+                                <label for="pancake_usd_rate" class="form-label">Tỷ giá USD/VND</label>
+                                <input type="number" step="1" class="form-control" id="pancake_usd_rate" name="pancake_usd_rate" 
+                                    value="<?= isset($settings['pancake_usd_rate']) ? $settings['pancake_usd_rate'] : '27000' ?>">
+                                <small class="form-text text-muted">
+                                    <i>Tỷ giá quy đổi từ VND sang USD (VD: 27000 VND = 1 USD)</i>
+                                </small>
+                            </div>
                         </div>
                         
                         <div id="gsheet_settings" class="mb-4" style="display: <?= isset($settings['use_pancake']) && $settings['use_pancake'] ? 'none' : 'block' ?>">
@@ -295,6 +315,18 @@ $(document).ready(function() {
     <?php if(isset($settings['pancake_shop_id']) && $settings['pancake_api_key']): ?>
         loadTags();
     <?php endif;?>
+    
+    // Xử lý sự kiện khi checkbox pancake_use_usd thay đổi
+    $('#pancake_use_usd').change(function() {
+        var isChecked = $(this).is(':checked');
+        console.log('pancake_use_usd changed:', isChecked);
+        if (isChecked) {
+            $('#pancake_usd_rate_container').show();
+        } else {
+            $('#pancake_usd_rate_container').hide();
+        }
+    });
+    
     $('#use_pancake').change(function() {
         var isChecked = $(this).is(':checked');
         console.log('use_pancake changed:', isChecked);
@@ -594,7 +626,9 @@ $(document).ready(function() {
             'exclude_campaign_ids': $('#exclude_campaign_ids').val(),
             'pancake_shop_id': $('#pancake_shop_id').val(),
             'pancake_api_key': $('#pancake_api_key').val(),
-            'pancake_product_id': $('#pancake_product_id').val()
+            'pancake_product_id': $('#pancake_product_id').val(),
+            'pancake_use_usd': $('#pancake_use_usd').is(':checked') ? 'true' : 'false',
+            'pancake_usd_rate': $('#pancake_usd_rate').val() || '27000'
         };
         
         // Thêm trường pancake_exclude_tags nếu use_pancake được chọn
