@@ -85,9 +85,13 @@
                                     <th class="sortable" data-sort="budget">Ngân sách</th>
                                     <th class="" data-sort="status">Trạng thái</th>
                                     <th class="sortable" data-sort="cost">Chi tiêu</th>
-                                    <th class="sortable" data-sort="roas">ROAS</th>
-                                    <th class="sortable" data-sort="cost_per_conversion">CPA</th>
-                                    <th class="sortable" data-sort="conversions">Conv</th>
+                                    <th class="sortable" data-sort="roas">ROAS tổng</th>
+                                    <th class="sortable bg-col-success" data-sort="roas_success">ROAS TC</th>
+                                    <th class="sortable" data-sort="cost_per_conversion">CPA tổng</th>
+                                    <th class="sortable bg-col-success" data-sort="cost_per_conversion_success">CPA TC</th>
+                                    <th class="sortable" data-sort="conversions">Đơn Tổng</th>
+                                    <th class="sortable" data-sort="conversions_pending">Đang Chốt</th>
+                                    <th class="sortable bg-col-success" data-sort="conversions_success">Thành Công</th>
                                     <th class="sortable" data-sort="ctr">CTR</th>
                                     <th class="sortable" data-sort="clicks">Clicks</th>
                                     <th class="sortable" data-sort="average_cpc">CPC</th>
@@ -208,6 +212,7 @@
     line-height: 1;
     margin: 0 1px;
 }
+.bg-col-success {background-color: #e8f8f5!important;}
 </style>
 
 <!-- Add Font Awesome -->
@@ -386,6 +391,9 @@ $(document).ready(function() {
             cost: 0,
             clicks: 0,
             real_conversions: 0,
+            real_conversions_total: 0,
+            real_conversions_pending: 0,
+            real_conversions_success: 0,
             real_conversion_value: 0
         };
 
@@ -394,15 +402,20 @@ $(document).ready(function() {
             totals.cost += parseFloat(campaign.cost) || 0;
             totals.clicks += parseInt(campaign.clicks) || 0;
             totals.real_conversions += parseFloat(campaign.real_conversions) || 0;
+            totals.real_conversions_total += parseFloat(campaign.real_conversions_total) || 0;
+            totals.real_conversions_pending += parseFloat(campaign.real_conversions_pending) || 0;
+            totals.real_conversions_success += parseFloat(campaign.real_conversions_success) || 0;
             totals.real_conversion_value += parseFloat(campaign.real_conversion_value) || 0;
         });
 
         // Tính các chỉ số tổng hợp
         const totalCTR = totals.clicks > 0 ? (totals.clicks / totals.clicks) * 100 : 0;
         const totalAverageCPC = totals.clicks > 0 ? totals.cost / totals.clicks : 0;
-        const totalRealCPA = totals.real_conversions > 0 ? totals.cost / totals.real_conversions : 0;
-        const totalRealConversionRate = totals.clicks > 0 ? (totals.real_conversions / totals.clicks) : 0;
-        const totalROAS = totals.cost > 0 ? totals.real_conversion_value / totals.cost : 0;
+        const totalRealCPA = totals.real_conversions_total > 0 ? totals.cost / totals.real_conversions_total : 0;
+                                const totalRealCPASuccess = totals.real_conversions_success > 0 ? totals.cost / totals.real_conversions_success : 0;
+                                const totalRealConversionRate = totals.clicks > 0 ? (totals.real_conversions_total / totals.clicks) : 0;
+                                const totalROAS = totals.cost > 0 ? totals.real_conversion_value / totals.cost : 0;
+                                const totalROASSuccess = totals.cost > 0 ? totals.real_conversion_value / totals.cost : 0;
 
         // Sắp xếp dữ liệu nếu có
         if (currentSort.column) {
@@ -443,20 +456,36 @@ $(document).ready(function() {
                         bValue = parseFloat(b.average_cpc) || 0;
                         break;
                     case 'conversions':
-                        aValue = parseFloat(a.real_conversions) || 0;
-                        bValue = parseFloat(b.real_conversions) || 0;
+                        aValue = parseFloat(a.real_conversions_total) || 0;
+                        bValue = parseFloat(b.real_conversions_total) || 0;
+                        break;
+                    case 'conversions_pending':
+                        aValue = parseFloat(a.real_conversions_pending) || 0;
+                        bValue = parseFloat(b.real_conversions_pending) || 0;
+                        break;
+                    case 'conversions_success':
+                        aValue = parseFloat(a.real_conversions_success) || 0;
+                        bValue = parseFloat(b.real_conversions_success) || 0;
                         break;
                     case 'conversion_value':
                         aValue = parseFloat(a.real_conversion_value) || 0;
                         bValue = parseFloat(b.real_conversion_value) || 0;
                         break;
                     case 'cost_per_conversion':
-                        aValue = parseFloat(a.real_cpa) || 0;
-                        bValue = parseFloat(b.real_cpa) || 0;
+                        aValue = parseFloat(a.real_cpa_total) || 0;
+                        bValue = parseFloat(b.real_cpa_total) || 0;
+                        break;
+                    case 'cost_per_conversion_success':
+                        aValue = parseFloat(a.real_cpa_success) || 0;
+                        bValue = parseFloat(b.real_cpa_success) || 0;
                         break;
                     case 'roas':
-                        aValue = a.cost > 0 ? parseFloat(a.real_conversion_value / a.cost) || 0 : 0;
-                        bValue = b.cost > 0 ? parseFloat(b.real_conversion_value / b.cost) || 0 : 0;
+                        aValue = parseFloat(a.real_roas_total) || 0;
+                        bValue = parseFloat(b.real_roas_total) || 0;
+                        break;
+                    case 'roas_success':
+                        aValue = parseFloat(a.real_roas_success) || 0;
+                        bValue = parseFloat(b.real_roas_success) || 0;
                         break;
                     case 'conversion_rate':
                         aValue = parseFloat(a.real_conversion_rate) || 0;
@@ -484,6 +513,15 @@ $(document).ready(function() {
         sortedCampaigns.forEach(campaign => {
             let tmpRoas = (campaign.cost > 0) ? campaign.real_conversion_value / campaign.cost : 0;
             let tmpRealCpa = (campaign.real_conversions > 0) ? campaign.cost / campaign.real_conversions : 0;
+            let classCPATotalTextClr = 'text-primary';
+            let classCPASuccessTextClr = 'text-primary';
+            if (campaign.real_cpa_total - accountSettings.cpa_threshold > 0 || campaign.real_cpa_total == 0) {
+                classCPATotalTextClr = 'text-danger';
+            }
+            if (campaign.real_cpa_success - accountSettings.cpa_threshold > 0 || campaign.real_cpa_success == 0) {
+                classCPASuccessTextClr = 'text-danger';
+            }
+
             html += `
                 <tr id="campaign-${campaign.campaign_id}">
                     <td>${campaign.campaign_id}</td>
@@ -510,16 +548,28 @@ $(document).ready(function() {
                         ${formatNumber(campaign.cost)}
                     </td>
                     <td>
-                        <span class="fw-bold ${(tmpRoas > accountSettings.roas_threshold) ? 'text-success' : 'text-danger'}">
-                            ${tmpRoas > 0 ? formatNumberWithoutCurrency2(tmpRoas) : '-'}
+                        <span class="fw-bold ${(campaign.real_roas_total > accountSettings.roas_threshold) ? 'text-success' : 'text-danger'}">
+                            ${campaign.real_roas_total > 0 ? formatNumberWithoutCurrency2(campaign.real_roas_total) : '-'}
+                        </span>
+                    </td>
+                    <td class="bg-col-success">
+                        <span class="fw-bold ${(campaign.real_roas_success > accountSettings.roas_threshold) ? 'text-success' : 'text-danger'}">
+                            ${campaign.real_roas_success > 0 ? formatNumberWithoutCurrency2(campaign.real_roas_success) : '-'}
                         </span>
                     </td>
                     <td>
-                        <span class="${(tmpRealCpa < accountSettings.cpa_threshold) ? 'text-primary' : 'text-danger'}">
-                            ${tmpRealCpa > 0 ? formatNumber(tmpRealCpa) : '-'}
+                        <span class="${classCPATotalTextClr}">
+                            ${campaign.real_cpa_total > 0 ? formatNumber(campaign.real_cpa_total) : '-'}
                         </span>
                     </td>
-                    <td class="text-primary">${(campaign.real_conversions > 0) ? formatNumberWithoutCurrency(campaign.real_conversions) + ' đơn' : '-'}</td>
+                    <td class="bg-col-success">
+                        <span class="${classCPASuccessTextClr}">
+                            ${campaign.real_cpa_success > 0 ? formatNumber(campaign.real_cpa_success) : '-'}
+                        </span>
+                    </td>
+                    <td class="text-primary">${(campaign.real_conversions_total > 0) ? formatNumberWithoutCurrency(campaign.real_conversions_total) + ' đơn' : '-'}</td>
+                    <td>${(campaign.real_conversions_pending > 0) ? formatNumberWithoutCurrency(campaign.real_conversions_pending) + ' đơn' : '-'}</td>
+                    <td class="text-success bg-col-success">${(campaign.real_conversions_success > 0) ? formatNumberWithoutCurrency(campaign.real_conversions_success) + ' đơn' : '-'}</td>
                     <td>${formatPercent(campaign.ctr)}</td>
                     <td>${formatNumberWithoutCurrency(campaign.clicks)}</td>
                     <td>${formatNumber(campaign.average_cpc)}</td>
@@ -583,8 +633,24 @@ $(document).ready(function() {
                         ${formatNumberWithoutCurrency2(totalROAS)}
                     </span>
                 </td>
-                <td class="text-primary">${formatNumber(totalRealCPA)}</td>
-                <td class="text-primary">${(totals.real_conversions > 0) ? formatNumberWithoutCurrency(totals.real_conversions) + ' đơn' : '-'}</td>
+                <td class="bg-col-success">
+                    <span class="${totalROASSuccess > 2 ? 'text-success' : 'text-danger'}">
+                        ${formatNumberWithoutCurrency2(totalROASSuccess)}
+                    </span>
+                </td>
+                <td class="text-primary">
+                    <span class="${totalRealCPA < accountSettings.cpa_threshold ? 'text-success' : 'text-danger'}">
+                        ${formatNumber(totalRealCPA)}
+                    </span>
+                </td>
+                <td class="text-primary bg-col-success">
+                    <span class="${totalRealCPASuccess < accountSettings.cpa_threshold ? 'text-success' : 'text-danger'}">
+                        ${formatNumber(totalRealCPASuccess)}
+                    </span>
+                </td>
+                <td class="text-primary">${(totals.real_conversions_total > 0) ? formatNumberWithoutCurrency(totals.real_conversions_total) + ' đơn' : '-'}</td>
+                <td class="text-primary">${(totals.real_conversions_pending > 0) ? formatNumberWithoutCurrency(totals.real_conversions_pending) + ' đơn' : '-'}</td>
+                <td class="text-success bg-col-success">${(totals.real_conversions_success > 0) ? formatNumberWithoutCurrency(totals.real_conversions_success) + ' đơn' : '-'}</td>
                 <td>-</td>
                 <td>${formatNumberWithoutCurrency(totals.clicks)}</td>
                 <td>${formatNumber(totalAverageCPC)}</td>

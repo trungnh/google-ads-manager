@@ -29,9 +29,18 @@ class CampaignsDataModel extends Model
         'clicks',
         'average_cpc',
         'real_conversions',
+        'real_conversions_total',
+        'real_conversions_pending',
+        'real_conversions_success',
         'real_conversion_value',
+        'real_conversion_value_total',
+        'real_conversion_value_success',
         'real_conversion_rate',
         'real_cpa',
+        'real_cpa_total',
+        'real_cpa_success',
+        'real_roas_total',
+        'real_roas_success',
         'last_cost_conversion',
         'last_count_conversion',
         'last_count_conversion_value',
@@ -76,7 +85,12 @@ class CampaignsDataModel extends Model
         $campaignReturnData = [];
         foreach ($campaignsData as $campaign) {
             $realConversions = $campaign['real_conversions']?? 0;
+            $realConversionsTotal = $campaign['real_conversions_total']?? 0;
+            $realConversionsPending = $campaign['real_conversions_pending']?? 0;
+            $realConversionsSuccess = $campaign['real_conversions_success']?? 0;
             $realConversionValue = $campaign['real_conversion_value']?? 0;
+            $realConversionValueTotal = $campaign['real_conversion_value_total']?? 0;
+            $realConversionValueSuccess = $campaign['real_conversion_value_success']?? 0;
             $realConversionRate = $campaign['real_conversion_rate']?? 0;
             $data = [
                 'customer_id' => $customerId,
@@ -96,9 +110,18 @@ class CampaignsDataModel extends Model
                 'clicks' => $campaign['clicks'] ?? 0,
                 'average_cpc' => $campaign['average_cpc'] ?? 0,
                 'real_conversions' => $realConversions,
+                'real_conversions_total' => $realConversionsTotal,
+                'real_conversions_pending' => $realConversionsPending,
+                'real_conversions_success' => $realConversionsSuccess,
                 'real_conversion_value' => $realConversionValue,
+                'real_conversion_value_total' => $realConversionValueTotal,
+                'real_conversion_value_success' => $realConversionValueSuccess,
                 'real_conversion_rate' => $realConversionRate,
                 'real_cpa' => $campaign['real_cpa'] ?? 0,
+                'real_cpa_total' => $campaign['real_cpa_total'] ?? 0,
+                'real_cpa_success' => $campaign['real_cpa_success'] ?? 0,
+                'real_roas_total' => $campaign['real_roas_total'] ?? 0,
+                'real_roas_success' => $campaign['real_roas_success'] ?? 0,
                 'last_updated_at' => date('Y-m-d H:i:s'),
             ];
             
@@ -183,4 +206,4 @@ class CampaignsDataModel extends Model
             'campaign_id' => $campaignId
         ])->orderBy('date', 'DESC')->findAll(1);
     }
-} 
+}

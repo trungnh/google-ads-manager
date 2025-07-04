@@ -205,7 +205,8 @@
                                     <label class="form-check-label" for="pancake_use_usd">Tính toán bằng USD</label>
                                 </div>
                                 <small class="form-text text-muted">
-                                    <i>Khi bật, giá trị real_conversion_value sẽ được quy đổi từ VND sang USD theo tỷ giá</i>
+                                    <i>Khi bật, giá trị đơn hàng sẽ được quy đổi từ VND sang USD theo tỷ giá</i><br>
+                                    <i>Dùng trong trường hợp tk ads là USD</i>
                                 </small>
                             </div>
                             
