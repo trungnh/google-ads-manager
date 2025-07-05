@@ -300,6 +300,7 @@ class PancakeService
 
         // Tạo mảng mới để lưu kết quả
         $processedCampaigns = [];
+        $processedCampaignIds = [];
 
         // Cập nhật dữ liệu chiến dịch với thông tin chuyển đổi thực tế
         foreach ($campaigns as $campaign) {
@@ -386,11 +387,18 @@ class PancakeService
                 $processedCampaign['real_roas_total'] = 0;
                 $processedCampaign['real_roas_success'] = 0;
             }
+
+            // Lưu ID chiến dịch vào 1 mảng
+            if (!in_array($campaignId, $processedCampaignIds)) {
+                $processedCampaignIds[] = $campaignId;
+            }
             
             $processedCampaigns[] = $processedCampaign;
         }
 
         // Xử lý đơn hàng offline và thêm vào danh sách chiến dịch
+        $offlineCampaign = [];
+
         if (!empty($offlineOrderData['unique_phones'])) {
             // Tính toán giá trị chuyển đổi cho đơn hàng offline, áp dụng quy đổi USD nếu được bật
             $totalValue = $offlineOrderData['total_value'];
@@ -410,9 +418,70 @@ class PancakeService
             $successConversions = count($offlineOrderData['success_phones']);
             
             // Tạo chiến dịch mới cho đơn hàng offline
+            $this->processOfflineCampaign(
+                $offlineCampaign, 
+                $totalConversions, 
+                $pendingConversions, 
+                $successConversions, 
+                $totalValue, 
+                $successValue);
+        }
+
+        // Xử lý những đơn hàng có utm campaign ID nhưng không đến từ Google Ads
+        foreach($campaignData as $campID => $data) {
+            if (in_array($campID, $processedCampaignIds)) {
+                continue;
+            }
+
+            // Tính toán giá trị chuyển đổi, áp dụng quy đổi USD nếu được bật
+            $totalValue = $data['total_value'];
+            $pendingValue = $data['pending_value'];
+            $successValue = $data['success_value'];
+            
+            if ($useUsd && $usdRate > 0) {
+                // Quy đổi từ VND sang USD theo tỷ giá
+                $totalValue = $totalValue / $usdRate;
+                $pendingValue = $pendingValue / $usdRate;
+                $successValue = $successValue / $usdRate;
+                log_message('info', 'Converting value from VND to USD with rate: ' . $usdRate);
+            }
+            
+            // Số lượng chuyển đổi theo từng loại
+            $totalConversions = count($data['unique_phones']);
+            $pendingConversions = count($data['pending_phones']);
+            $successConversions = count($data['success_phones']);
+            
+            // Gán giá trị cho offline Campaign
+            $this->processOfflineCampaign(
+                $offlineCampaign, 
+                $totalConversions, 
+                $pendingConversions, 
+                $successConversions, 
+                $totalValue, 
+                $successValue);
+        }
+
+        // Thêm chiến dịch offline vào danh sách
+        if (!empty($offlineCampaign)) {
+            $processedCampaigns[] = $offlineCampaign;
+        }
+
+        return $processedCampaigns;
+    }
+
+    protected function processOfflineCampaign (
+        &$offlineCampaign, 
+        $totalConversions, 
+        $pendingConversions, 
+        $successConversions, 
+        $totalValue, 
+        $successValue) 
+    {
+        if (empty($offlineCampaign)) {
+            // Tạo chiến dịch mới cho đơn hàng offline
             $offlineCampaign = [
-                'campaign_id' => 'hotline',
-                'name' => 'Đơn hàng HOTLINE',
+                'campaign_id' => 'other',
+                'name' => 'Đơn hàng KHÁC',
                 'status' => 'ENABLED',
                 'budget' => 0,
                 'cost' => 0,
@@ -442,12 +511,16 @@ class PancakeService
                 'real_cpa' => 0, // Không có chi phí nên CPA = 0
                 'real_roas' => 0 // Không có chi phí nên ROAS = 0
             ];
-            
-            // Thêm chiến dịch offline vào danh sách
-            $processedCampaigns[] = $offlineCampaign;
+        } else {
+            $offlineCampaign['real_conversions_total'] += $totalConversions;
+            $offlineCampaign['real_conversions_pending'] += $pendingConversions;
+            $offlineCampaign['real_conversions_success'] += $successConversions;
+            $offlineCampaign['real_conversion_value_total'] += $totalValue;
+            $offlineCampaign['real_conversion_value_success'] += $successValue;
+            $offlineCampaign['real_conversions'] += $totalConversions;
+            $offlineCampaign['real_conversion_value'] += $totalValue;
         }
-
-        return $processedCampaigns;
+        
     }
 
     /**

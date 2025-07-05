@@ -104,7 +104,7 @@ class Campaigns extends BaseController
                 if ($showPausedAndCost) {
                     $returnCampaigns[] = $campaign;
                 } else {
-                    if ($campaign['cost'] > 0 || $campaign['campaign_id'] == 'hotline') {
+                    if ($campaign['cost'] > 0 || $campaign['campaign_id'] == 'other') {
                         $returnCampaigns[] = $campaign;
                     }
                 }
@@ -273,7 +273,7 @@ class Campaigns extends BaseController
                         if ($showPausedAndCost) {
                             $returnCampaigns[] = $campaign;
                         } else {
-                            if ($campaign['cost'] > 0 || $campaign['campaign_id'] == 'hotline') {
+                            if ($campaign['cost'] > 0 || $campaign['campaign_id'] == 'other') {
                                 $returnCampaigns[] = $campaign;
                             }
                         }
