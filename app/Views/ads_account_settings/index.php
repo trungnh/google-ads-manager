@@ -186,7 +186,8 @@
                                     <button class="btn btn-outline-secondary" type="button" id="load_tags_button">Load các thẻ đơn hàng</button>
                                 </div>
                                 <small class="form-text text-muted">
-                                    <i>Các thẻ đơn hàng cần loại trừ khi tính toán chuyển đổi thực tế</i>
+                                    <i>Các thẻ đơn hàng cần loại trừ khi tính toán chuyển đổi thực tế</i><br/>
+                                    <i>(Thẻ đánh dấu đơn hàng chốt KO thành công)</i>
                                 </small>
                                 <div id="tags_container" class="mt-2" style="display: none;">
                                     <div class="card">

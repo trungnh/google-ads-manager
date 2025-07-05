@@ -208,6 +208,9 @@ class PancakeService
             // Kiểm tra thẻ đơn hàng nếu có cấu hình exclude_tags
             $excludeTags = isset($settings['pancake_exclude_tags']) ? $settings['pancake_exclude_tags'] : '';
             $hasExcludedTag = !empty($excludeTags) && $this->orderContainsExcludedTag($order, $excludeTags);
+            if ($hasExcludedTag) {
+                continue;
+            }
 
             // Lấy thời gian tạo đơn hàng và kiểm tra xem có nằm trong khoảng thời gian cần lấy không
             // $insertedAt = $order['inserted_at'] ?? null;
@@ -239,7 +242,8 @@ class PancakeService
             }
 
             // Xác định loại đơn hàng (đang chốt hay thành công)
-            $isPendingOrder = in_array($orderStatus, $pendingStatuses) && !$hasExcludedTag;
+            //$isPendingOrder = in_array($orderStatus, $pendingStatuses) && !$hasExcludedTag;
+            $isPendingOrder = in_array($orderStatus, $pendingStatuses);
 
             // Xử lý đơn hàng dựa vào campaignId
             if (empty($campaignId)) {
