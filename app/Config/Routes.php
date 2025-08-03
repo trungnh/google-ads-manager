@@ -94,6 +94,7 @@ $routes->group('', ['filter' => 'auth'], function($routes) {
     $routes->get('adsaccounts/settings/(:num)', 'AdsAccountSettings::index/$1');
     $routes->post('adsaccounts/settings/update/(:num)', 'AdsAccountSettings::update/$1');
     $routes->post('adsaccounts/delete/(:num)', 'AdsAccounts::delete/$1');
+    $routes->post('adsaccounts/settings/toggleExcludeCampaign/(:segment)/(:num)', 'AdsAccountSettings::toggleExcludeCampaign/$1/$2');
 
     // Campaign Schedules Routes
     $routes->get('campaignschedules/(:segment)', 'CampaignSchedules::index/$1', ['filter' => 'auth']);
