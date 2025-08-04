@@ -222,7 +222,7 @@ class AdsAccountSettings extends BaseController
                 $action = 'include';
             }
             $settings['exclude_campaign_ids'] = implode(',', $excludeCampaignIds);
-            $this->adsAccountSettingsModel->saveSettings($customerId, $settings);
+            $this->adsAccountSettingsModel->updateSettings($customerId, $settings);
             return $this->response->setJSON(['success' => true, 'message' => 'Cập nhật thành công', 'action' => $action]);
         } catch (\Exception $e) {
             log_message('error', 'Error in AdsAccountSettings::toggleExcludeCampaign: ' . $e->getMessage());

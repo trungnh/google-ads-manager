@@ -108,6 +108,11 @@ class AdsAccountSettingsModel extends Model
         }
     }
 
+    public function updateSettings($customerId, $settings) 
+    {
+        return $this->update($customerId, $settings);
+    }
+
     public function getAccountsForOptimization()
     {
         return $this->select('ads_account_settings.*, ads_accounts.customer_id, ads_accounts.customer_name, ads_accounts.user_id')
