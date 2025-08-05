@@ -110,7 +110,10 @@ class AdsAccountSettingsModel extends Model
 
     public function updateSettings($customerId, $settings) 
     {
-        return $this->update($customerId, $settings);
+        $existing = $this->where('customer_id', $customerId)->first();
+         if ($existing) {
+            return $this->update($existing['id'], $settings);
+        }
     }
 
     public function getAccountsForOptimization()
