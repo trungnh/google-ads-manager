@@ -564,7 +564,7 @@ $(document).ready(function() {
                             <i class="fas fa-exclamation"></i>
                             ${excludeCampaignIds.includes(campaign.campaign_id.toString()) ? 'Auto' : 'Bỏ Auto'}
                         </button>
-                        <?php if (in_array(session()->get('role'), ['superadmin', 'admin'])): ?>
+                        <?php /* if (in_array(session()->get('role'), ['superadmin', 'admin'])): ?>
                         <a href="<?= base_url('campaign-details/campaign/') ?>${campaign.customer_id}/${campaign.campaign_id}" class="btn btn-sm btn-info m-1">
                             <i class="fas fa-eye"></i> Chi tiết
                         </a>
@@ -574,7 +574,7 @@ $(document).ready(function() {
                             <i class="fa fa-refresh"></i>
                             CFLC
                         </button>
-                        <?php endif; ?>
+                        <?php endif; */ ?>
                     </td>
                 </tr>
             `;
