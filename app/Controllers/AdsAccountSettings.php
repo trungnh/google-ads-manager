@@ -297,4 +297,26 @@ class AdsAccountSettings extends BaseController
             ]);
         }
     }
-}
+    
+    public function toggleExcludeCampaign($customerId, $campaignId)
+    {
+        try {
+            $settings = $this->adsAccountSettingsModel->getSettingsByCustomerId($customerId);
+            $excludeCampaignIds = explode(',', $settings['exclude_campaign_ids'] ?? '');
+            $action = 'exclude';
+            if (in_array($campaignId, $excludeCampaignIds)) {
+                $excludeCampaignIds = array_diff($excludeCampaignIds, [$campaignId]);
+                $action = 'exclude';
+            } else {
+                $excludeCampaignIds[] = $campaignId;
+                $action = 'include';
+            }
+            $settings['exclude_campaign_ids'] = trim(trim(implode(',', $excludeCampaignIds)), ',');
+            $this->adsAccountSettingsModel->updateSettings($customerId, $settings);
+            return $this->response->setJSON(['success' => true, 'message' => 'Cập nhật thành công', 'action' => $action]);
+        } catch (\Exception $e) {
+            log_message('error', 'Error in AdsAccountSettings::toggleExcludeCampaign: ' . $e->getMessage());
+            return $this->response->setJSON(['success' => false, 'message' => 'Lỗi khi toggle campaign exclude']);
+        }
+    }
+} 

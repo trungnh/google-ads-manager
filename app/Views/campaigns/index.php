@@ -239,6 +239,7 @@ $(document).ready(function() {
         column: 'cost',
         direction: 'desc'
     };
+    let excludeCampaignIds = accountSettings.exclude_campaign_ids.split(',');
 
     // Thêm hàm number_format
     function number_format(number, decimals, dec_point, thousands_sep) {
@@ -605,7 +606,15 @@ $(document).ready(function() {
                             <i class="fas fa-power-off"></i>
                             ${campaign.status === 'ENABLED' ? 'Tắt' : 'Bật'}
                         </button>
-                        <?php if (in_array(session()->get('role'), ['superadmin', 'admin'])): ?>
+                        <button class="btn btn-sm btn-exclude-campaign m-1 ${excludeCampaignIds.includes(campaign.campaign_id.toString()) ? 'btn-secondary' : 'btn-warning'}"
+                                data-customer-id="${campaign.customer_id}"
+                                data-campaign-id="${campaign.campaign_id}"
+                                title="Loại trừ chiến dịch, không tự động tắt"
+                                >
+                            <i class="fas fa-exclamation"></i>
+                            ${excludeCampaignIds.includes(campaign.campaign_id.toString()) ? 'Auto' : 'Bỏ Auto'}
+                        </button>
+                        <?php /* if (in_array(session()->get('role'), ['superadmin', 'admin'])): ?>
                         <a href="<?= base_url('campaign-details/campaign/') ?>${campaign.customer_id}/${campaign.campaign_id}" class="btn btn-sm btn-info m-1">
                             <i class="fas fa-eye"></i> Chi tiết
                         </a>
@@ -615,7 +624,7 @@ $(document).ready(function() {
                             <i class="fa fa-refresh"></i>
                             CFLC
                         </button>
-                        <?php endif; ?>
+                        <?php endif; */ ?>
                     </td>
                 </tr>
             `;
@@ -665,6 +674,7 @@ $(document).ready(function() {
         $('#campaignsBody').html(html);
         initializeToggleButtons();
         initializeCFLCButtons();
+        initializeExcludeButtons();
         initializeEditableTargets();
     }
 
@@ -787,6 +797,61 @@ $(document).ready(function() {
             complete: function() {
                 // Re-enable button
                 $(`.btn-cflc[data-campaign-id="${campaignId}"]`).prop('disabled', false);
+            }
+        });
+    }
+
+    function initializeExcludeButtons() {
+        $('.btn-exclude-campaign').off('click').on('click', function(e) {
+            e.preventDefault();
+            
+            const btn = $(this);
+            const customerId = currentCustomerId;
+            const campaignId = btn.data('campaign-id');
+            
+            // Validate
+            if (!customerId || !campaignId) {
+                showNotification('Lỗi: Thiếu thông tin cần thiết', 'error');
+                return;
+            }
+            
+            toggleExcludeCampaign(customerId, campaignId);
+        });
+    }
+
+    function toggleExcludeCampaign(customerId, campaignId) {
+        // Kiểm tra customerId
+        if (!customerId) {
+            showNotification('Lỗi: Không tìm thấy ID tài khoản', 'error');
+            return;
+        }
+
+        // Disable button while processing
+        $(`.btn-exclude-campaign[data-campaign-id="${campaignId}"]`).prop('disabled', true);
+
+        $.ajax({
+            url: `/adsaccounts/settings/toggleExcludeCampaign/${customerId}/${campaignId}`,
+            method: 'POST',
+            success: function(response) {
+                if (response.success) {
+                    showNotification(response.message);
+                    // Cập nhật UI
+                    const row = $(`#campaign-${campaignId}`);
+                    const excludeButton = row.find('.btn-exclude-campaign');
+                    excludeButton.removeClass('btn-warning btn-secondary')
+                    .addClass(response.action === 'include' ? 'btn-secondary' : 'btn-warning');
+                    excludeButton.html('<i class="fas fa-exclamation"></i> ' + (response.action === 'include' ? 'Auto' : 'Bỏ Auto'));
+                } else {
+                    showNotification(response.message, 'error');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error:', xhr.responseText);
+                showNotification('Có lỗi xảy ra khi cập nhật trạng thái chiến dịch', 'error');
+            },
+            complete: function() {
+                // Re-enable button
+                $(`.btn-exclude-campaign[data-campaign-id="${campaignId}"]`).prop('disabled', false);
             }
         });
     }

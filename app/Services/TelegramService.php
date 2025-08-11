@@ -76,7 +76,7 @@ class TelegramService
             //log_message('error', 'Using proxy for Telegram: ' . $this->proxySettings['ip'] . ':' . $this->proxySettings['port']);
         } else {
             // Không gửi mess nếu không có proxy
-            return true;
+            //return true;
         }
         
         $result = curl_exec($ch);
