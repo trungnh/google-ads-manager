@@ -85,13 +85,19 @@
                                     <th class="sortable" data-sort="budget">Ngân sách</th>
                                     <th class="" data-sort="status">Trạng thái</th>
                                     <th class="sortable" data-sort="cost">Chi tiêu</th>
-                                    <th class="sortable" data-sort="roas">ROAS tổng</th>
-                                    <th class="sortable bg-col-success" data-sort="roas_success">ROAS TC</th>
-                                    <th class="sortable" data-sort="cost_per_conversion">CPA tổng</th>
-                                    <th class="sortable bg-col-success" data-sort="cost_per_conversion_success">CPA TC</th>
-                                    <th class="sortable" data-sort="conversions">Đơn Tổng</th>
-                                    <th class="sortable" data-sort="conversions_pending">Đang Chốt</th>
-                                    <th class="sortable bg-col-success" data-sort="conversions_success">Thành Công</th>
+                                    <?php if($accountSettings['use_pancake'] == 1) :?>
+                                        <th class="sortable" data-sort="roas">ROAS tổng</th>
+                                        <th class="sortable bg-col-success" data-sort="roas_success">ROAS TC</th>
+                                        <th class="sortable" data-sort="cost_per_conversion">CPA tổng</th>
+                                        <th class="sortable bg-col-success" data-sort="cost_per_conversion_success">CPA TC</th>
+                                        <th class="sortable" data-sort="conversions">Đơn Tổng</th>
+                                        <th class="sortable" data-sort="conversions_pending">Đang Chốt</th>
+                                        <th class="sortable bg-col-success" data-sort="conversions_success">Thành Công</th>
+                                    <?php else :?>
+                                        <th class="sortable" data-sort="roas">ROAS</th>
+                                        <th class="sortable" data-sort="cost_per_conversion">CPA</th>
+                                        <th class="sortable" data-sort="conversions">Conv</th>
+                                    <?php endif;?>
                                     <th class="sortable" data-sort="ctr">CTR</th>
                                     <th class="sortable" data-sort="clicks">Clicks</th>
                                     <th class="sortable" data-sort="average_cpc">CPC</th>
@@ -548,29 +554,44 @@ $(document).ready(function() {
                     <td class="text-primary">
                         ${formatNumber(campaign.cost)}
                     </td>
-                    <td>
-                        <span class="fw-bold ${(campaign.real_roas_total > accountSettings.roas_threshold) ? 'text-success' : 'text-danger'}">
-                            ${campaign.real_roas_total > 0 ? formatNumberWithoutCurrency2(campaign.real_roas_total) : '-'}
-                        </span>
-                    </td>
-                    <td class="bg-col-success">
-                        <span class="fw-bold ${(campaign.real_roas_success > accountSettings.roas_threshold) ? 'text-success' : 'text-danger'}">
-                            ${campaign.real_roas_success > 0 ? formatNumberWithoutCurrency2(campaign.real_roas_success) : '-'}
-                        </span>
-                    </td>
-                    <td>
-                        <span class="${classCPATotalTextClr}">
-                            ${campaign.real_cpa_total > 0 ? formatNumber(campaign.real_cpa_total) : '-'}
-                        </span>
-                    </td>
-                    <td class="bg-col-success">
-                        <span class="${classCPASuccessTextClr}">
-                            ${campaign.real_cpa_success > 0 ? formatNumber(campaign.real_cpa_success) : '-'}
-                        </span>
-                    </td>
-                    <td class="text-primary">${(campaign.real_conversions_total > 0) ? formatNumberWithoutCurrency(campaign.real_conversions_total) + ' đơn' : '-'}</td>
-                    <td>${(campaign.real_conversions_pending > 0) ? formatNumberWithoutCurrency(campaign.real_conversions_pending) + ' đơn' : '-'}</td>
-                    <td class="text-success bg-col-success">${(campaign.real_conversions_success > 0) ? formatNumberWithoutCurrency(campaign.real_conversions_success) + ' đơn' : '-'}</td>
+                    <?php if($accountSettings['use_pancake'] == 1) :?>
+                        <td>
+                            <span class="fw-bold ${(campaign.real_roas_total > accountSettings.roas_threshold) ? 'text-success' : 'text-danger'}">
+                                ${campaign.real_roas_total > 0 ? formatNumberWithoutCurrency2(campaign.real_roas_total) : '-'}
+                            </span>
+                        </td>
+                        <td class="bg-col-success">
+                            <span class="fw-bold ${(campaign.real_roas_success > accountSettings.roas_threshold) ? 'text-success' : 'text-danger'}">
+                                ${campaign.real_roas_success > 0 ? formatNumberWithoutCurrency2(campaign.real_roas_success) : '-'}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="${classCPATotalTextClr}">
+                                ${campaign.real_cpa_total > 0 ? formatNumber(campaign.real_cpa_total) : '-'}
+                            </span>
+                        </td>
+                        <td class="bg-col-success">
+                            <span class="${classCPASuccessTextClr}">
+                                ${campaign.real_cpa_success > 0 ? formatNumber(campaign.real_cpa_success) : '-'}
+                            </span>
+                        </td>
+                        <td class="text-primary">${(campaign.real_conversions_total > 0) ? formatNumberWithoutCurrency(campaign.real_conversions_total) + ' đơn' : '-'}</td>
+                        <td>${(campaign.real_conversions_pending > 0) ? formatNumberWithoutCurrency(campaign.real_conversions_pending) + ' đơn' : '-'}</td>
+                        <td class="text-success bg-col-success">${(campaign.real_conversions_success > 0) ? formatNumberWithoutCurrency(campaign.real_conversions_success) + ' đơn' : '-'}</td>
+                    <?php else : ?>
+                        <td>
+                            <span class="fw-bold ${(tmpRoas > accountSettings.roas_threshold) ? 'text-success' : 'text-danger'}">
+                                ${tmpRoas > 0 ? formatNumberWithoutCurrency2(tmpRoas) : '-'}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="${(tmpRealCpa < accountSettings.cpa_threshold) ? 'text-primary' : 'text-danger'}">
+                                ${tmpRealCpa > 0 ? formatNumber(tmpRealCpa) : '-'}
+                            </span>
+                        </td>
+                        <td class="text-primary">${(campaign.real_conversions > 0) ? formatNumberWithoutCurrency(campaign.real_conversions) + ' đơn' : '-'}</td>
+                    <?php endif; ?>
+                    
                     <td>${formatPercent(campaign.ctr)}</td>
                     <td>${formatNumberWithoutCurrency(campaign.clicks)}</td>
                     <td>${formatNumber(campaign.average_cpc)}</td>
@@ -618,13 +639,13 @@ $(document).ready(function() {
                         <a href="<?= base_url('campaign-details/campaign/') ?>${campaign.customer_id}/${campaign.campaign_id}" class="btn btn-sm btn-info m-1">
                             <i class="fas fa-eye"></i> Chi tiết
                         </a>
+                        <?php endif; */ ?>
                         <button class="btn btn-primary btn-sm btn-cflc m-1"
                                 data-customer-id="${campaign.customer_id}"
                                 data-campaign-id="${campaign.campaign_id}"
                             <i class="fa fa-refresh"></i>
                             CFLC
                         </button>
-                        <?php endif; */ ?>
                     </td>
                 </tr>
             `;
@@ -637,29 +658,39 @@ $(document).ready(function() {
                 <td>${formatNumber(totals.budget)}</td>
                 <td>-</td>
                 <td class="text-primary">${formatNumber(totals.cost)}</td>
-                <td>
-                    <span class="${totalROAS > 2 ? 'text-success' : 'text-danger'}">
-                        ${formatNumberWithoutCurrency2(totalROAS)}
-                    </span>
-                </td>
-                <td class="bg-col-success">
-                    <span class="${totalROASSuccess > 2 ? 'text-success' : 'text-danger'}">
-                        ${formatNumberWithoutCurrency2(totalROASSuccess)}
-                    </span>
-                </td>
-                <td class="text-primary">
-                    <span class="${totalRealCPA < accountSettings.cpa_threshold ? 'text-success' : 'text-danger'}">
-                        ${formatNumber(totalRealCPA)}
-                    </span>
-                </td>
-                <td class="text-primary bg-col-success">
-                    <span class="${totalRealCPASuccess < accountSettings.cpa_threshold ? 'text-success' : 'text-danger'}">
-                        ${formatNumber(totalRealCPASuccess)}
-                    </span>
-                </td>
-                <td class="text-primary">${(totals.real_conversions_total > 0) ? formatNumberWithoutCurrency(totals.real_conversions_total) + ' đơn' : '-'}</td>
-                <td class="text-primary">${(totals.real_conversions_pending > 0) ? formatNumberWithoutCurrency(totals.real_conversions_pending) + ' đơn' : '-'}</td>
-                <td class="text-success bg-col-success">${(totals.real_conversions_success > 0) ? formatNumberWithoutCurrency(totals.real_conversions_success) + ' đơn' : '-'}</td>
+                <?php if($accountSettings['use_pancake'] == 1) :?>
+                    <td>
+                        <span class="${totalROAS > 2 ? 'text-success' : 'text-danger'}">
+                            ${formatNumberWithoutCurrency2(totalROAS)}
+                        </span>
+                    </td>
+                    <td class="bg-col-success">
+                        <span class="${totalROASSuccess > 2 ? 'text-success' : 'text-danger'}">
+                            ${formatNumberWithoutCurrency2(totalROASSuccess)}
+                        </span>
+                    </td>
+                    <td class="text-primary">
+                        <span class="${totalRealCPA < accountSettings.cpa_threshold ? 'text-success' : 'text-danger'}">
+                            ${formatNumber(totalRealCPA)}
+                        </span>
+                    </td>
+                    <td class="text-primary bg-col-success">
+                        <span class="${totalRealCPASuccess < accountSettings.cpa_threshold ? 'text-success' : 'text-danger'}">
+                            ${formatNumber(totalRealCPASuccess)}
+                        </span>
+                    </td>
+                    <td class="text-primary">${(totals.real_conversions_total > 0) ? formatNumberWithoutCurrency(totals.real_conversions_total) + ' đơn' : '-'}</td>
+                    <td class="text-primary">${(totals.real_conversions_pending > 0) ? formatNumberWithoutCurrency(totals.real_conversions_pending) + ' đơn' : '-'}</td>
+                    <td class="text-success bg-col-success">${(totals.real_conversions_success > 0) ? formatNumberWithoutCurrency(totals.real_conversions_success) + ' đơn' : '-'}</td>
+                <?php else: ?>
+                    <td>
+                        <span class="${totalROAS > 2 ? 'text-success' : 'text-danger'}">
+                            ${formatNumberWithoutCurrency2(totalROAS)}
+                        </span>
+                    </td>
+                    <td class="text-primary">${formatNumber(totalRealCPA)}</td>
+                    <td class="text-primary">${(totals.real_conversions > 0) ? formatNumberWithoutCurrency(totals.real_conversions) + ' đơn' : '-'}</td>
+                <?php endif; ?>
                 <td>-</td>
                 <td>${formatNumberWithoutCurrency(totals.clicks)}</td>
                 <td>${formatNumber(totalAverageCPC)}</td>
