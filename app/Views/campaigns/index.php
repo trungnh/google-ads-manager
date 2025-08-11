@@ -585,7 +585,7 @@ $(document).ready(function() {
                             </span>
                         </td>
                         <td>
-                            <span class="${(tmpRealCpa < accountSettings.cpa_threshold) ? 'text-primary' : 'text-danger'}">
+                             <span class="${classCPATotalTextClr}">
                                 ${tmpRealCpa > 0 ? formatNumber(tmpRealCpa) : '-'}
                             </span>
                         </td>
