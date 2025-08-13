@@ -109,6 +109,13 @@ class ExecuteCampaignSchedules extends BaseCommand
                         'last_executed_date' => date('Y-m-d')
                     ]);
 
+                    $this->adsAccountSettingsModel->updateSettings($schedule['customer_id'], [
+                        'exclude_campaign_ids' => null
+                    ]);
+                    CLI::write("Exclude campaign IDs reset for account: {$schedule['customer_id']}", 'green');
+
+
+
                 } catch (Exception $e) {
                     CLI::error("Error processing schedule {$schedule['id']}: " . $e->getMessage());
                 }
