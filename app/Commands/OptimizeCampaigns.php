@@ -200,10 +200,10 @@ class OptimizeCampaigns extends BaseCommand
             $excludeCampaignIds = explode(',', $account['exclude_campaign_ids']);
             $excludeCampaignIds = array_map('trim', $excludeCampaignIds);
             foreach ($campaigns as $campaign) {
-                if (in_array($campaign['campaign_id'], $excludeCampaignIds)) {
-                    CLI::write("Bỏ qua chiến dịch {$campaign['campaign_id']} vì đã được exclude", 'yellow');
-                    continue;
-                }
+                // if (in_array($campaign['campaign_id'], $excludeCampaignIds)) {
+                //     CLI::write("Bỏ qua chiến dịch {$campaign['campaign_id']} vì đã được exclude", 'yellow');
+                //     continue;
+                // }
 
                 if (!isset($campaign['campaign_id']) || !isset($campaign['cost']) || !isset($campaign['budget'])) {
                     CLI::write("Bỏ qua chiến dịch không hợp lệ: thiếu thông tin bắt buộc", 'yellow');
@@ -343,7 +343,12 @@ class OptimizeCampaigns extends BaseCommand
                     $action = "Chi tiêu (".number_format($campaign['cost'], 0, '', '.').") vượt 50% ngân sách (".number_format($campaign['budget'], 0, '', '.').")";
                 }
                 if ($shouldPause || $shouldIncreaseBudget) {
-                    $this->executeCampaignAction($account, $campaign, $shouldPause, $shouldIncreaseBudget, $action, $accessToken, $mccId, $telegramChatIds);
+                    if (in_array($campaign['campaign_id'], $excludeCampaignIds)) {
+                        $message = "CHÚ Ý: Chiến dịch <b>{$account['customer_name']}</b> - {$campaign['name']}[{$campaign['campaign_id']}]: {$action}";
+                        $this->sendTelegramMessage("💢 " . $message, $telegramChatIds);
+                    } else {
+                        $this->executeCampaignAction($account, $campaign, $shouldPause, $shouldIncreaseBudget, $action, $accessToken, $mccId, $telegramChatIds);
+                    }
                 }
 
                 if(isset($account['auto_on_off']) && $account['auto_on_off'] == 1){
