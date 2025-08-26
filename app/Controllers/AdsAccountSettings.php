@@ -171,6 +171,11 @@ class AdsAccountSettings extends BaseController
                 'gsheet_value_col' => $this->request->getPost('gsheet_value_col'),
                 'gsheet_campaign_col' => $this->request->getPost('gsheet_campaign_col'),
                 'gsheet2' => $this->request->getPost('gsheet2'),
+                'use_ggsheet_api' => ($this->request->getPost('use_ggsheet_api') === 'true' || $this->request->getPost('use_ggsheet_api') === true || $this->request->getPost('use_ggsheet_api') === '1' || $this->request->getPost('use_ggsheet_api') === 1) ? 1 : 0,
+                'ggsheet_id' => $this->request->getPost('ggsheet_id'),
+                'ggsheet_name' => $this->request->getPost('ggsheet_name'),
+                'ggsheet2_id' => $this->request->getPost('ggsheet2_id'),
+                'ggsheet2_name' => $this->request->getPost('ggsheet2_name'),
                 'cost_threshold' => $this->request->getPost('cost_threshold'),
                 'auto_on_off' => $this->request->getPost('auto_on_off'),
                 'use_roas_threshold' => $this->request->getPost('use_roas_threshold'),
@@ -229,4 +234,4 @@ class AdsAccountSettings extends BaseController
             return $this->response->setJSON(['success' => false, 'message' => 'Lỗi khi toggle campaign exclude']);
         }
     }
-} 
+}

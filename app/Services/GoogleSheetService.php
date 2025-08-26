@@ -3,7 +3,224 @@
 namespace App\Services;
 
 class GoogleSheetService
-{
+{   
+    /**
+     * Lấy dữ liệu chuyển đổi từ Google Sheet
+     * 
+     * @param array $settings Cài đặt tài khoản
+     * @param string $startDate Ngày bắt đầu
+     * @param string $endDate Ngày kết thúc
+     * @return array Dữ liệu chuyển đổi
+     */
+    public function getConversionsFromSheet($settings, $startDate, $endDate)
+    {   
+        $result = [];
+        
+        // Kiểm tra xem có sử dụng Google Sheet API không
+        if (isset($settings['use_ggsheet_api']) && $settings['use_ggsheet_api'] == 1) {
+            // Xử lý Google Sheet 1
+            if (!empty($settings['ggsheet_id']) && !empty($settings['ggsheet_name'])) {
+                // Sử dụng Google Sheet API cho sheet 1
+                $result = $this->getConversionsFromGoogleSheetApi(
+                    $settings['ggsheet_id'], 
+                    $settings['ggsheet_name'], 
+                    $startDate, 
+                    $endDate, 
+                    $settings
+                );
+            }
+            
+            // Xử lý Google Sheet 2 nếu có
+            if (!empty($settings['ggsheet2_id']) && !empty($settings['ggsheet2_name'])) {
+                // Sử dụng Google Sheet API cho sheet 2
+                $sheet2Data = $this->getConversionsFromGoogleSheetApi(
+                    $settings['ggsheet2_id'], 
+                    $settings['ggsheet2_name'], 
+                    $startDate, 
+                    $endDate, 
+                    $settings
+                );
+                
+                // Gộp dữ liệu từ sheet 2 vào kết quả
+                foreach ($sheet2Data as $campaignId => $data) {
+                    if (isset($result[$campaignId])) {
+                        // Nếu campaign đã tồn tại, cộng dồn giá trị
+                        $result[$campaignId]['conversions'] += $data['conversions'];
+                        $result[$campaignId]['conversion_value'] += $data['conversion_value'];
+                    } else {
+                        // Nếu campaign chưa tồn tại, thêm mới
+                        $result[$campaignId] = $data;
+                    }
+                }
+            }
+            
+            return $result;
+        } else {
+            // Sử dụng phương thức cũ (CSV)
+            $result = $this->getConversionsFromCsv(
+                $settings['gsheet1'], 
+                $startDate, 
+                $endDate, 
+                $settings
+            );
+            
+            // Xử lý gsheet2 nếu có
+            if (!empty($settings['gsheet2'])) {
+                $sheet2Data = $this->getConversionsFromCsv(
+                    $settings['gsheet2'], 
+                    $startDate, 
+                    $endDate, 
+                    $settings
+                );
+                
+                // Gộp dữ liệu từ sheet 2 vào kết quả
+                foreach ($sheet2Data as $campaignId => $data) {
+                    if (isset($result[$campaignId])) {
+                        // Nếu campaign đã tồn tại, cộng dồn giá trị
+                        $result[$campaignId]['conversions'] += $data['conversions'];
+                        $result[$campaignId]['conversion_value'] += $data['conversion_value'];
+                    } else {
+                        // Nếu campaign chưa tồn tại, thêm mới
+                        $result[$campaignId] = $data;
+                    }
+                }
+            }
+            
+            return $result;
+        }
+    }
+    
+    /**
+     * Lấy dữ liệu chuyển đổi từ Google Sheet API
+     * 
+     * @param string $spreadsheetId ID của Google Sheet
+     * @param string $sheetName Tên của Sheet
+     * @param string $startDate Ngày bắt đầu
+     * @param string $endDate Ngày kết thúc
+     * @param array $settings Cài đặt tài khoản
+     * @return array Dữ liệu chuyển đổi
+     */
+    public function getConversionsFromGoogleSheetApi($spreadsheetId, $sheetName, $startDate, $endDate, $settings)
+    {   
+        try {
+            // Lấy dữ liệu từ Google Sheet API
+            $data = $this->fetchSheetData($spreadsheetId, $sheetName);
+            if (empty($data)) {
+                throw new \Exception("Không thể đọc dữ liệu từ Google Sheet API");
+            }
+            
+            // Xử lý dữ liệu
+            return $this->processSheetData($data, $startDate, $endDate, $settings);
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Error reading Google Sheet API: ' . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
+     * Lấy dữ liệu từ Google Sheet API
+     * 
+     * @param string $spreadsheetId ID của Google Sheet
+     * @param string $sheetName Tên của Sheet
+     * @return array Dữ liệu từ Google Sheet
+     */
+    private function fetchSheetData($spreadsheetId, $sheetName)
+    {   
+        try {
+            // Lấy API key từ file .env
+            $apiKey = getenv('GOOGLE_SHEET_API_KEY') ?: 'YOUR_API_KEY';
+            
+            // Tạo URL API
+            $url = "https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheetId}/values/{$sheetName}?key={$apiKey}";
+            
+            // Gọi API
+            $response = file_get_contents($url);
+            if ($response === false) {
+                throw new \Exception("Không thể kết nối đến Google Sheet API");
+            }
+            
+            // Giải mã JSON
+            $data = json_decode($response, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new \Exception("Lỗi giải mã JSON: " . json_last_error_msg());
+            }
+            
+            // Kiểm tra và trả về dữ liệu
+            if (isset($data['values'])) {
+                return $data['values'];
+            } else {
+                throw new \Exception("Không tìm thấy dữ liệu trong Google Sheet");
+            }
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Error fetching Google Sheet data: ' . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
+     * Xử lý dữ liệu từ Google Sheet
+     * 
+     * @param array $rows Dữ liệu từ Google Sheet
+     * @param string $startDate Ngày bắt đầu
+     * @param string $endDate Ngày kết thúc
+     * @param array $settings Cài đặt tài khoản
+     * @return array Dữ liệu chuyển đổi
+     */
+    private function processSheetData($rows, $startDate, $endDate, $settings)
+    {   
+        // Lấy index của các cột từ settings
+        $dateColIndex = ord(strtoupper($settings['gsheet_date_col'])) - ord('A');
+        $phoneColIndex = ord(strtoupper($settings['gsheet_phone_col'])) - ord('A');
+        $valueColIndex = ord(strtoupper($settings['gsheet_value_col'])) - ord('A');
+        $campaignColIndex = ord(strtoupper($settings['gsheet_campaign_col'])) - ord('A');
+
+        // Validate column indexes
+        $maxIndex = max($dateColIndex, $phoneColIndex, $valueColIndex, $campaignColIndex);
+        
+        $campaignData = [];
+        foreach ($rows as $row) {
+            if (count($row) <= $maxIndex) continue; // Bỏ qua các dòng không đủ cột
+
+            // Lấy thời gian từ cột được cấu hình và chuyển đổi thành ngày
+            $conversionTime = strtotime($row[$dateColIndex]);
+            $conversionDate = date('Y-m-d', $conversionTime);
+
+            // Chỉ xử lý dữ liệu trong khoảng thời gian được chọn
+            if ($conversionDate >= $startDate && $conversionDate <= $endDate) {
+                $phone = trim($row[$phoneColIndex]); // Số điện thoại
+                $value = floatval(str_replace(['₫', ',', ' '], '', $row[$valueColIndex])); // Giá trị
+                $campaignId = trim($row[$campaignColIndex]); // Campaign ID
+
+                if (!empty($campaignId)) {
+                    if (!isset($campaignData[$campaignId])) {
+                        $campaignData[$campaignId] = [
+                            'unique_phones' => [],
+                            'total_value' => 0
+                        ];
+                    }
+
+                    // Nếu số điện thoại chưa xuất hiện trong chiến dịch này
+                    if (!isset($campaignData[$campaignId]['unique_phones'][$phone])) {
+                        $campaignData[$campaignId]['unique_phones'][$phone] = true;
+                        $campaignData[$campaignId]['total_value'] += $value;
+                    }
+                }
+            }
+        }
+        
+        // Chuyển đổi dữ liệu thành định dạng cuối cùng
+        $result = [];
+        foreach ($campaignData as $campaignId => $data) {
+            $result[$campaignId] = [
+                'conversions' => count($data['unique_phones']),
+                'conversion_value' => $data['total_value']
+            ];
+        }
+
+        return $result;
+    }
     public function getConversionsFromCsv($csvUrl, $startDate, $endDate, $settings)
     {
         try {
@@ -81,13 +298,15 @@ class GoogleSheetService
             return [];
         }
 
-        if (empty($gsheetUrl)) {
+        // Kiểm tra nếu không có URL Google Sheet và không sử dụng API
+        if (empty($gsheetUrl) && !(isset($settings['use_ggsheet_api']) && $settings['use_ggsheet_api'] == 1 
+            && !empty($settings['ggsheet_id']) && !empty($settings['ggsheet_name']))) {
             return $campaigns;
         }
 
         try {
-            // Lấy dữ liệu chuyển đổi từ Google Sheet
-            $sheetData = $this->getConversionsFromCsv($gsheetUrl, $startDate, $endDate, $settings);
+            // Lấy dữ liệu chuyển đổi từ Google Sheet (sử dụng API hoặc CSV tùy theo cài đặt)
+            $sheetData = $this->getConversionsFromSheet($settings, $startDate, $endDate);
             
             // Tạo mảng mới để lưu kết quả
             $processedCampaigns = [];
@@ -136,4 +355,4 @@ class GoogleSheetService
             return $campaigns; // Trả về dữ liệu gốc nếu có lỗi
         }
     }
-} 
+}
