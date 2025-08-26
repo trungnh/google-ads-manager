@@ -64,10 +64,10 @@ class ExecuteCampaignSchedules extends BaseCommand
 
             foreach ($schedules as $schedule) {
                 // Reset exclude campaign IDs
-                // $this->adsAccountSettingsModel->updateSettings($schedule['customer_id'], [
-                //     'exclude_campaign_ids' => null
-                // ]);
-                // CLI::write("Exclude campaign IDs reset for account: {$schedule['customer_id']}", 'green');
+                $this->adsAccountSettingsModel->updateSettings($schedule['customer_id'], [
+                    'exclude_campaign_ids' => ''
+                ]);
+                CLI::write("Exclude campaign IDs reset for account: {$schedule['customer_id']}", 'green');
                 try {
                     CLI::write("Processing schedule ID: {$schedule['id']}", 'green');
 
