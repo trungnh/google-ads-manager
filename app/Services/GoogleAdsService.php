@@ -6,13 +6,13 @@ use Exception;
 
 class GoogleAdsService
 {
-    protected $apiVersion = 'v19';
+    protected $apiVersion = 'v22';
     protected $baseUrl = 'https://googleads.googleapis.com/';
-    
+
     public function getAccessibleAccounts($accessToken, $mccId = null)
     {
         $accounts = [];
-        
+
         try {
             if ($mccId) {
                 // Nếu có MCC ID, lấy danh sách tài khoản từ MCC
@@ -21,7 +21,7 @@ class GoogleAdsService
                 // Nếu không có MCC ID, lấy danh sách tất cả tài khoản có thể truy cập
                 $accounts = $this->getAccountsFromOwnAccess($accessToken);
             }
-            
+
             return $accounts;
         } catch (Exception $e) {
             log_message('error', 'Lỗi khi lấy danh sách tài khoản: ' . $e->getMessage());
@@ -32,11 +32,11 @@ class GoogleAdsService
     protected function makeAccountListRequest($url, $method, $accessToken, $data = null, $loginCustomerId = null)
     {
         $ch = curl_init();
-        
+
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
-        
+
         $headers = [
             'Authorization: Bearer ' . $accessToken,
             'Content-Type: application/json',
@@ -50,17 +50,17 @@ class GoogleAdsService
             $headers[] = 'login-customer-id: ' . $formattedLoginCustomerId;
             log_message('debug', '[Account List] Using login-customer-id: ' . $formattedLoginCustomerId);
         }
-        
+
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        
+
         if ($data && $method !== 'GET') {
             curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
             log_message('debug', '[Account List] Request body: ' . $data);
         }
-        
+
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        
+
         if (curl_errno($ch)) {
             $error = curl_error($ch);
             curl_close($ch);
@@ -69,18 +69,18 @@ class GoogleAdsService
         }
 
         curl_close($ch);
-        
+
         $decodedResponse = json_decode($response, true);
-        
+
         if ($httpCode >= 400) {
-            $errorMessage = isset($decodedResponse['error']['message']) 
-                ? $decodedResponse['error']['message'] 
+            $errorMessage = isset($decodedResponse['error']['message'])
+                ? $decodedResponse['error']['message']
                 : 'API request failed with status ' . $httpCode . '. Response: ' . $response;
-            
+
             log_message('error', '[Account List] Google Ads API Error: ' . $errorMessage);
             throw new Exception('API request failed with status ' . $httpCode . '. Response: ' . $response);
         }
-        
+
         return $decodedResponse;
     }
 
@@ -89,7 +89,7 @@ class GoogleAdsService
         try {
             $formattedCustomerId = $this->formatCustomerId($customerId);
             $url = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedCustomerId . '/googleAds:searchStream';
-            
+
             $query = "
                 SELECT
                     customer.id,
@@ -99,13 +99,13 @@ class GoogleAdsService
                     customer.status
                 FROM customer
                 WHERE customer.id = " . $formattedCustomerId;
-            
+
             $data = [
                 'query' => $query
             ];
-            
+
             $response = $this->makeAccountListRequest($url, 'POST', $accessToken, json_encode($data), $mccId);
-            
+
             if (isset($response[0]['results'][0]['customer'])) {
                 $customer = $response[0]['results'][0]['customer'];
                 return [
@@ -116,7 +116,7 @@ class GoogleAdsService
                     'status' => $customer['status'] ?? 'UNKNOWN'
                 ];
             }
-            
+
             return null;
         } catch (Exception $e) {
             log_message('error', 'Error getting account details for customer ' . $customerId . ': ' . $e->getMessage());
@@ -128,9 +128,9 @@ class GoogleAdsService
     {
         // Đảm bảo MCC ID có định dạng xxx-xxx-xxxx thành xxxxxxxxxx
         $formattedMccId = $this->formatCustomerId($mccId);
-        
+
         $url = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedMccId . '/googleAds:searchStream';
-        
+
         $query = "
             SELECT
                 customer_client.id,
@@ -143,21 +143,21 @@ class GoogleAdsService
             WHERE
                 customer_client.status = 'ENABLED'
         ";
-        
+
         $data = [
             'query' => $query
         ];
-        
+
         $response = $this->makeCurlRequest($url, 'POST', $accessToken, json_encode($data));
         $accounts = [];
-        
+
         // Xử lý phản hồi từ API
         if (is_array($response)) {
             foreach ($response as $batch) {
                 if (isset($batch['results'])) {
                     foreach ($batch['results'] as $result) {
                         $customerClient = $result['customerClient'] ?? null;
-                        
+
                         if ($customerClient) {
                             if ($mccId == $customerClient['id']) {
                                 continue;
@@ -174,23 +174,23 @@ class GoogleAdsService
                 }
             }
         }
-        
+
         return $accounts;
     }
-    
+
     protected function getAccountsFromOwnAccess($accessToken)
     {
         $url = $this->baseUrl . $this->apiVersion . '/customers:listAccessibleCustomers';
-        
+
         try {
             $response = $this->makeCurlRequest($url, 'GET', $accessToken);
-            
+
             $accounts = [];
-            
+
             if (isset($response['resourceNames']) && !empty($response['resourceNames'])) {
                 foreach ($response['resourceNames'] as $resourceName) {
                     $customerId = str_replace('customers/', '', $resourceName);
-                    
+
                     // Lấy thông tin chi tiết về customer bằng cách sử dụng searchStream
                     $customerDetails = $this->getCustomerDetailsFromSearch($accessToken, $customerId);
                     if ($customerDetails) {
@@ -198,19 +198,19 @@ class GoogleAdsService
                     }
                 }
             }
-            
+
             return $accounts;
         } catch (Exception $e) {
             log_message('error', 'Lỗi khi lấy danh sách tài khoản: ' . $e->getMessage());
             throw $e;
         }
     }
-    
+
     protected function getCustomerDetailsFromSearch($accessToken, $customerId)
     {
         $formattedCustomerId = $this->formatCustomerId($customerId);
         $url = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedCustomerId . '/googleAds:searchStream';
-        
+
         $query = "
             SELECT
                 customer.id,
@@ -222,14 +222,14 @@ class GoogleAdsService
                 customer
             WHERE
                 customer.id = " . $formattedCustomerId;
-        
+
         $data = [
             'query' => $query
         ];
-        
+
         try {
             $response = $this->makeCurlRequest($url, 'POST', $accessToken, json_encode($data));
-            
+
             if (is_array($response)) {
                 foreach ($response as $batch) {
                     if (isset($batch['results'])) {
@@ -251,27 +251,27 @@ class GoogleAdsService
         } catch (Exception $e) {
             log_message('error', 'Lỗi khi lấy thông tin chi tiết customer ' . $customerId . ': ' . $e->getMessage());
         }
-        
+
         return null;
     }
-    
+
     // Thêm hàm này để định dạng Customer ID
-    protected function formatCustomerId($customerId) 
+    protected function formatCustomerId($customerId)
     {
         // Loại bỏ tất cả các ký tự không phải số
         $customerId = preg_replace('/[^0-9]/', '', $customerId);
-        
+
         return $customerId;
     }
 
     protected function makeCurlRequest($url, $method, $accessToken, $data = null, $loginCustomerId = null)
     {
         $ch = curl_init();
-        
+
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
-        
+
         $headers = [
             'Authorization: Bearer ' . $accessToken,
             'Content-Type: application/json',
@@ -284,28 +284,28 @@ class GoogleAdsService
             // Đảm bảo ID được định dạng đúng (không có dấu gạch ngang)
             $formattedLoginCustomerId = $this->formatCustomerId($loginCustomerId);
             $headers[] = 'login-customer-id: ' . $formattedLoginCustomerId;
-            
+
             // Log để debug
             log_message('debug', '[CURL] Using login-customer-id header: ' . $formattedLoginCustomerId);
         } else {
             log_message('debug', '[CURL] No login-customer-id provided');
         }
-        
+
         // Log tất cả các header để debug
         log_message('debug', '[CURL] Headers: ' . json_encode($headers));
-        
+
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        
+
         if ($data && $method !== 'GET') {
             curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
             log_message('debug', '[CURL] Request body: ' . $data);
         }
-        
+
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        
+
         log_message('debug', '[CURL] HTTP Status Code: ' . $httpCode);
-        
+
         if (curl_errno($ch)) {
             $error = curl_error($ch);
             curl_close($ch);
@@ -314,28 +314,28 @@ class GoogleAdsService
         }
 
         curl_close($ch);
-        
+
         $decodedResponse = json_decode($response, true);
-        
+
         // Kiểm tra và xử lý lỗi
         if ($httpCode >= 400) {
-            $errorMessage = isset($decodedResponse['error']['message']) 
-                ? $decodedResponse['error']['message'] 
+            $errorMessage = isset($decodedResponse['error']['message'])
+                ? $decodedResponse['error']['message']
                 : 'API request failed with status ' . $httpCode . '. Response: ' . $response;
-            
+
             log_message('error', '[CURL] Google Ads API Error: ' . $errorMessage);
             throw new Exception('API request failed with status ' . $httpCode . '. Response: ' . $response);
         }
-        
+
         return $decodedResponse;
     }
 
     public function getCampaigns($customerId, $accessToken, $mccId = null, $showPaused = false, $startDate = null, $endDate = null)
     {
         $formattedCustomerId = $this->formatCustomerId($customerId);
-        
+
         $url = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedCustomerId . '/googleAds:searchStream';
-        
+
         $query = "
             SELECT
                 campaign.id,
@@ -357,10 +357,10 @@ class GoogleAdsService
                 metrics.clicks,
                 campaign_budget.amount_micros
             FROM campaign
-            WHERE campaign.status != 'REMOVED'" . 
+            WHERE campaign.status != 'REMOVED'" .
             (!$showPaused ? " AND campaign.status = 'ENABLED'" : "") .
             ($startDate && $endDate ? " AND segments.date BETWEEN '$startDate' AND '$endDate'" : "");
-        
+
         $data = [
             'query' => $query
         ];
@@ -380,27 +380,27 @@ class GoogleAdsService
                             $campaign = $result['campaign'];
                             $metrics = $result['metrics'] ?? [];
                             $budget = $result['campaignBudget'] ?? null;
-                            
+
                             // Xác định target CPA và ROAS dựa trên chiến lược đặt giá thầu
                             $targetCpa = null;
                             $targetRoas = null;
-                            
+
                             $biddingStrategyType = $campaign['biddingStrategyType'] ?? '';
-                            
+
                             // Lấy CPA mục tiêu từ các loại chiến lược đặt giá thầu khác nhau
                             if (isset($campaign['maximizeConversions']['targetCpaMicros']) && $campaign['maximizeConversions']['targetCpaMicros'] > 0) {
                                 $targetCpa = $this->microToStandard($campaign['maximizeConversions']['targetCpaMicros']);
                             } elseif (isset($campaign['targetCpa']['targetCpaMicros']) && $campaign['targetCpa']['targetCpaMicros'] > 0) {
                                 $targetCpa = $this->microToStandard($campaign['targetCpa']['targetCpaMicros']);
                             }
-                            
+
                             // Lấy ROAS mục tiêu từ các loại chiến lược đặt giá thầu khác nhau
                             if (isset($campaign['maximizeConversionValue']['targetRoas']) && $campaign['maximizeConversionValue']['targetRoas'] > 0) {
                                 $targetRoas = $campaign['maximizeConversionValue']['targetRoas'];
                             } elseif (isset($campaign['targetRoas']['targetRoas']) && $campaign['targetRoas']['targetRoas'] > 0) {
                                 $targetRoas = $campaign['targetRoas']['targetRoas'];
                             }
-                            
+
                             // Log để debug
                             log_message('debug', 'Campaign ID: ' . $campaign['id'] . ' - Bidding Strategy: ' . $biddingStrategyType);
                             if ($targetCpa !== null) {
@@ -409,7 +409,7 @@ class GoogleAdsService
                             if ($targetRoas !== null) {
                                 log_message('debug', 'Target ROAS: ' . $targetRoas);
                             }
-                            
+
                             $campaigns[] = [
                                 'campaign_id' => $campaign['id'],
                                 'name' => $campaign['name'],
@@ -418,8 +418,8 @@ class GoogleAdsService
                                 'cost' => isset($metrics['costMicros']) ? $this->microToStandard($metrics['costMicros']) : 0,
                                 'conversions' => $metrics['conversions'] ?? 0,
                                 'conversion_value' => $metrics['conversionsValue'] ?? 0,
-                                'cost_per_conversion' => isset($metrics['costMicros'], $metrics['conversions']) && $metrics['conversions'] > 0 
-                                    ? $this->microToStandard($metrics['costMicros']) / $metrics['conversions'] 
+                                'cost_per_conversion' => isset($metrics['costMicros'], $metrics['conversions']) && $metrics['conversions'] > 0
+                                    ? $this->microToStandard($metrics['costMicros']) / $metrics['conversions']
                                     : 0,
                                 'conversion_rate' => $metrics['conversionsFromInteractionsRate'] ?? 0,
                                 'bidding_strategy' => $biddingStrategyType,
@@ -463,10 +463,10 @@ class GoogleAdsService
 
             // Format customer ID
             $formattedCustomerId = $this->formatCustomerId($customerId);
-            
+
             // Prepare the request URL
             $url = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedCustomerId . '/googleAds:mutate';
-            
+
             // Prepare the request data
             $data = [
                 'mutateOperations' => [
@@ -511,9 +511,9 @@ class GoogleAdsService
     {
         $formattedCustomerId = $this->formatCustomerId($customerId);
         $today = date('Y-m-d');
-        
+
         $url = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedCustomerId . '/googleAds:searchStream';
-        
+
         $query = "
             SELECT
                 campaign.id,
@@ -526,15 +526,15 @@ class GoogleAdsService
             FROM campaign
             WHERE campaign.status = 'ENABLED'
             AND segments.date = '$today'";
-        
+
         $data = [
             'query' => $query
         ];
-        
+
         try {
             $response = $this->makeCurlRequest($url, 'POST', $accessToken, json_encode($data), $mccId);
             $campaigns = [];
-            
+
             if (is_array($response)) {
                 foreach ($response as $batch) {
                     if (isset($batch['results'])) {
@@ -543,11 +543,11 @@ class GoogleAdsService
                             if (!isset($result['campaign'])) {
                                 continue;
                             }
-                            
+
                             $campaign = $result['campaign'];
                             $metrics = $result['metrics'] ?? [];
                             $budget = $result['campaignBudget'] ?? null;
-                            
+
                             // Chỉ thêm vào mảng kết quả nếu có đủ thông tin cần thiết
                             if (isset($campaign['id'])) {
                                 $campaigns[] = [
@@ -557,8 +557,8 @@ class GoogleAdsService
                                     'budget' => $budget ? $this->microToStandard($budget['amountMicros']) : 0,
                                     'cost' => isset($metrics['costMicros']) ? $this->microToStandard($metrics['costMicros']) : 0,
                                     'conversions' => $metrics['conversions'] ?? 0,
-                                    'cost_per_conversion' => isset($metrics['costMicros'], $metrics['conversions']) && $metrics['conversions'] > 0 
-                                        ? $this->microToStandard($metrics['costMicros']) / $metrics['conversions'] 
+                                    'cost_per_conversion' => isset($metrics['costMicros'], $metrics['conversions']) && $metrics['conversions'] > 0
+                                        ? $this->microToStandard($metrics['costMicros']) / $metrics['conversions']
                                         : 0,
                                     'customer_id' => $customerId
                                 ];
@@ -567,7 +567,7 @@ class GoogleAdsService
                     }
                 }
             }
-            
+
             return $campaigns;
         } catch (Exception $e) {
             log_message('error', 'Error in GoogleAdsService::getTodayCampaignMetrics: ' . $e->getMessage());
@@ -578,11 +578,11 @@ class GoogleAdsService
     protected function makeCampaignBudgetRequest($url, $method, $accessToken, $data, $loginCustomerId = null)
     {
         $ch = curl_init();
-        
+
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
-        
+
         $headers = [
             'Authorization: Bearer ' . $accessToken,
             'Content-Type: application/json',
@@ -595,17 +595,17 @@ class GoogleAdsService
             $headers[] = 'login-customer-id: ' . $formattedLoginCustomerId;
             log_message('debug', '[Budget Request] Using login-customer-id: ' . $formattedLoginCustomerId);
         }
-        
+
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        
+
         if ($data && $method !== 'GET') {
             curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
             log_message('debug', '[Budget Request] Request body: ' . $data);
         }
-        
+
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        
+
         if (curl_errno($ch)) {
             $error = curl_error($ch);
             curl_close($ch);
@@ -614,18 +614,18 @@ class GoogleAdsService
         }
 
         curl_close($ch);
-        
+
         $decodedResponse = json_decode($response, true);
-        
+
         if ($httpCode >= 400) {
-            $errorMessage = isset($decodedResponse['error']['message']) 
-                ? $decodedResponse['error']['message'] 
+            $errorMessage = isset($decodedResponse['error']['message'])
+                ? $decodedResponse['error']['message']
                 : 'API request failed with status ' . $httpCode . '. Response: ' . $response;
-            
+
             log_message('error', '[Budget Request] Google Ads API Error: ' . $errorMessage);
             throw new Exception('API request failed with status ' . $httpCode . '. Response: ' . $response);
         }
-        
+
         return $decodedResponse;
     }
 
@@ -645,12 +645,12 @@ class GoogleAdsService
 
             // Format customer ID
             $formattedCustomerId = $this->formatCustomerId($customerId);
-            
+
             log_message('debug', "updateCampaignBudget: Starting budget update for campaign {$campaignId} with customerId {$formattedCustomerId}");
-            
+
             // Get campaign and its current budget resource name
             $searchUrl = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedCustomerId . '/googleAds:searchStream';
-            
+
             $query = "
                 SELECT
                     campaign.id,
@@ -661,38 +661,38 @@ class GoogleAdsService
                     campaign_budget.type
                 FROM campaign
                 WHERE campaign.id = " . $campaignId;
-            
+
             $data = [
                 'query' => $query
             ];
-            
+
             log_message('debug', "updateCampaignBudget: Searching for budget info with query: " . json_encode($data));
-            
+
             $response = $this->makeCampaignBudgetRequest($searchUrl, 'POST', $accessToken, json_encode($data), $mccId);
-            
+
             if (!isset($response[0]['results'][0]['campaign']['resourceName'])) {
                 log_message('error', "updateCampaignBudget: Campaign not found. Response: " . json_encode($response));
                 throw new Exception('Campaign not found');
             }
-            
+
             if (!isset($response[0]['results'][0]['campaignBudget']['resourceName'])) {
                 log_message('error', "updateCampaignBudget: Campaign budget not found. Response: " . json_encode($response));
                 throw new Exception('Campaign budget not found');
             }
-            
+
             $campaignResourceName = $response[0]['results'][0]['campaign']['resourceName'];
             $budgetResourceName = $response[0]['results'][0]['campaignBudget']['resourceName'];
             $budgetType = $response[0]['results'][0]['campaignBudget']['type'] ?? 'STANDARD';
-            
+
             log_message('debug', "updateCampaignBudget: Found campaign resource: {$campaignResourceName}");
             log_message('debug', "updateCampaignBudget: Found budget resource: {$budgetResourceName}");
-            
+
             // Convert budget to micros (1 unit = 1,000,000 micros)
-            $budgetMicros = (int)($newBudget * 1000000);
-            
+            $budgetMicros = (int) ($newBudget * 1000000);
+
             // Update the existing budget directly
             $updateBudgetUrl = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedCustomerId . '/googleAds:mutate';
-            
+
             $updateBudgetData = [
                 'mutateOperations' => [
                     [
@@ -708,18 +708,18 @@ class GoogleAdsService
                     ]
                 ]
             ];
-            
+
             log_message('debug', "updateCampaignBudget: Updating existing budget with data: " . json_encode($updateBudgetData));
-            
+
             $updateResponse = $this->makeCampaignBudgetRequest($updateBudgetUrl, 'POST', $accessToken, json_encode($updateBudgetData), $mccId);
-            
+
             log_message('debug', "updateCampaignBudget: Budget update response: " . json_encode($updateResponse));
-            
+
             if (!isset($updateResponse['mutateOperationResponses'][0]['campaignBudgetResult'])) {
                 log_message('error', "updateCampaignBudget: Failed to update budget. Response: " . json_encode($updateResponse));
                 throw new Exception('Failed to update campaign budget');
             }
-            
+
             log_message('debug', "updateCampaignBudget: Budget update successful");
             return true;
         } catch (Exception $e) {
@@ -775,11 +775,11 @@ class GoogleAdsService
     public function updateCampaignTarget($accessToken, $customerId, $campaignId, $type, $value, $mccId = null)
     {
         $formattedCustomerId = $this->formatCustomerId($customerId);
-        
+
         try {
             // First, get campaign details to determine bidding strategy
             $url = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedCustomerId . '/googleAds:searchStream';
-            
+
             $query = "
                 SELECT
                     campaign.id,
@@ -791,36 +791,36 @@ class GoogleAdsService
                     campaign.target_roas.target_roas
                 FROM campaign
                 WHERE campaign.id = " . $campaignId;
-            
+
             $data = [
                 'query' => $query
             ];
-            
+
             $response = $this->makeCurlRequest($url, 'POST', $accessToken, json_encode($data), $mccId);
-            
+
             if (!isset($response[0]['results'][0]['campaign'])) {
                 throw new \Exception('Không tìm thấy chiến dịch');
             }
-            
+
             $campaign = $response[0]['results'][0]['campaign'];
             $resourceName = $campaign['resourceName'];
             $biddingStrategyType = $campaign['biddingStrategyType'] ?? '';
-            
+
             log_message('debug', 'Campaign bidding strategy: ' . $biddingStrategyType);
-            
+
             // Determine the update structure based on bidding strategy and target type
             $updateUrl = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedCustomerId . '/campaigns:mutate';
             $campaignObject = [
                 'resourceName' => $resourceName
             ];
-            
+
             $updateMask = '';
             $valueMicros = null;
-            
+
             if ($type === 'cpa') {
                 // Convert to micro amount (multiply by 1,000,000)
-                $valueMicros = (float)$value * 1000000;
-                
+                $valueMicros = (float) $value * 1000000;
+
                 // Check bidding strategy to determine where to set CPA
                 if ($biddingStrategyType === 'MAXIMIZE_CONVERSIONS') {
                     $campaignObject['maximizeConversions'] = [
@@ -837,8 +837,8 @@ class GoogleAdsService
                 }
             } elseif ($type === 'roas') {
                 // ROAS is a ratio value, not in micro amount
-                $roas = (float)$value;
-                
+                $roas = (float) $value;
+
                 // Check bidding strategy to determine where to set ROAS
                 if ($biddingStrategyType === 'MAXIMIZE_CONVERSION_VALUE') {
                     $campaignObject['maximizeConversionValue'] = [
@@ -856,7 +856,7 @@ class GoogleAdsService
             } else {
                 throw new \Exception('Loại mục tiêu không hợp lệ. Chỉ hỗ trợ "cpa" hoặc "roas"');
             }
-            
+
             // Create update request
             $updateData = [
                 'operations' => [
@@ -867,26 +867,26 @@ class GoogleAdsService
                 ],
                 'validateOnly' => false
             ];
-            
+
             // Log request data for debugging
             log_message('debug', 'Campaign target update URL: ' . $updateUrl);
             log_message('debug', 'Campaign target update request: ' . json_encode($updateData));
-            
+
             $updateResponse = $this->makeCurlRequest($updateUrl, 'POST', $accessToken, json_encode($updateData), $mccId);
-            
+
             // Log response for debugging
             log_message('debug', 'Campaign target update response: ' . json_encode($updateResponse));
-            
+
             // Check response
             if (isset($updateResponse['error'])) {
                 throw new \Exception('API Error: ' . json_encode($updateResponse['error']));
             }
-            
+
             // Check mutate results
             if (!isset($updateResponse['results']) || empty($updateResponse['results'])) {
                 throw new \Exception('Không nhận được kết quả từ API khi cập nhật mục tiêu');
             }
-            
+
             return true;
         } catch (\Exception $e) {
             log_message('error', 'Lỗi khi cập nhật mục tiêu chiến dịch: ' . $e->getMessage());
