@@ -135,11 +135,80 @@
                         <h5 class="card-title mb-4 mt-4">Cài đặt nguồn dữ liệu chuyển đổi thực tế</h5>
                         
                         <div class="mb-3">
+<<<<<<< HEAD
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" id="use_pancake" name="use_pancake" 
                                     <?= isset($settings['use_pancake']) && $settings['use_pancake'] ? 'checked' : '' ?>>
                                 <label class="form-check-label" for="use_pancake">Sử dụng Pancake POS</label>
                             </div>
+=======
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="use_ggsheet_api" name="use_ggsheet_api" 
+                                    <?= isset($settings['use_ggsheet_api']) && $settings['use_ggsheet_api'] ? 'checked' : '' ?>>
+                                <label class="form-check-label" for="use_ggsheet_api">Sử dụng Google Sheet API</label>
+                            </div>
+                            <small class="form-text text-muted mb-3">
+                                <i>Khi bật, hệ thống sẽ sử dụng Google Sheet API thay vì phương thức CSV</i>
+                            </small>
+                        </div>
+
+                        <div id="ggsheet_api_fields" class="mb-3" style="display: <?= isset($settings['use_ggsheet_api']) && $settings['use_ggsheet_api'] ? 'block' : 'none' ?>">
+                            <h6 class="mb-3">Google Sheet 1</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="ggsheet_id" class="form-label">Google Sheet ID <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="ggsheet_id" name="ggsheet_id" 
+                                            value="<?= isset($settings['ggsheet_id']) ? $settings['ggsheet_id'] : '' ?>"
+                                            placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms">
+                                        <div class="form-text">ID của Google Sheet (lấy từ URL)</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="ggsheet_name" class="form-label">Tên Sheet <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="ggsheet_name" name="ggsheet_name" 
+                                            value="<?= isset($settings['ggsheet_name']) ? $settings['ggsheet_name'] : '' ?>"
+                                            placeholder="Sheet1">
+                                        <div class="form-text">Tên của sheet trong Google Sheet</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <h6 class="mb-3 mt-4">Google Sheet 2</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="ggsheet2_id" class="form-label">Google Sheet 2 ID</label>
+                                        <input type="text" class="form-control" id="ggsheet2_id" name="ggsheet2_id" 
+                                            value="<?= isset($settings['ggsheet2_id']) ? $settings['ggsheet2_id'] : '' ?>"
+                                            placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms">
+                                        <div class="form-text">ID của Google Sheet 2 (lấy từ URL)</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="ggsheet2_name" class="form-label">Tên Sheet 2</label>
+                                        <input type="text" class="form-control" id="ggsheet2_name" name="ggsheet2_name" 
+                                            value="<?= isset($settings['ggsheet2_name']) ? $settings['ggsheet2_name'] : '' ?>"
+                                            placeholder="Sheet1">
+                                        <div class="form-text">Tên của sheet trong Google Sheet 2</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="csv_fields">
+                            <div class="mb-3">
+                                <label for="gsheet1" class="form-label">URL Google Sheet (CSV)</label>
+                                <input type="text" class="form-control" id="gsheet1" name="gsheet1" 
+                                    value="<?= isset($settings['gsheet1']) ? $settings['gsheet1'] : '' ?>"
+                                    placeholder="https://docs.google.com/spreadsheets/d/.../export?format=csv">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="gsheet2" class="form-label">URL Google Sheet 2 (CSV)</label>
+>>>>>>> develop
                             <small class="form-text text-muted">
                                 <i>Khi bật, hệ thống sẽ lấy dữ liệu chuyển đổi từ Pancake POS thay vì Google Sheet</i>
                             </small>
@@ -310,6 +379,8 @@
         </div>
     </div>
 </div>
+
+<script src="/assets/js/ggsheet-api-toggle.js"></script>
 
 <script>
 $(document).ready(function() {
@@ -509,6 +580,7 @@ $(document).ready(function() {
         
         console.log('Form submitted');
         
+<<<<<<< HEAD
         // Cập nhật giá trị pancake_exclude_tags trước khi thu thập dữ liệu form
         if ($('#use_pancake').is(':checked')) {
             // Cập nhật lại giá trị từ các checkbox đã chọn
@@ -631,6 +703,31 @@ $(document).ready(function() {
             'pancake_product_id': $('#pancake_product_id').val(),
             'pancake_use_usd': $('#pancake_use_usd').is(':checked') ? 'true' : 'false',
             'pancake_usd_rate': $('#pancake_usd_rate').val() || '27000'
+=======
+        const formData = {
+            auto_optimize: $('#auto_optimize').is(':checked') ? 'true' : 'false',
+            cost_threshold: $('#cost_threshold').val(),
+            cpa_threshold: $('#cpa_threshold').val(),
+            roas_threshold: $('#roas_threshold').val(),
+            increase_budget: $('#increase_budget').val(),
+            gsheet1: $('#gsheet1').val(),
+            gsheet_date_col: $('#gsheet_date_col').val().toUpperCase(),
+            gsheet_phone_col: $('#gsheet_phone_col').val().toUpperCase(),
+            gsheet_value_col: $('#gsheet_value_col').val().toUpperCase(),
+            gsheet_campaign_col: $('#gsheet_campaign_col').val().toUpperCase(),
+            gsheet2: $('#gsheet2').val(),
+            use_ggsheet_api: $('#use_ggsheet_api').is(':checked') ? 'true' : 'false',
+            ggsheet_id: $('#ggsheet_id').val(),
+            ggsheet_name: $('#ggsheet_name').val(),
+            ggsheet2_id: $('#ggsheet2_id').val(),
+            ggsheet2_name: $('#ggsheet2_name').val(),
+            order: $('#order').val(),
+            auto_on_off: $('#auto_on_off').is(':checked') ? 'true' : 'false',
+            use_roas_threshold: $('#use_roas_threshold').is(':checked')? 'true' : 'false',
+            extended_cpa_threshold: $('#extended_cpa_threshold').val(),
+            default_paused_campaigns: $('#default_paused_campaigns').is(':checked') ? 'true' : 'false',
+            exclude_campaign_ids: $('#exclude_campaign_ids').val(),
+>>>>>>> develop
         };
         
         // Thêm trường pancake_exclude_tags nếu use_pancake được chọn

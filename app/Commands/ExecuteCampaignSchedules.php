@@ -10,6 +10,7 @@ use App\Models\GoogleTokenModel;
 use App\Models\AdsAccountModel;
 use App\Models\UserSettingsModel;
 use App\Services\GoogleAdsService;
+use App\Models\AdsAccountSettingsModel;
 use Exception;
 
 class ExecuteCampaignSchedules extends BaseCommand
@@ -24,6 +25,7 @@ class ExecuteCampaignSchedules extends BaseCommand
     protected $adsAccountModel;
     protected $userSettingsModel;
     protected $googleAdsService;
+    protected $adsAccountSettingsModel;
 
     public function __construct()
     {
@@ -33,6 +35,7 @@ class ExecuteCampaignSchedules extends BaseCommand
         $this->adsAccountModel = new AdsAccountModel();
         $this->userSettingsModel = new UserSettingsModel();
         $this->googleAdsService = new GoogleAdsService();
+        $this->adsAccountSettingsModel = new AdsAccountSettingsModel();
     }
 
     public function run(array $params)
@@ -43,7 +46,7 @@ class ExecuteCampaignSchedules extends BaseCommand
             $minutes = (int) $currentTime->format('i');
             $roundedMinutes = round($minutes / 30) * 30;
             $currentTime->setTime($currentTime->format('H'), $roundedMinutes);
-            
+
             CLI::write('Checking schedules for time: ' . $currentTime->format('H:i'), 'yellow');
 
             // Get active schedules for current time that haven't been executed today
@@ -60,6 +63,11 @@ class ExecuteCampaignSchedules extends BaseCommand
             }
 
             foreach ($schedules as $schedule) {
+                // Reset exclude campaign IDs
+                $this->adsAccountSettingsModel->updateSettings($schedule['customer_id'], [
+                    'exclude_campaign_ids' => ''
+                ]);
+                CLI::write("Exclude campaign IDs reset for account: {$schedule['customer_id']}", 'green');
                 try {
                     CLI::write("Processing schedule ID: {$schedule['id']}", 'green');
 
@@ -90,7 +98,7 @@ class ExecuteCampaignSchedules extends BaseCommand
                     foreach ($scheduledCampaigns as $campaign) {
                         try {
                             $status = $schedule['action_type'] === 'enable' ? 'ENABLED' : 'PAUSED';
-                            
+
                             $this->googleAdsService->toggleCampaignStatus(
                                 $tokenData['access_token'],
                                 $schedule['customer_id'],
@@ -108,13 +116,6 @@ class ExecuteCampaignSchedules extends BaseCommand
                     $this->campaignScheduleModel->update($schedule['id'], [
                         'last_executed_date' => date('Y-m-d')
                     ]);
-
-                    $this->adsAccountSettingsModel->updateSettings($schedule['customer_id'], [
-                        'exclude_campaign_ids' => null
-                    ]);
-                    CLI::write("Exclude campaign IDs reset for account: {$schedule['customer_id']}", 'green');
-
-
 
                 } catch (Exception $e) {
                     CLI::error("Error processing schedule {$schedule['id']}: " . $e->getMessage());

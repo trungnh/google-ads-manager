@@ -38,9 +38,9 @@ class AdsAccountSettings extends BaseController
 
             // Lấy danh sách tất cả tài khoản của user để hiển thị trong dropdown
             $accounts = $this->adsAccountModel
-            ->where('user_id', $userId)
-            ->orderBy('order', 'ASC')
-            ->findAll();
+                ->where('user_id', $userId)
+                ->orderBy('order', 'ASC')
+                ->findAll();
 
             // Lấy settings hiện tại
             $settings = $this->adsAccountSettingsModel->getSettingsByCustomerId($customerId);
@@ -54,7 +54,7 @@ class AdsAccountSettings extends BaseController
             //         }
             //     }
             // }
-            
+
             // Tạo settings mặc định nếu chưa có
             if (!$settings) {
                 $settings = [
@@ -108,7 +108,7 @@ class AdsAccountSettings extends BaseController
             return redirect()->to('/login');
         }
 
-        $userId = session()->get('id'); 
+        $userId = session()->get('id');
 
         try {
             // Lấy danh sách tất cả tài khoản của user để hiển thị trong dropdown
@@ -124,7 +124,7 @@ class AdsAccountSettings extends BaseController
 
             // Lấy settings hiện tại
             $settings = $this->adsAccountSettingsModel->getSettingsByCustomerId($customerId);
-            
+
             // Tạo settings mặc định nếu chưa có
             if (!$settings) {
                 return redirect()->to('/adsaccounts/admin_view')->with('error', 'Chưa có setting cho tài khoản này');
@@ -166,16 +166,16 @@ class AdsAccountSettings extends BaseController
             log_message('info', 'POST data: ' . json_encode($this->request->getPost()));
             log_message('info', 'Request method: ' . $this->request->getMethod());
             log_message('info', 'Content-Type: ' . $this->request->getHeaderLine('Content-Type'));
-            
+
             $order = $this->request->getPost('order') ?? 0;
             $userId = session()->get('id');
-            
+
             // Kiểm tra tài khoản
             $account = $this->adsAccountModel
                 ->where('user_id', $userId)
                 ->where('customer_id', $customerId)
                 ->first();
-                
+
             if (!$account) {
                 log_message('error', 'Account not found for customer ID: ' . $customerId . ' and user ID: ' . $userId);
                 return $this->response->setJSON([
@@ -183,7 +183,7 @@ class AdsAccountSettings extends BaseController
                     'message' => 'Không tìm thấy tài khoản'
                 ]);
             }
-            
+
             log_message('info', 'Account found: ' . json_encode($account));
 
             // Debug log for auto_optimize value
@@ -202,6 +202,11 @@ class AdsAccountSettings extends BaseController
                 'gsheet_value_col' => $this->request->getPost('gsheet_value_col'),
                 'gsheet_campaign_col' => $this->request->getPost('gsheet_campaign_col'),
                 'gsheet2' => $this->request->getPost('gsheet2'),
+                'use_ggsheet_api' => ($this->request->getPost('use_ggsheet_api') === 'true' || $this->request->getPost('use_ggsheet_api') === true || $this->request->getPost('use_ggsheet_api') === '1' || $this->request->getPost('use_ggsheet_api') === 1) ? 1 : 0,
+                'ggsheet_id' => $this->request->getPost('ggsheet_id'),
+                'ggsheet_name' => $this->request->getPost('ggsheet_name'),
+                'ggsheet2_id' => $this->request->getPost('ggsheet2_id'),
+                'ggsheet2_name' => $this->request->getPost('ggsheet2_name'),
                 'cost_threshold' => $this->request->getPost('cost_threshold'),
                 'auto_on_off' => $this->request->getPost('auto_on_off'),
                 'use_roas_threshold' => $this->request->getPost('use_roas_threshold'),
@@ -222,7 +227,7 @@ class AdsAccountSettings extends BaseController
             $result = $this->adsAccountSettingsModel->saveSettings($customerId, $settings);
 
             $this->adsAccountModel->update($account['id'], ['order' => $order]);
-            
+
             if ($result) {
                 log_message('info', 'Settings saved successfully for account: ' . $customerId);
                 return $this->response->setJSON([
@@ -266,10 +271,10 @@ class AdsAccountSettings extends BaseController
 
             // Khởi tạo service Pancake
             $pancakeService = new \App\Services\PancakeService();
-            
+
             // Lấy danh sách thẻ từ Pancake POS
             $tags = $pancakeService->getTags($shopId, $apiKey);
-            
+
             if ($tags === false) {
                 return $this->response->setJSON([
                     'success' => false,
@@ -283,7 +288,7 @@ class AdsAccountSettings extends BaseController
                     $rsTags[] = $tag;
                 }
             }
-            
+
             return $this->response->setJSON([
                 'success' => true,
                 'tags' => $rsTags
@@ -297,7 +302,7 @@ class AdsAccountSettings extends BaseController
             ]);
         }
     }
-    
+
     public function toggleExcludeCampaign($customerId, $campaignId)
     {
         try {
@@ -319,4 +324,4 @@ class AdsAccountSettings extends BaseController
             return $this->response->setJSON(['success' => false, 'message' => 'Lỗi khi toggle campaign exclude']);
         }
     }
-} 
+}

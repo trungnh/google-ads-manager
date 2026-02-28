@@ -640,12 +640,20 @@ $(document).ready(function() {
                             <i class="fas fa-eye"></i> Chi tiết
                         </a>
                         <?php endif; */ ?>
+<<<<<<< HEAD
+=======
+                        <?php if (in_array(session()->get('role'), ['superadmin', 'admin'])): ?>
+>>>>>>> develop
                         <button class="btn btn-primary btn-sm btn-cflc m-1"
                                 data-customer-id="${campaign.customer_id}"
                                 data-campaign-id="${campaign.campaign_id}"
                             <i class="fa fa-refresh"></i>
                             CFLC
                         </button>
+<<<<<<< HEAD
+=======
+                        <?php endif; ?>
+>>>>>>> develop
                     </td>
                 </tr>
             `;
