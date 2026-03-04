@@ -55,12 +55,12 @@ $routes->get('ads-accounts/create', 'AdsAccounts::create');
 $routes->post('ads-accounts/store', 'AdsAccounts::store');
 
 // Protected routes (with auth filter)
-$routes->group('', ['filter' => 'auth'], function($routes) {
+$routes->group('', ['filter' => 'auth'], function ($routes) {
     // Dashboard route
     $routes->get('dashboard', 'Dashboard::index');
-    
+
     // Các route cho role user, admin, superadmin
-    
+
     // Profile routes
     $routes->get('profile', 'UserProfile::index');
     $routes->post('profile/update', 'UserProfile::update');
@@ -68,19 +68,20 @@ $routes->group('', ['filter' => 'auth'], function($routes) {
     // Settings routes
     $routes->get('settings', 'Settings::index');
     $routes->post('settings/update', 'Settings::update');
-    
+
     // Sync Ads routes
     $routes->get('syncads', 'SyncAds::index');
     $routes->post('syncads/syncaccounts', 'SyncAds::syncAccounts');
-    
+
     // Ads Accounts routes
     $routes->get('adsaccounts', 'AdsAccounts::index');
-    
+
     // Campaign routes
-    $routes->get('campaigns', 'Campaigns::index'); 
+    $routes->get('campaigns', 'Campaigns::index');
     $routes->get('campaigns/index/(:segment)', 'Campaigns::index/$1');
     $routes->get('campaigns/(:segment)', 'Campaigns::index/$1');
     $routes->get('campaigns/load/(:segment)', 'Campaigns::loadCampaigns/$1');
+    $routes->get('campaigns/chart/(:segment)/(:segment)', 'Campaigns::getChartData/$1/$2');
     $routes->post('campaigns/toggleStatus/(:segment)/(:segment)', 'Campaigns::toggleStatus/$1/$2');
     $routes->post('campaigns/updateTarget/(:segment)/(:segment)', 'Campaigns::updateTarget/$1/$2');
     $routes->post('campaigns/updateBudget/(:segment)/(:segment)', 'Campaigns::updateBudget/$1/$2');
@@ -105,7 +106,7 @@ $routes->group('', ['filter' => 'auth'], function($routes) {
     $routes->get('campaignschedules/(:segment)/delete/(:num)', 'CampaignSchedules::delete/$1/$2', ['filter' => 'auth']);
 
     // Route chỉ dành cho role admin và superadmin
-    $routes->group('', ['filter' => 'role:admin,superadmin'], function($routes) {
+    $routes->group('', ['filter' => 'role:admin,superadmin'], function ($routes) {
         $routes->post('campaigns/updateCFLC/(:segment)/(:segment)', 'Campaigns::updateCFLC/$1/$2');
 
         // Campaign Details routes
@@ -116,7 +117,7 @@ $routes->group('', ['filter' => 'auth'], function($routes) {
     });
 
     // Route chỉ dành cho role superadmin - quản lý người dùng
-    $routes->group('', ['filter' => 'role:superadmin'], function($routes) {
+    $routes->group('', ['filter' => 'role:superadmin'], function ($routes) {
         $routes->get('users', 'Users::index');
         $routes->get('users/create', 'Users::create');
         $routes->post('users/store', 'Users::store');

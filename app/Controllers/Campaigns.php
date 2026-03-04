@@ -8,6 +8,8 @@ use App\Models\UserSettingsModel;
 use App\Models\CampaignsDataModel;
 use App\Services\GoogleAdsService;
 use App\Models\AdsAccountSettingsModel;
+use App\Models\CampaignChart5mModel;
+use App\Models\CampaignChart30mModel;
 use App\Services\GoogleSheetService;
 use Exception;
 use DateTime;
@@ -21,6 +23,8 @@ class Campaigns extends BaseController
     protected $campaignsDataModel;
     protected $adsAccountSettingsModel;
     protected $googleSheetService;
+    protected $campaignChart5mModel;
+    protected $campaignChart30mModel;
 
     public function __construct()
     {
@@ -31,6 +35,8 @@ class Campaigns extends BaseController
         $this->campaignsDataModel = new CampaignsDataModel();
         $this->adsAccountSettingsModel = new AdsAccountSettingsModel();
         $this->googleSheetService = new GoogleSheetService();
+        $this->campaignChart5mModel = new CampaignChart5mModel();
+        $this->campaignChart30mModel = new CampaignChart30mModel();
     }
 
     public function index($customerId)
@@ -91,9 +97,9 @@ class Campaigns extends BaseController
                 }
 
                 $campaigns = $this->googleAdsService->getCampaigns(
-                    $customerId, 
-                    $tokenData['access_token'], 
-                    $mccId, 
+                    $customerId,
+                    $tokenData['access_token'],
+                    $mccId,
                     $showPaused,
                     $today,
                     $today
@@ -111,7 +117,7 @@ class Campaigns extends BaseController
                 $this->campaignsDataModel->saveCampaignsData($customerId, $campaigns);
             }
 
-            $returnCampaigns = []; 
+            $returnCampaigns = [];
             foreach ($campaigns as $campaign) {
                 if ($showPausedAndCost) {
                     $returnCampaigns[] = $campaign;
@@ -147,7 +153,7 @@ class Campaigns extends BaseController
             return redirect()->to('/login');
         }
 
-        $loggedId = session()->get('id'); 
+        $loggedId = session()->get('id');
 
         try {
             // 2. Kiểm tra tài khoản hiện tại
@@ -189,9 +195,9 @@ class Campaigns extends BaseController
                 }
 
                 $campaigns = $this->googleAdsService->getCampaigns(
-                    $customerId, 
-                    $tokenData['access_token'], 
-                    $mccId, 
+                    $customerId,
+                    $tokenData['access_token'],
+                    $mccId,
                     $showPaused,
                     $today,
                     $today
@@ -209,7 +215,7 @@ class Campaigns extends BaseController
                 $this->campaignsDataModel->saveCampaignsData($customerId, $campaigns);
             }
 
-            $returnCampaigns = []; 
+            $returnCampaigns = [];
             foreach ($campaigns as $campaign) {
                 if ($showPausedAndCost) {
                     $returnCampaigns[] = $campaign;
@@ -253,18 +259,18 @@ class Campaigns extends BaseController
             $startDate = $this->request->getGet('startDate');
             $endDate = $this->request->getGet('endDate');
             $forceUpdate = $this->request->getGet('forceUpdate') === 'true';
-            
+
             // Convert date format from dd/mm/yyyy to yyyy-mm-dd
             $startDateObj = DateTime::createFromFormat('d/m/Y', $startDate);
             $endDateObj = DateTime::createFromFormat('d/m/Y', $endDate);
-            
+
             if (!$startDateObj || !$endDateObj) {
                 return $this->response->setJSON([
                     'success' => false,
                     'message' => 'Định dạng ngày không hợp lệ'
                 ]);
             }
-            
+
             $startDate = $startDateObj->format('Y-m-d');
             $endDate = $endDateObj->format('Y-m-d');
 
@@ -309,7 +315,7 @@ class Campaigns extends BaseController
                             }
                         }
                     }
-                    
+
                     if (!empty($returnCampaigns)) {
                         return $this->response->setJSON([
                             'success' => true,
@@ -320,12 +326,12 @@ class Campaigns extends BaseController
                     }
                 }
             }
-            
+
             // Lấy danh sách chiến dịch từ API
             $campaigns = $this->googleAdsService->getCampaigns(
-                $customerId, 
-                $tokenData['access_token'], 
-                $mccId, 
+                $customerId,
+                $tokenData['access_token'],
+                $mccId,
                 $showPaused,
                 $startDate,
                 $endDate
@@ -365,7 +371,7 @@ class Campaigns extends BaseController
             } else {
                 $lastUpdateTime = null;
             }
-            
+
             foreach ($campaigns as $campaign) {
                 if ($showPausedAndCost) {
                     $returnCampaigns[] = $campaign;
@@ -408,18 +414,18 @@ class Campaigns extends BaseController
             $startDate = $this->request->getGet('startDate');
             $endDate = $this->request->getGet('endDate');
             $forceUpdate = $this->request->getGet('forceUpdate') === 'true';
-            
+
             // Convert date format from dd/mm/yyyy to yyyy-mm-dd
             $startDateObj = DateTime::createFromFormat('d/m/Y', $startDate);
             $endDateObj = DateTime::createFromFormat('d/m/Y', $endDate);
-            
+
             if (!$startDateObj || !$endDateObj) {
                 return $this->response->setJSON([
                     'success' => false,
                     'message' => 'Định dạng ngày không hợp lệ'
                 ]);
             }
-            
+
             $startDate = $startDateObj->format('Y-m-d');
             $endDate = $endDateObj->format('Y-m-d');
 
@@ -463,7 +469,7 @@ class Campaigns extends BaseController
                             }
                         }
                     }
-                    
+
                     if (!empty($returnCampaigns)) {
                         return $this->response->setJSON([
                             'success' => true,
@@ -474,12 +480,12 @@ class Campaigns extends BaseController
                     }
                 }
             }
-            
+
             // Lấy danh sách chiến dịch từ API
             $campaigns = $this->googleAdsService->getCampaigns(
-                $customerId, 
-                $tokenData['access_token'], 
-                $mccId, 
+                $customerId,
+                $tokenData['access_token'],
+                $mccId,
                 $showPaused,
                 $startDate,
                 $endDate
@@ -519,7 +525,7 @@ class Campaigns extends BaseController
             } else {
                 $lastUpdateTime = null;
             }
-            
+
             foreach ($campaigns as $campaign) {
                 if ($showPausedAndCost) {
                     $returnCampaigns[] = $campaign;
@@ -565,13 +571,13 @@ class Campaigns extends BaseController
 
             $userId = session()->get('id');
             $status = $this->request->getPost('status');
-            
+
             // Validate status
             if (!in_array($status, ['ENABLED', 'PAUSED'])) {
                 log_message('error', 'Invalid status in toggleStatus: ' . $status);
                 return $this->response->setJSON(['success' => false, 'message' => 'Trạng thái không hợp lệ']);
             }
-            
+
             // Lấy access token
             $tokenData = $this->googleTokenModel->getValidToken($userId);
             if (empty($tokenData) || empty($tokenData['access_token'])) {
@@ -597,11 +603,11 @@ class Campaigns extends BaseController
             if ($result === true) {
                 $message = $status === 'ENABLED' ? 'Đã bật chiến dịch thành công' : 'Đã tắt chiến dịch thành công';
                 $this->campaignsDataModel->saveCampaignStatus($customerId, $campaignId, $status);
-                
+
                 log_message('info', 'Successfully toggled campaign status: ' . $message);
-                
+
                 return $this->response->setJSON([
-                    'success' => true, 
+                    'success' => true,
                     'message' => $message,
                     'newStatus' => $status
                 ]);
@@ -625,16 +631,16 @@ class Campaigns extends BaseController
             $userId = session()->get('id');
             $type = $this->request->getPost('type'); // 'cpa' or 'roas'
             $value = $this->request->getPost('value');
-            
+
             // Validate input
             if (!in_array($type, ['cpa', 'roas'])) {
                 return $this->response->setJSON(['success' => false, 'message' => 'Loại mục tiêu không hợp lệ']);
             }
-            
+
             if (!is_numeric($value) || $value <= 0) {
                 return $this->response->setJSON(['success' => false, 'message' => 'Giá trị mục tiêu không hợp lệ']);
             }
-            
+
             // Get access token
             $tokenData = $this->googleTokenModel->getValidToken($userId);
             if (empty($tokenData) || empty($tokenData['access_token'])) {
@@ -667,10 +673,10 @@ class Campaigns extends BaseController
                     }
                     $this->campaignsDataModel->saveCampaignsData($customerId, [$campaign]);
                 }
-                
+
                 $message = $type === 'cpa' ? 'Đã cập nhật CPA mục tiêu thành công' : 'Đã cập nhật ROAS mục tiêu thành công';
                 return $this->response->setJSON([
-                    'success' => true, 
+                    'success' => true,
                     'message' => $message,
                     'newValue' => $value
                 ]);
@@ -692,11 +698,11 @@ class Campaigns extends BaseController
         try {
             $userId = session()->get('id');
             $newBudget = $this->request->getPost('budget');
-            
+
             if (!$newBudget) {
                 return $this->response->setJSON(['success' => false, 'message' => 'Thiếu tham số cần thiết']);
             }
-            
+
             // Lấy access token từ database
             $tokenData = $this->googleTokenModel->getValidToken($userId);
             if (empty($tokenData) || empty($tokenData['access_token'])) {
@@ -715,7 +721,7 @@ class Campaigns extends BaseController
                 $newBudget,
                 $mccId
             );
-            
+
             // Cập nhật dữ liệu trong database
             $campaigns = $this->campaignsDataModel->getCampaignsByID($customerId, $campaignId);
             if (!empty($campaigns)) {
@@ -723,7 +729,7 @@ class Campaigns extends BaseController
                 $campaign['budget'] = $newBudget;
                 $this->campaignsDataModel->saveCampaignsData($customerId, [$campaign]);
             }
-            
+
             return $this->response->setJSON([
                 'success' => true,
                 'message' => 'Cập nhật ngân sách thành công',
@@ -741,7 +747,7 @@ class Campaigns extends BaseController
     public function updateCFLC($customerId, $campaignId)
     {
         if (!session()->get('isLoggedIn')) {
-            return $this->response->setJSON(['success' => false,'message' => 'Unauthorized']);
+            return $this->response->setJSON(['success' => false, 'message' => 'Unauthorized']);
         }
 
         try {
@@ -752,10 +758,43 @@ class Campaigns extends BaseController
             ]);
 
         } catch (\Exception $e) {
-            log_message('error', 'Lỗi khi cập nhật CFLC: '. $e->getMessage());
+            log_message('error', 'Lỗi khi cập nhật CFLC: ' . $e->getMessage());
             return $this->response->setJSON([
-               'success' => false,
-               'message' => 'Lỗi khi cập nhật CFLC: '. $e->getMessage()
+                'success' => false,
+                'message' => 'Lỗi khi cập nhật CFLC: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    public function getChartData($customerId, $campaignId)
+    {
+        if (!session()->get('isLoggedIn')) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Unauthorized']);
+        }
+
+        try {
+            $interval = $this->request->getGet('interval') ?? 5; // 5 hoặc 30
+            $date = $this->request->getGet('date') ?? date('Y-m-d');
+
+            $startTime = $date . ' 00:00:00';
+            $endTime = $date . ' 23:59:59';
+
+            if ($interval == 30) {
+                $data = $this->campaignChart30mModel->getChartData($campaignId, $startTime, $endTime);
+            } else {
+                $data = $this->campaignChart5mModel->getChartData($campaignId, $startTime, $endTime);
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'data' => $data
+            ]);
+
+        } catch (\Exception $e) {
+            log_message('error', 'Lỗi khi lấy dữ liệu biểu đồ: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Lỗi khi lấy dữ liệu biểu đồ: ' . $e->getMessage()
             ]);
         }
     }

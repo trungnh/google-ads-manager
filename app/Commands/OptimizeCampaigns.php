@@ -13,6 +13,8 @@ use App\Models\UserSettingsModel;
 use App\Models\AdsAccountModel;
 use App\Models\OptimizeLogsModel;
 use App\Models\CampaignsDataModel;
+use App\Models\CampaignChart5mModel;
+use App\Models\CampaignChart30mModel;
 
 class OptimizeCampaigns extends BaseCommand
 {
@@ -29,6 +31,8 @@ class OptimizeCampaigns extends BaseCommand
     protected $adsAccountsModel;
     protected $optimizeLogsModel;
     protected $campaignsDataModel;
+    protected $campaignChart5mModel;
+    protected $campaignChart30mModel;
 
     public function __construct()
     {
@@ -41,6 +45,8 @@ class OptimizeCampaigns extends BaseCommand
         $this->adsAccountsModel = new AdsAccountModel();
         $this->optimizeLogsModel = new OptimizeLogsModel();
         $this->campaignsDataModel = new CampaignsDataModel();
+        $this->campaignChart5mModel = new CampaignChart5mModel();
+        $this->campaignChart30mModel = new CampaignChart30mModel();
     }
 
     public function run(array $params)
@@ -187,6 +193,69 @@ class OptimizeCampaigns extends BaseCommand
             } catch (\Exception $e) {
                 log_message('error', 'Lỗi tối ưu chiến dịch - xử lý đơn thực tế - ' . $account['customer_id'] . ': ' . $e->getMessage());
                 $this->sendTelegramMessage("❌Lỗi tối ưu chiến dịch - xử lý đơn thực tế - {$account['customer_id']}: " . $e->getMessage(), $telegramChatIds);
+            }
+
+            try {
+                // Determine rounded time blocks
+                $now = time();
+                $recordTime5m = date('Y-m-d H:i:00', floor($now / 300) * 300);
+                $recordTime30m = date('Y-m-d H:i:00', floor($now / 1800) * 1800);
+
+                // Fetch previous checkpoint
+                $oldCampaigns = $this->campaignsDataModel->getCampaignsByDate($account['customer_id'], date('Y-m-d'), true);
+                $oldCampaignsMap = [];
+                foreach ($oldCampaigns as $old) {
+                    $oldCampaignsMap[$old['campaign_id']] = $old;
+                }
+
+                foreach ($campaigns as $campaign) {
+                    $old = $oldCampaignsMap[$campaign['campaign_id']] ?? null;
+
+                    $oldCost = $old ? (float) $old['cost'] : 0;
+                    $oldConversions = $old ? (float) ($old['real_conversions'] ?? 0) : 0;
+                    $oldConversionValue = $old ? (float) ($old['real_conversion_value'] ?? 0) : 0;
+                    $oldClicks = $old ? (int) $old['clicks'] : 0;
+
+                    $newCost = (float) ($campaign['cost'] ?? 0);
+                    $newConversions = (float) ($campaign['real_conversions'] ?? 0);
+                    $newConversionValue = (float) ($campaign['real_conversion_value'] ?? 0);
+                    $newClicks = (int) ($campaign['clicks'] ?? 0);
+
+                    $diffCost = max(0, $newCost - $oldCost);
+                    $diffConversions = max(0, $newConversions - $oldConversions);
+                    $diffConversionValue = max(0, $newConversionValue - $oldConversionValue);
+                    $diffClicks = max(0, $newClicks - $oldClicks);
+
+                    // Skip upserting if no change
+                    if ($diffCost == 0 && $diffConversions == 0 && $diffClicks == 0) {
+                        continue;
+                    }
+
+                    $insertData5m = [
+                        'customer_id' => $account['customer_id'],
+                        'campaign_id' => $campaign['campaign_id'],
+                        'record_time' => $recordTime5m,
+                        'cost' => $diffCost,
+                        'conversions' => $diffConversions,
+                        'conversion_value' => $diffConversionValue,
+                        'clicks' => $diffClicks
+                    ];
+
+                    $insertData30m = [
+                        'customer_id' => $account['customer_id'],
+                        'campaign_id' => $campaign['campaign_id'],
+                        'record_time' => $recordTime30m,
+                        'cost' => $diffCost,
+                        'conversions' => $diffConversions,
+                        'conversion_value' => $diffConversionValue,
+                        'clicks' => $diffClicks
+                    ];
+
+                    $this->campaignChart5mModel->upsertData($insertData5m);
+                    $this->campaignChart30mModel->upsertData($insertData30m);
+                }
+            } catch (\Exception $e) {
+                log_message('error', 'Lỗi lưu lịch sử 5m/30m: ' . $e->getMessage());
             }
 
             try {
