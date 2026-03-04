@@ -1078,6 +1078,26 @@
                         mode: 'index',
                         intersect: false,
                     },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        if (context.dataset.label === 'Conversions') {
+                                            label += new Intl.NumberFormat('vi-VN').format(context.parsed.y);
+                                        } else {
+                                            label += new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(context.parsed.y);
+                                        }
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
                     scales: {
                         x: {
                             display: true,
@@ -1093,6 +1113,11 @@
                             title: {
                                 display: true,
                                 text: 'Cost'
+                            },
+                            ticks: {
+                                callback: function(value, index, values) {
+                                    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+                                }
                             }
                         },
                         y1: {
@@ -1103,7 +1128,12 @@
                                 display: true,
                                 text: 'CPA'
                             },
-                            grid: { drawOnChartArea: false }
+                            grid: { drawOnChartArea: false },
+                            ticks: {
+                                callback: function(value, index, values) {
+                                    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+                                }
+                            }
                         },
                         y2: {
                             type: 'linear',
@@ -1113,7 +1143,12 @@
                                 display: true,
                                 text: 'Conversions'
                             },
-                            grid: { drawOnChartArea: false }
+                            grid: { drawOnChartArea: false },
+                            ticks: {
+                                callback: function(value, index, values) {
+                                    return new Intl.NumberFormat('vi-VN').format(value);
+                                }
+                            }
                         },
                         y3: {
                             type: 'linear',
@@ -1123,7 +1158,12 @@
                                 display: true,
                                 text: 'CPC'
                             },
-                            grid: { drawOnChartArea: false }
+                            grid: { drawOnChartArea: false },
+                            ticks: {
+                                callback: function(value, index, values) {
+                                    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+                                }
+                            }
                         }
                     }
                 }
