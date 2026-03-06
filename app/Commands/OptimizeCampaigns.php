@@ -225,6 +225,8 @@ class OptimizeCampaigns extends BaseCommand
                     $diffConversions = max(0, $newConversions - $oldConversions);
                     $diffConversionValue = max(0, $newConversionValue - $oldConversionValue);
                     $diffClicks = max(0, $newClicks - $oldClicks);
+                    $diffCpa = $diffConversions == 0 ? 0 : $diffCost / $diffConversions;
+                    $diffCpc = $diffClicks == 0 ? 0 : $diffCost / $diffClicks;
 
                     // Skip upserting if no change
                     if ($diffCost == 0 && $diffConversions == 0 && $diffClicks == 0) {
@@ -238,7 +240,9 @@ class OptimizeCampaigns extends BaseCommand
                         'cost' => $diffCost,
                         'conversions' => $diffConversions,
                         'conversion_value' => $diffConversionValue,
-                        'clicks' => $diffClicks
+                        'clicks' => $diffClicks,
+                        'cpa' => $diffCpa,
+                        'cpc' => $diffCpc
                     ];
 
                     $insertData30m = [
@@ -248,7 +252,9 @@ class OptimizeCampaigns extends BaseCommand
                         'cost' => $diffCost,
                         'conversions' => $diffConversions,
                         'conversion_value' => $diffConversionValue,
-                        'clicks' => $diffClicks
+                        'clicks' => $diffClicks,
+                        'cpa' => $diffCpa,
+                        'cpc' => $diffCpc
                     ];
 
                     $this->campaignChart5mModel->upsertData($insertData5m);
