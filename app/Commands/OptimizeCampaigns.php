@@ -157,6 +157,13 @@ class OptimizeCampaigns extends BaseCommand
                 throw new \Exception('Thiếu thông tin customer_id hoặc account id');
             }
 
+            // Fetch previous checkpoint
+            $oldCampaigns = $this->campaignsDataModel->getCampaignsByDate($account['customer_id'], date('Y-m-d'), true);
+            $oldCampaignsMap = [];
+            foreach ($oldCampaigns as $old) {
+                $oldCampaignsMap[$old['campaign_id']] = $old;
+            }
+
             // Lấy dữ liệu chiến dịch realtime từ Google Ads
             try {
                 $campaigns = $this->googleAdsService->getCampaigns($account['customer_id'], $accessToken, $mccId, false, date('Y-m-d'), date('Y-m-d'));
@@ -200,13 +207,6 @@ class OptimizeCampaigns extends BaseCommand
                 $now = time();
                 $recordTime5m = date('Y-m-d H:i:00', floor($now / 300) * 300);
                 $recordTime30m = date('Y-m-d H:i:00', floor($now / 1800) * 1800);
-
-                // Fetch previous checkpoint
-                $oldCampaigns = $this->campaignsDataModel->getCampaignsByDate($account['customer_id'], date('Y-m-d'), true);
-                $oldCampaignsMap = [];
-                foreach ($oldCampaigns as $old) {
-                    $oldCampaignsMap[$old['campaign_id']] = $old;
-                }
 
                 foreach ($campaigns as $campaign) {
                     $old = $oldCampaignsMap[$campaign['campaign_id']] ?? null;
