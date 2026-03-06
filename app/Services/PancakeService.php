@@ -27,7 +27,7 @@ class PancakeService
         // Chuyển đổi định dạng ngày tháng thành Unix timestamp theo yêu cầu của API
         $startTimestamp = strtotime($startDateTime);
         $endTimestamp = strtotime($endDateTime);
-        
+
         if ($startTimestamp === false || $endTimestamp === false) {
             log_message('error', 'Pancake POS API: Invalid date format - Start: ' . $startDateTime . ', End: ' . $endDateTime);
             return [];
@@ -43,11 +43,11 @@ class PancakeService
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_TIMEOUT, 30);
             curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
-            
+
             // Execute cURL request
             $response = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            
+
             // Check for errors
             if ($httpCode != 200) {
                 $error = curl_error($ch);
@@ -55,30 +55,30 @@ class PancakeService
                 curl_close($ch);
                 return [];
             }
-            
+
             curl_close($ch);
-            
+
             // Parse JSON response
             $data = json_decode($response, true);
-            
+
             if (json_last_error() !== JSON_ERROR_NONE) {
                 log_message('error', 'Pancake POS API: Invalid JSON response - ' . json_last_error_msg());
                 return [];
             }
-            
+
             // Check if response contains orders
             if (!isset($data['data']) || !is_array($data['data'])) {
                 log_message('info', 'Pancake POS API: No orders found in response');
                 return [];
             }
-            
+
             return $data['data'];
         } catch (\Exception $e) {
             log_message('error', 'Pancake POS API Exception: ' . $e->getMessage());
             return [];
         }
     }
-    
+
     /**
      * Xử lý dữ liệu chuyển đổi thực tế từ Pancake POS
      * 
@@ -100,7 +100,7 @@ class PancakeService
         if (empty($settings['pancake_shop_id']) || empty($settings['pancake_api_key'])) {
             log_message('error', 'Pancake POS: Missing shop ID or API key in settings');
             // Nếu không có dữ liệu chuyển đổi, đặt giá trị mặc định
-            foreach ($campaigns as &$tmpCampaign) {   
+            foreach ($campaigns as &$tmpCampaign) {
                 $tmpCampaign['real_conversions'] = 0;
                 $tmpCampaign['real_conversion_value'] = 0;
                 $tmpCampaign['real_conversion_rate'] = 0;
@@ -120,10 +120,10 @@ class PancakeService
 
             return $campaigns;
         }
-        
+
         // Kiểm tra cài đặt quy đổi USD
         $useUsd = isset($settings['pancake_use_usd']) && $settings['pancake_use_usd'];
-        $usdRate = isset($settings['pancake_usd_rate']) && is_numeric($settings['pancake_usd_rate']) ? (float)$settings['pancake_usd_rate'] : 27000;
+        $usdRate = isset($settings['pancake_usd_rate']) && is_numeric($settings['pancake_usd_rate']) ? (float) $settings['pancake_usd_rate'] : 27000;
 
         // Thêm thời gian vào ngày để lấy dữ liệu cả ngày
         $startDateTime = $startDate . ' 00:00:00';
@@ -140,7 +140,7 @@ class PancakeService
         if (empty($orders)) {
             log_message('info', 'Pancake POS: No orders found for the specified date range');
             // Nếu không có dữ liệu chuyển đổi, đặt giá trị mặc định
-            foreach ($campaigns as &$tmpCampaign) {   
+            foreach ($campaigns as &$tmpCampaign) {
                 $tmpCampaign['real_conversions'] = 0;
                 $tmpCampaign['real_conversion_value'] = 0;
                 $tmpCampaign['real_conversion_rate'] = 0;
@@ -176,10 +176,10 @@ class PancakeService
 
         // Lọc sản phẩm theo product_id nếu được cấu hình
         $productId = $settings['pancake_product_id'] ?? null;
-        
+
         // Định nghĩa các trạng thái đơn hàng
         $canceledStatuses = [6, 7]; // Đã hủy, Đã xóa
-        $pendingStatuses = [0,10,21]; // Mới, Webcake, Storecake
+        $pendingStatuses = [0, 10, 21]; // Mới, Webcake, Storecake
 
         // Xử lý từng đơn hàng
         foreach ($orders as $order) {
@@ -191,20 +191,20 @@ class PancakeService
 
             // Lấy campaign ID từ trường p_utm_campaign
             $campaignId = $order['p_utm_campaign'] ?? '';
-            
+
             // Kiểm tra sản phẩm nếu có cấu hình product_id
             if (!empty($productId) && !$this->orderContainsProduct($order, $productId)) {
                 continue;
             }
-            
+
             // Lấy trạng thái đơn hàng
-            $orderStatus = isset($order['status']) ? (int)$order['status'] : null;
-            
+            $orderStatus = isset($order['status']) ? (int) $order['status'] : null;
+
             // Bỏ qua đơn hàng đã hủy hoặc đã xóa
             if (in_array($orderStatus, $canceledStatuses)) {
                 continue;
             }
-            
+
             // Kiểm tra thẻ đơn hàng nếu có cấu hình exclude_tags
             $excludeTags = isset($settings['pancake_exclude_tags']) ? $settings['pancake_exclude_tags'] : '';
             $hasExcludedTag = !empty($excludeTags) && $this->orderContainsExcludedTag($order, $excludeTags);
@@ -221,10 +221,10 @@ class PancakeService
             //     } else {
             //         $conversionTime = strtotime($insertedAt);
             //     }
-                
+
             //     if ($conversionTime) {
             //         $conversionDate = date('Y-m-d', $conversionTime);
-                    
+
             //         // Chỉ xử lý đơn hàng trong khoảng thời gian được chọn
             //         if ($conversionDate < $startDate || $conversionDate > $endDate) {
             //             continue;
@@ -235,7 +235,7 @@ class PancakeService
             // Lấy giá trị đơn hàng và số điện thoại
             $orderValue = $order['total_price'] ?? 0;
             $phone = $order['bill_phone_number'] ?? '';
-            
+
             // Bỏ qua nếu không có số điện thoại
             if (empty($phone)) {
                 continue;
@@ -253,7 +253,7 @@ class PancakeService
                     // Thêm vào tổng đơn hàng offline
                     $offlineOrderData['unique_phones'][$phone] = true;
                     $offlineOrderData['total_value'] += $orderValue;
-                    
+
                     // Phân loại đơn hàng offline
                     if ($isPendingOrder) {
                         $offlineOrderData['pending_phones'][$phone] = true;
@@ -282,7 +282,7 @@ class PancakeService
                     // Thêm vào tổng đơn hàng
                     $campaignData[$campaignId]['unique_phones'][$phone] = true;
                     $campaignData[$campaignId]['total_value'] += $orderValue;
-                    
+
                     // Phân loại đơn hàng
                     if ($isPendingOrder) {
                         $campaignData[$campaignId]['pending_phones'][$phone] = true;
@@ -309,18 +309,18 @@ class PancakeService
                 log_message('error', 'Invalid campaign data: ' . json_encode($campaign));
                 continue;
             }
-            
+
             // Tạo bản sao của campaign để tránh tham chiếu
             $processedCampaign = $campaign;
             $campaignId = $campaign['campaign_id'];
-            
+
             // Nếu có dữ liệu chuyển đổi cho chiến dịch này
             if (isset($campaignData[$campaignId])) {
                 // Tính toán giá trị chuyển đổi, áp dụng quy đổi USD nếu được bật
                 $totalValue = $campaignData[$campaignId]['total_value'];
                 $pendingValue = $campaignData[$campaignId]['pending_value'];
                 $successValue = $campaignData[$campaignId]['success_value'];
-                
+
                 if ($useUsd && $usdRate > 0) {
                     // Quy đổi từ VND sang USD theo tỷ giá
                     $totalValue = $totalValue / $usdRate;
@@ -328,45 +328,45 @@ class PancakeService
                     $successValue = $successValue / $usdRate;
                     log_message('info', 'Converting value from VND to USD with rate: ' . $usdRate);
                 }
-                
+
                 // Số lượng chuyển đổi theo từng loại
                 $totalConversions = count($campaignData[$campaignId]['unique_phones']);
                 $pendingConversions = count($campaignData[$campaignId]['pending_phones']);
                 $successConversions = count($campaignData[$campaignId]['success_phones']);
-                
+
                 // Gán giá trị cho các trường mới
                 $processedCampaign['real_conversions_total'] = $totalConversions;
                 $processedCampaign['real_conversions_pending'] = $pendingConversions;
                 $processedCampaign['real_conversions_success'] = $successConversions;
                 $processedCampaign['real_conversion_value_total'] = $totalValue;
                 $processedCampaign['real_conversion_value_success'] = $successValue;
-                
+
                 // Tính CPA
-                $processedCampaign['real_cpa_total'] = $totalConversions > 0 
+                $processedCampaign['real_cpa_total'] = $totalConversions > 0
                     ? ($campaign['cost'] ?? 0) / $totalConversions
                     : 0;
-                $processedCampaign['real_cpa_success'] = $successConversions > 0 
+                $processedCampaign['real_cpa_success'] = $successConversions > 0
                     ? ($campaign['cost'] ?? 0) / $successConversions
                     : 0;
-                
+
                 // Tính ROAS
-                $processedCampaign['real_roas_total'] = isset($campaign['cost']) && $campaign['cost'] > 0 
+                $processedCampaign['real_roas_total'] = isset($campaign['cost']) && $campaign['cost'] > 0
                     ? $totalValue / $campaign['cost']
                     : 0;
-                $processedCampaign['real_roas_success'] = isset($campaign['cost']) && $campaign['cost'] > 0 
+                $processedCampaign['real_roas_success'] = isset($campaign['cost']) && $campaign['cost'] > 0
                     ? $successValue / $campaign['cost']
                     : 0;
-                
+
                 // Giữ lại các trường cũ để tương thích ngược
                 $processedCampaign['real_conversions'] = $totalConversions;
                 $processedCampaign['real_conversion_value'] = $totalValue;
-                $processedCampaign['real_conversion_rate'] = isset($campaign['clicks']) && $campaign['clicks'] > 0 
-                    ? ($totalConversions / $campaign['clicks']) 
+                $processedCampaign['real_conversion_rate'] = isset($campaign['clicks']) && $campaign['clicks'] > 0
+                    ? ($totalConversions / $campaign['clicks'])
                     : 0;
-                $processedCampaign['real_cpa'] = $totalConversions > 0 
+                $processedCampaign['real_cpa'] = $totalConversions > 0
                     ? ($campaign['cost'] ?? 0) / $totalConversions
                     : 0;
-                $processedCampaign['real_roas'] = isset($campaign['cost']) && $campaign['cost'] > 0 
+                $processedCampaign['real_roas'] = isset($campaign['cost']) && $campaign['cost'] > 0
                     ? $totalValue / $campaign['cost']
                     : 0;
             } else {
@@ -392,7 +392,7 @@ class PancakeService
             if (!in_array($campaignId, $processedCampaignIds)) {
                 $processedCampaignIds[] = $campaignId;
             }
-            
+
             $processedCampaigns[] = $processedCampaign;
         }
 
@@ -404,31 +404,32 @@ class PancakeService
             $totalValue = $offlineOrderData['total_value'];
             $pendingValue = $offlineOrderData['pending_value'];
             $successValue = $offlineOrderData['success_value'];
-            
+
             if ($useUsd && $usdRate > 0) {
                 // Quy đổi từ VND sang USD theo tỷ giá
                 $totalValue = $totalValue / $usdRate;
                 $pendingValue = $pendingValue / $usdRate;
                 $successValue = $successValue / $usdRate;
             }
-            
+
             // Số lượng chuyển đổi theo từng loại
             $totalConversions = count($offlineOrderData['unique_phones']);
             $pendingConversions = count($offlineOrderData['pending_phones']);
             $successConversions = count($offlineOrderData['success_phones']);
-            
+
             // Tạo chiến dịch mới cho đơn hàng offline
             $this->processOfflineCampaign(
-                $offlineCampaign, 
-                $totalConversions, 
-                $pendingConversions, 
-                $successConversions, 
-                $totalValue, 
-                $successValue);
+                $offlineCampaign,
+                $totalConversions,
+                $pendingConversions,
+                $successConversions,
+                $totalValue,
+                $successValue
+            );
         }
 
         // Xử lý những đơn hàng có utm campaign ID nhưng không đến từ Google Ads
-        foreach($campaignData as $campID => $data) {
+        foreach ($campaignData as $campID => $data) {
             if (in_array($campID, $processedCampaignIds)) {
                 continue;
             }
@@ -437,7 +438,7 @@ class PancakeService
             $totalValue = $data['total_value'];
             $pendingValue = $data['pending_value'];
             $successValue = $data['success_value'];
-            
+
             if ($useUsd && $usdRate > 0) {
                 // Quy đổi từ VND sang USD theo tỷ giá
                 $totalValue = $totalValue / $usdRate;
@@ -445,20 +446,21 @@ class PancakeService
                 $successValue = $successValue / $usdRate;
                 log_message('info', 'Converting value from VND to USD with rate: ' . $usdRate);
             }
-            
+
             // Số lượng chuyển đổi theo từng loại
             $totalConversions = count($data['unique_phones']);
             $pendingConversions = count($data['pending_phones']);
             $successConversions = count($data['success_phones']);
-            
+
             // Gán giá trị cho offline Campaign
             $this->processOfflineCampaign(
-                $offlineCampaign, 
-                $totalConversions, 
-                $pendingConversions, 
-                $successConversions, 
-                $totalValue, 
-                $successValue);
+                $offlineCampaign,
+                $totalConversions,
+                $pendingConversions,
+                $successConversions,
+                $totalValue,
+                $successValue
+            );
         }
 
         // Thêm chiến dịch offline vào danh sách
@@ -469,14 +471,14 @@ class PancakeService
         return $processedCampaigns;
     }
 
-    protected function processOfflineCampaign (
-        &$offlineCampaign, 
-        $totalConversions, 
-        $pendingConversions, 
-        $successConversions, 
-        $totalValue, 
-        $successValue) 
-    {
+    protected function processOfflineCampaign(
+        &$offlineCampaign,
+        $totalConversions,
+        $pendingConversions,
+        $successConversions,
+        $totalValue,
+        $successValue
+    ) {
         if (empty($offlineCampaign)) {
             // Tạo chiến dịch mới cho đơn hàng offline
             $offlineCampaign = [
@@ -520,7 +522,7 @@ class PancakeService
             $offlineCampaign['real_conversions'] += $totalConversions;
             $offlineCampaign['real_conversion_value'] += $totalValue;
         }
-        
+
     }
 
     /**
@@ -569,7 +571,7 @@ class PancakeService
 
         // Chuyển chuỗi thẻ cần loại trừ thành mảng và loại bỏ khoảng trắng
         $excludeTags = array_map('trim', explode(',', $excludeTagsString));
-        
+
         // Kiểm tra xem đơn hàng có chứa thông tin khách hàng không
         if (!isset($order['tags']) || !is_array($order['tags'])) {
             return false;
@@ -588,7 +590,7 @@ class PancakeService
 
         return false;
     }
-    
+
     /**
      * Lấy danh sách thẻ từ Pancake POS API
      * 
@@ -613,11 +615,11 @@ class PancakeService
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_TIMEOUT, 30);
             curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
-            
+
             // Execute cURL request
             $response = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            
+
             // Check for cURL errors
             if (curl_errno($ch)) {
                 $error = curl_error($ch);
@@ -625,32 +627,32 @@ class PancakeService
                 log_message('error', 'Pancake POS API cURL Error: ' . $error);
                 return false;
             }
-            
+
             curl_close($ch);
-            
+
             // Check HTTP response code
             if ($httpCode != 200) {
                 log_message('error', 'Pancake POS API HTTP Error: ' . $httpCode . ' - Response: ' . $response);
                 return false;
             }
-            
+
             // Parse JSON response
             $data = json_decode($response, true);
-            
+
             if (json_last_error() !== JSON_ERROR_NONE) {
                 log_message('error', 'Pancake POS API JSON Error: ' . json_last_error_msg() . ' - Response: ' . $response);
                 return false;
             }
-            
+
             // Kiểm tra cấu trúc dữ liệu trả về
             if (!isset($data['data']) || !is_array($data['data'])) {
                 log_message('error', 'Pancake POS API Invalid Response Structure: ' . $response);
                 return false;
             }
-            
+
             // Trả về danh sách thẻ
             return $data['data'];
-            
+
         } catch (Exception $e) {
             log_message('error', 'Pancake POS API Exception: ' . $e->getMessage());
             return false;

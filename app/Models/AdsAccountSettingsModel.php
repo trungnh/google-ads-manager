@@ -133,33 +133,6 @@ class AdsAccountSettingsModel extends Model
                 'pancake_usd_rate' => $data['pancake_usd_rate'] ?? 27000
             ];
 
-            // Chuẩn hóa dữ liệu
-            $settings = [
-                'customer_id' => $customerId,
-                'account_id' => $data['account_id'],
-                'auto_optimize' => ($data['auto_optimize'] === 'true' || $data['auto_optimize'] === true || $data['auto_optimize'] === 1) ? 1 : 0,
-                'cpa_threshold' => $data['cpa_threshold'] ?? 0,
-                'roas_threshold' => $data['roas_threshold'] ?? 0,
-                'increase_budget' => $data['increase_budget'] ?? 0,
-                'gsheet1' => $data['gsheet1'] ?? null,
-                'gsheet_date_col' => strtoupper($data['gsheet_date_col'] ?? ''),
-                'gsheet_phone_col' => strtoupper($data['gsheet_phone_col'] ?? ''),
-                'gsheet_value_col' => strtoupper($data['gsheet_value_col'] ?? ''),
-                'gsheet_campaign_col' => strtoupper($data['gsheet_campaign_col'] ?? ''),
-                'gsheet2' => $data['gsheet2'] ?? null,
-                'use_ggsheet_api' => ($data['use_ggsheet_api'] === 'true' || $data['use_ggsheet_api'] === true || $data['use_ggsheet_api'] === 1) ? 1 : 0,
-                'ggsheet_id' => $data['ggsheet_id'] ?? null,
-                'ggsheet_name' => $data['ggsheet_name'] ?? null,
-                'ggsheet2_id' => $data['ggsheet2_id'] ?? null,
-                'ggsheet2_name' => $data['ggsheet2_name'] ?? null,
-                'cost_threshold' => $data['cost_threshold'] ?? 0,
-                'auto_on_off' => ($data['auto_on_off'] === 'true' || $data['auto_on_off'] === true || $data['auto_on_off'] === 1) ? 1 : 0,
-                'use_roas_threshold' => ($data['use_roas_threshold'] === 'true' || $data['use_roas_threshold'] === true || $data['use_roas_threshold'] === 1) ? 1 : 0,
-                'extended_cpa_threshold' => $data['extended_cpa_threshold'] ?? 0,
-                'default_paused_campaigns' => ($data['default_paused_campaigns'] === 'true' || $data['default_paused_campaigns'] === true || $data['default_paused_campaigns'] === 1) ? 1 : 0,
-                'exclude_campaign_ids' => $data['exclude_campaign_ids'] ?? null
-            ];
-
             // Kiểm tra xem đã có settings chưa
             $existing = $this->where('customer_id', $customerId)->first();
             log_message('info', 'Existing settings: ' . ($existing ? json_encode($existing) : 'None'));
