@@ -608,10 +608,10 @@
                             ${excludeCampaignIds.includes(campaign.campaign_id.toString()) ? 'Auto' : 'Bỏ Auto'}
                         </button>
                         <?php /* if (in_array(session()->get('role'), ['superadmin', 'admin'])): ?>
-              <a href="<?= base_url('campaign-details/campaign/') ?>${campaign.customer_id}/${campaign.campaign_id}" class="btn btn-sm btn-info m-1">
-                  <i class="fas fa-eye"></i> Chi tiết
-              </a>
-              <?php endif; */ ?>
+<a href="<?= base_url('campaign-details/campaign/') ?>${campaign.customer_id}/${campaign.campaign_id}" class="btn btn-sm btn-info m-1">
+<i class="fas fa-eye"></i> Chi tiết
+</a>
+<?php endif; */ ?>
                         <?php if (in_array(session()->get('role'), ['superadmin', 'admin'])): ?>
                         <button class="btn btn-primary btn-sm btn-cflc m-1"
                                 data-customer-id="${campaign.customer_id}"
@@ -958,7 +958,7 @@
                 }
             });
         }
-        
+
         let currentChart = null;
         let activeCampaignIdForChart = null;
         let activeCampaignNameForChart = '';
@@ -1040,16 +1040,16 @@
                         {
                             label: 'Cost',
                             data: costData,
-                            borderColor: 'rgb(54, 162, 235)',
-                            backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                            borderColor: 'rgb(255, 99, 132)',
+                            backgroundColor: 'rgba(255, 99, 132, 0.1)',
                             yAxisID: 'y',
                             tension: 0.1
                         },
                         {
                             label: 'CPA',
                             data: cpaData,
-                            borderColor: 'rgb(255, 99, 132)',
-                            backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                            borderColor: 'rgb(	127,255,0)',
+                            backgroundColor: 'rgba(54, 162, 235, 0.1)',
                             yAxisID: 'y1',
                             tension: 0.1
                         },
@@ -1081,7 +1081,7 @@
                     plugins: {
                         tooltip: {
                             callbacks: {
-                                label: function(context) {
+                                label: function (context) {
                                     let label = context.dataset.label || '';
                                     if (label) {
                                         label += ': ';
@@ -1115,7 +1115,7 @@
                                 text: 'Cost'
                             },
                             ticks: {
-                                callback: function(value, index, values) {
+                                callback: function (value, index, values) {
                                     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
                                 }
                             }
@@ -1130,7 +1130,7 @@
                             },
                             grid: { drawOnChartArea: false },
                             ticks: {
-                                callback: function(value, index, values) {
+                                callback: function (value, index, values) {
                                     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
                                 }
                             }
@@ -1145,7 +1145,7 @@
                             },
                             grid: { drawOnChartArea: false },
                             ticks: {
-                                callback: function(value, index, values) {
+                                callback: function (value, index, values) {
                                     return new Intl.NumberFormat('vi-VN').format(value);
                                 }
                             }
@@ -1160,7 +1160,7 @@
                             },
                             grid: { drawOnChartArea: false },
                             ticks: {
-                                callback: function(value, index, values) {
+                                callback: function (value, index, values) {
                                     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
                                 }
                             }
