@@ -15,8 +15,6 @@ use App\Models\UserModel;
 use App\Models\AdsAccountModel;
 use App\Models\OptimizeLogsModel;
 use App\Models\CampaignsDataModel;
-use App\Models\CampaignChart5mModel;
-use App\Models\CampaignChart30mModel;
 
 class OptimizeCampaigns extends BaseCommand
 {
@@ -34,9 +32,12 @@ class OptimizeCampaigns extends BaseCommand
     protected $adsAccountsModel;
     protected $optimizeLogsModel;
     protected $campaignsDataModel;
+<<<<<<< HEAD
     protected $pancakeService;
     protected $campaignChart5mModel;
     protected $campaignChart30mModel;
+=======
+>>>>>>> develop
 
     public function __construct()
     {
@@ -50,9 +51,12 @@ class OptimizeCampaigns extends BaseCommand
         $this->adsAccountsModel = new AdsAccountModel();
         $this->optimizeLogsModel = new OptimizeLogsModel();
         $this->campaignsDataModel = new CampaignsDataModel();
+<<<<<<< HEAD
         $this->pancakeService = new PancakeService();
         $this->campaignChart5mModel = new CampaignChart5mModel();
         $this->campaignChart30mModel = new CampaignChart30mModel();
+=======
+>>>>>>> develop
     }
 
     public function run(array $params)
@@ -168,13 +172,6 @@ class OptimizeCampaigns extends BaseCommand
                 throw new \Exception('Thiếu thông tin customer_id hoặc account id');
             }
 
-            // Fetch previous checkpoint
-            $oldCampaigns = $this->campaignsDataModel->getCampaignsByDate($account['customer_id'], date('Y-m-d'), true);
-            $oldCampaignsMap = [];
-            foreach ($oldCampaigns as $old) {
-                $oldCampaignsMap[$old['campaign_id']] = $old;
-            }
-
             // Lấy dữ liệu chiến dịch realtime từ Google Ads
             try {
                 $campaigns = $this->googleAdsService->getCampaignsWithRealConv($account, $account['customer_id'], $accessToken, $mccId, false, date('Y-m-d'), date('Y-m-d'));
@@ -197,6 +194,7 @@ class OptimizeCampaigns extends BaseCommand
             }
 
             try {
+<<<<<<< HEAD
                 // Determine rounded time blocks
                 $now = time();
                 $recordTime5m = date('Y-m-d H:i:00', floor($now / 300) * 300);
@@ -257,6 +255,24 @@ class OptimizeCampaigns extends BaseCommand
             } catch (\Exception $e) {
                 log_message('error', 'Lỗi lưu lịch sử 5m/30m: ' . $e->getMessage());
             }
+=======
+                $gsheetUrl = $account['gsheet1'] ?? null;
+                $gsheetUrl2 = $account['gsheet2'] ?? null;
+                if (empty($gsheetUrl) && empty($gsheetUrl2)) {
+                    return;
+                }
+                if (!empty($campaigns) && !empty($gsheetUrl)) {
+                    $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, date('Y-m-d'), date('Y-m-d'), $account);
+                }
+                if (!empty($campaigns) && !empty($gsheetUrl2)) {
+                    $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl2, date('Y-m-d'), date('Y-m-d'), $account);
+                }
+            } catch (\Exception $e) {
+                log_message('error', 'Lỗi tối ưu chiến dịch - xử lý đơn thực tế - ' . $account['customer_id'] . ': ' . $e->getMessage());
+                $this->sendTelegramMessage("❌Lỗi tối ưu chiến dịch - xử lý đơn thực tế - {$account['customer_id']}: " . $e->getMessage(), $telegramChatIds);
+            }
+
+>>>>>>> develop
 
             try {
                 // Save campaign data

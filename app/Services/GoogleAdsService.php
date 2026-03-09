@@ -297,6 +297,45 @@ class GoogleAdsService
         return null;
     }
 
+    public function getDailyCost($customerId, $accessToken, $date, $mccId = null)
+    {
+        $formattedCustomerId = $this->formatCustomerId($customerId);
+        $url = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedCustomerId . '/googleAds:searchStream';
+
+        $query = "
+            SELECT
+                metrics.cost_micros
+            FROM customer
+            WHERE segments.date = '$date'
+        ";
+
+        $data = [
+            'query' => $query
+        ];
+
+        try {
+            $response = $this->makeCurlRequest($url, 'POST', $accessToken, json_encode($data), $mccId);
+            $totalCost = 0;
+
+            if (is_array($response)) {
+                foreach ($response as $batch) {
+                    if (isset($batch['results'])) {
+                        foreach ($batch['results'] as $result) {
+                            if (isset($result['metrics']['costMicros'])) {
+                                $totalCost += $this->microToStandard($result['metrics']['costMicros']);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return $totalCost;
+        } catch (Exception $e) {
+            log_message('error', 'Error in GoogleAdsService::getDailyCost for customer ' . $customerId . ': ' . $e->getMessage());
+            return 0;
+        }
+    }
+
     // Thêm hàm này để định dạng Customer ID
     protected function formatCustomerId($customerId)
     {

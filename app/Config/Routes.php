@@ -117,6 +117,19 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
         $routes->get('campaign-details/ad/(:segment)/(:segment)/(:segment)/(:segment)', 'CampaignDetails::ad/$1/$2/$3/$4');
     });
 
+    // Products
+    $routes->get('products', 'Products::index');
+    $routes->post('products/create', 'Products::create');
+    $routes->post('products/update/(:num)', 'Products::update/$1');
+    $routes->get('products/delete/(:num)', 'Products::delete/$1');
+
+    // Revenue Reports
+    $routes->get('revenue_reports', 'RevenueReports::index');
+    $routes->post('revenue_reports/create', 'RevenueReports::create');
+    $routes->get('revenue_reports/edit/(:num)', 'RevenueReports::edit/$1');
+    $routes->post('revenue_reports/update/(:num)', 'RevenueReports::update/$1');
+    $routes->post('revenue_reports/fetchAdsCost', 'RevenueReports::fetchAdsCost');
+
     // Route chỉ dành cho role superadmin - quản lý người dùng
     $routes->group('', ['filter' => 'role:superadmin'], function ($routes) {
         $routes->get('users', 'Users::index');

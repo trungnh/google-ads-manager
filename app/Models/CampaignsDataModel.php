@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use CodeIgniter\Model;
+use App\Models\CampaignChart5mModel;
+use App\Models\CampaignChart30mModel;
 
 class CampaignsDataModel extends Model
 {
@@ -84,6 +86,7 @@ class CampaignsDataModel extends Model
         $date = $date ?? date('Y-m-d');
         $campaignReturnData = [];
         foreach ($campaignsData as $campaign) {
+<<<<<<< HEAD
             $realConversions = $campaign['real_conversions']?? 0;
             $realConversionsTotal = $campaign['real_conversions_total']?? 0;
             $realConversionsPending = $campaign['real_conversions_pending']?? 0;
@@ -92,6 +95,11 @@ class CampaignsDataModel extends Model
             $realConversionValueTotal = $campaign['real_conversion_value_total']?? 0;
             $realConversionValueSuccess = $campaign['real_conversion_value_success']?? 0;
             $realConversionRate = $campaign['real_conversion_rate']?? 0;
+=======
+            $realConversions = $campaign['real_conversions'] ?? 0;
+            $realConversionValue = $campaign['real_conversion_value'] ?? 0;
+            $realConversionRate = $campaign['real_conversion_rate'] ?? 0;
+>>>>>>> develop
             $data = [
                 'customer_id' => $customerId,
                 'campaign_id' => $campaign['campaign_id'],
@@ -124,13 +132,69 @@ class CampaignsDataModel extends Model
                 'real_roas_success' => $campaign['real_roas_success'] ?? 0,
                 'last_updated_at' => date('Y-m-d H:i:s'),
             ];
-            
+
             // Kiểm tra xem dữ liệu đã tồn tại chưa
             $tmpCampaign = $this->where('customer_id', $customerId)
-                        ->where('campaign_id', $campaign['campaign_id'])
-                        ->where('date', date('Y-m-d'))
-                        ->first();
-            
+                ->where('campaign_id', $campaign['campaign_id'])
+                ->where('date', date('Y-m-d'))
+                ->first();
+
+            // Tính chênh lệch và đẩy vào biểu đồ nếu dữ liệu của hôm nay
+            if ($date === date('Y-m-d')) {
+                $oldCost = $tmpCampaign ? (float) ($tmpCampaign['cost'] ?? 0) : 0;
+                $oldConversions = $tmpCampaign ? (float) ($tmpCampaign['real_conversions'] ?? 0) : 0;
+                $oldConversionValue = $tmpCampaign ? (float) ($tmpCampaign['real_conversion_value'] ?? 0) : 0;
+                $oldClicks = $tmpCampaign ? (int) ($tmpCampaign['clicks'] ?? 0) : 0;
+
+                $newCost = (float) ($campaign['cost'] ?? 0);
+                $newConversions = (float) ($realConversions);
+                $newConversionValue = (float) ($realConversionValue);
+                $newClicks = (int) ($campaign['clicks'] ?? 0);
+
+                $diffCost = max(0, $newCost - $oldCost);
+                $diffConversions = max(0, $newConversions - $oldConversions);
+                $diffConversionValue = max(0, $newConversionValue - $oldConversionValue);
+                $diffClicks = max(0, $newClicks - $oldClicks);
+                $diffCpa = $diffConversions == 0 ? 0 : $diffCost / $diffConversions;
+                $diffCpc = $diffClicks == 0 ? 0 : $diffCost / $diffClicks;
+
+                if ($diffCost > 0 || $diffConversions > 0 || $diffClicks > 0) {
+                    $now = time();
+                    $recordTime5m = date('Y-m-d H:i:00', floor($now / 300) * 300);
+                    $recordTime30m = date('Y-m-d H:i:00', floor($now / 1800) * 1800);
+
+                    $insertData5m = [
+                        'customer_id' => $customerId,
+                        'campaign_id' => $campaign['campaign_id'],
+                        'record_time' => $recordTime5m,
+                        'cost' => $diffCost,
+                        'conversions' => $diffConversions,
+                        'conversion_value' => $diffConversionValue,
+                        'clicks' => $diffClicks,
+                        'cpa' => $diffCpa,
+                        'cpc' => $diffCpc
+                    ];
+
+                    $insertData30m = [
+                        'customer_id' => $customerId,
+                        'campaign_id' => $campaign['campaign_id'],
+                        'record_time' => $recordTime30m,
+                        'cost' => $diffCost,
+                        'conversions' => $diffConversions,
+                        'conversion_value' => $diffConversionValue,
+                        'clicks' => $diffClicks,
+                        'cpa' => $diffCpa,
+                        'cpc' => $diffCpc
+                    ];
+
+                    $campaignChart5mModel = new CampaignChart5mModel();
+                    $campaignChart30mModel = new CampaignChart30mModel();
+
+                    $campaignChart5mModel->upsertData($insertData5m);
+                    $campaignChart30mModel->upsertData($insertData30m);
+                }
+            }
+
             if ($tmpCampaign) {
                 // Nếu có thêm conversions mới thì cập nhật last_cost_conversion, last_count_conversion, last_count_conversion_value
                 if (isset($tmpCampaign['real_conversions']) && $tmpCampaign['real_conversions'] < $realConversions) {
@@ -138,15 +202,15 @@ class CampaignsDataModel extends Model
                     $data['last_count_conversion'] = $realConversions;
                     $data['last_count_conversion_value'] = $realConversionValue;
                 } else {
-                    $data['last_cost_conversion'] = $tmpCampaign['last_cost_conversion']?? 0;
-                    $data['last_count_conversion'] = $tmpCampaign['last_count_conversion']?? 0;
-                    $data['last_count_conversion_value'] = $tmpCampaign['last_count_conversion_value']?? 0;
+                    $data['last_cost_conversion'] = $tmpCampaign['last_cost_conversion'] ?? 0;
+                    $data['last_count_conversion'] = $tmpCampaign['last_count_conversion'] ?? 0;
+                    $data['last_count_conversion_value'] = $tmpCampaign['last_count_conversion_value'] ?? 0;
                 }
                 // Cập nhật dữ liệu nếu đã tồn tại
                 $builder->where('customer_id', $customerId)
-                       ->where('campaign_id', $campaign['campaign_id'])
-                       ->where('date', $date)
-                       ->update($data);
+                    ->where('campaign_id', $campaign['campaign_id'])
+                    ->where('date', $date)
+                    ->update($data);
             } else {
                 // Thêm dữ liệu mới nếu chưa tồn tại
                 // Nếu chưa có chuyển đổi thì đặt giá trị là 0, ngược lại là giá trị hiện tại
@@ -159,7 +223,7 @@ class CampaignsDataModel extends Model
             }
             $campaignReturnData[] = $data;
         }
-        
+
         return $campaignReturnData;
         // return true;
     }
@@ -169,21 +233,21 @@ class CampaignsDataModel extends Model
         $data = [
             'customer_id' => $customerId,
             'campaign_id' => $campaignId,
-            'status' => $status 
+            'status' => $status
         ];
 
         $this->db->table('campaigns_data')
-                ->where('customer_id', $customerId)
-                ->where('campaign_id', $campaignId)
-                ->update($data);    
+            ->where('customer_id', $customerId)
+            ->where('campaign_id', $campaignId)
+            ->update($data);
     }
 
     public function saveCampaignCFLC($customerId, $campaignId)
     {
         $campaign = $this->where('customer_id', $customerId)
-                        ->where('campaign_id', $campaignId)
-                        ->where('date', date('Y-m-d'))
-                        ->first();
+            ->where('campaign_id', $campaignId)
+            ->where('date', date('Y-m-d'))
+            ->first();
 
         $data = [
             'customer_id' => $customerId,
@@ -194,11 +258,11 @@ class CampaignsDataModel extends Model
         ];
 
         $this->db->table('campaigns_data')
-                ->where('customer_id', $customerId)
-                ->where('campaign_id', $campaignId)
-                ->update($data);    
+            ->where('customer_id', $customerId)
+            ->where('campaign_id', $campaignId)
+            ->update($data);
     }
-    
+
     public function getCampaignsByID($customerId, $campaignId)
     {
         return $this->where([
