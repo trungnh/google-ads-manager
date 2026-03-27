@@ -86,7 +86,6 @@ class CampaignsDataModel extends Model
         $date = $date ?? date('Y-m-d');
         $campaignReturnData = [];
         foreach ($campaignsData as $campaign) {
-<<<<<<< HEAD
             $realConversions = $campaign['real_conversions']?? 0;
             $realConversionsTotal = $campaign['real_conversions_total']?? 0;
             $realConversionsPending = $campaign['real_conversions_pending']?? 0;
@@ -95,11 +94,6 @@ class CampaignsDataModel extends Model
             $realConversionValueTotal = $campaign['real_conversion_value_total']?? 0;
             $realConversionValueSuccess = $campaign['real_conversion_value_success']?? 0;
             $realConversionRate = $campaign['real_conversion_rate']?? 0;
-=======
-            $realConversions = $campaign['real_conversions'] ?? 0;
-            $realConversionValue = $campaign['real_conversion_value'] ?? 0;
-            $realConversionRate = $campaign['real_conversion_rate'] ?? 0;
->>>>>>> develop
             $data = [
                 'customer_id' => $customerId,
                 'campaign_id' => $campaign['campaign_id'],

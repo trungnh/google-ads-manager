@@ -15,6 +15,8 @@ use App\Models\UserModel;
 use App\Models\AdsAccountModel;
 use App\Models\OptimizeLogsModel;
 use App\Models\CampaignsDataModel;
+use App\Models\CampaignChart30mModel;
+use App\Models\CampaignChart5mModel;
 
 class OptimizeCampaigns extends BaseCommand
 {
