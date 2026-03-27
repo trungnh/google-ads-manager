@@ -32,12 +32,9 @@ class OptimizeCampaigns extends BaseCommand
     protected $adsAccountsModel;
     protected $optimizeLogsModel;
     protected $campaignsDataModel;
-<<<<<<< HEAD
     protected $pancakeService;
     protected $campaignChart5mModel;
     protected $campaignChart30mModel;
-=======
->>>>>>> develop
 
     public function __construct()
     {
@@ -51,12 +48,9 @@ class OptimizeCampaigns extends BaseCommand
         $this->adsAccountsModel = new AdsAccountModel();
         $this->optimizeLogsModel = new OptimizeLogsModel();
         $this->campaignsDataModel = new CampaignsDataModel();
-<<<<<<< HEAD
         $this->pancakeService = new PancakeService();
         $this->campaignChart5mModel = new CampaignChart5mModel();
         $this->campaignChart30mModel = new CampaignChart30mModel();
-=======
->>>>>>> develop
     }
 
     public function run(array $params)
@@ -192,87 +186,6 @@ class OptimizeCampaigns extends BaseCommand
                     throw $e;
                 }
             }
-
-            try {
-<<<<<<< HEAD
-                // Determine rounded time blocks
-                $now = time();
-                $recordTime5m = date('Y-m-d H:i:00', floor($now / 300) * 300);
-                $recordTime30m = date('Y-m-d H:i:00', floor($now / 1800) * 1800);
-
-                foreach ($campaigns as $campaign) {
-                    $old = $oldCampaignsMap[$campaign['campaign_id']] ?? null;
-
-                    $oldCost = $old ? (float) $old['cost'] : 0;
-                    $oldConversions = $old ? (float) ($old['real_conversions'] ?? 0) : 0;
-                    $oldConversionValue = $old ? (float) ($old['real_conversion_value'] ?? 0) : 0;
-                    $oldClicks = $old ? (int) $old['clicks'] : 0;
-
-                    $newCost = (float) ($campaign['cost'] ?? 0);
-                    $newConversions = (float) ($campaign['real_conversions'] ?? 0);
-                    $newConversionValue = (float) ($campaign['real_conversion_value'] ?? 0);
-                    $newClicks = (int) ($campaign['clicks'] ?? 0);
-
-                    $diffCost = max(0, $newCost - $oldCost);
-                    $diffConversions = max(0, $newConversions - $oldConversions);
-                    $diffConversionValue = max(0, $newConversionValue - $oldConversionValue);
-                    $diffClicks = max(0, $newClicks - $oldClicks);
-                    $diffCpa = $diffConversions == 0 ? 0 : $diffCost / $diffConversions;
-                    $diffCpc = $diffClicks == 0 ? 0 : $diffCost / $diffClicks;
-
-                    // Skip upserting if no change
-                    if ($diffCost == 0 && $diffConversions == 0 && $diffClicks == 0) {
-                        continue;
-                    }
-
-                    $insertData5m = [
-                        'customer_id' => $account['customer_id'],
-                        'campaign_id' => $campaign['campaign_id'],
-                        'record_time' => $recordTime5m,
-                        'cost' => $diffCost,
-                        'conversions' => $diffConversions,
-                        'conversion_value' => $diffConversionValue,
-                        'clicks' => $diffClicks,
-                        'cpa' => $diffCpa,
-                        'cpc' => $diffCpc
-                    ];
-
-                    $insertData30m = [
-                        'customer_id' => $account['customer_id'],
-                        'campaign_id' => $campaign['campaign_id'],
-                        'record_time' => $recordTime30m,
-                        'cost' => $diffCost,
-                        'conversions' => $diffConversions,
-                        'conversion_value' => $diffConversionValue,
-                        'clicks' => $diffClicks,
-                        'cpa' => $diffCpa,
-                        'cpc' => $diffCpc
-                    ];
-
-                    $this->campaignChart5mModel->upsertData($insertData5m);
-                    $this->campaignChart30mModel->upsertData($insertData30m);
-                }
-            } catch (\Exception $e) {
-                log_message('error', 'Lỗi lưu lịch sử 5m/30m: ' . $e->getMessage());
-            }
-=======
-                $gsheetUrl = $account['gsheet1'] ?? null;
-                $gsheetUrl2 = $account['gsheet2'] ?? null;
-                if (empty($gsheetUrl) && empty($gsheetUrl2)) {
-                    return;
-                }
-                if (!empty($campaigns) && !empty($gsheetUrl)) {
-                    $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, date('Y-m-d'), date('Y-m-d'), $account);
-                }
-                if (!empty($campaigns) && !empty($gsheetUrl2)) {
-                    $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl2, date('Y-m-d'), date('Y-m-d'), $account);
-                }
-            } catch (\Exception $e) {
-                log_message('error', 'Lỗi tối ưu chiến dịch - xử lý đơn thực tế - ' . $account['customer_id'] . ': ' . $e->getMessage());
-                $this->sendTelegramMessage("❌Lỗi tối ưu chiến dịch - xử lý đơn thực tế - {$account['customer_id']}: " . $e->getMessage(), $telegramChatIds);
-            }
-
->>>>>>> develop
 
             try {
                 // Save campaign data
