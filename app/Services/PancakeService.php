@@ -189,6 +189,13 @@ class PancakeService
                 continue;
             }
 
+            if (!empty($order['ads_source']) && strtolower($order['ads_source']) == 'facebook') {
+                continue;
+            }
+            if (!empty($order['p_utm_source']) && strtolower($order['p_utm_source']) == 'facebook') {
+                continue;
+            }
+
             // Lấy campaign ID từ trường p_utm_campaign
             $campaignId = $order['p_utm_campaign'] ?? '';
 
@@ -523,6 +530,81 @@ class PancakeService
             $offlineCampaign['real_conversion_value'] += $totalValue;
         }
 
+    }
+
+    /**
+     * Parse and compute aggregate metrics for matched orders based on CRM logic
+     */
+    public function calculateRevenueFromOrders($orders, $productCode)
+    {
+        // Chỉ tính toán các đơn ở trạng thái: 0, 1, 2, 8, 9, 12, 13
+        $validStatuses = [0, 1, 2, 8, 9, 12, 13];
+        $totalOrders = 0;
+        $totalGoodsCost = 0;
+        $totalShipCost = 0;
+        $totalRevenue = 0;
+
+        if (empty($orders)) {
+            return [
+                'orders' => 0,
+                'goods_cost' => 0,
+                'ship_cost' => 0,
+                'revenue' => 0
+            ];
+        }
+
+        foreach ($orders as $order) {
+            $status = isset($order['status']) ? (int) $order['status'] : null;
+
+            if (!in_array($status, $validStatuses)) {
+                continue;
+            }
+
+            // Lọc doanh thu của các đơn hàng chứa mã sản phẩm này
+            if (!empty($productCode) && !$this->orderContainsProduct($order, $productCode)) {
+                continue;
+            }
+
+            $totalOrders++;
+
+            // Doanh thu: tổng money_to_collect của đơn hàng
+            $totalRevenue += isset($order['money_to_collect']) ? (float) $order['money_to_collect'] : 0;
+
+            // Vận chuyển: Tổng partner_fee của đơn hàng
+            $totalShipCost += isset($order['partner_fee']) ? (float) $order['partner_fee'] : 0;
+
+            // Tiền hàng: tổng (item.quantity * item.variation_info.last_imported_price)
+            if (isset($order['items']) && is_array($order['items'])) {
+                foreach ($order['items'] as $item) {
+                    $isMatch = empty($productCode);
+                    if (!$isMatch) {
+                        // Check matching items corresponding to the product
+                        if (isset($item['product_display_id']) && $item['product_display_id'] == $productCode) {
+                            $isMatch = true;
+                        } elseif (isset($item['variation_info']['product_display_id']) && $item['variation_info']['product_display_id'] == $productCode) {
+                            $isMatch = true;
+                        }
+                    }
+
+                    if ($isMatch) {
+                        $quantity = isset($item['quantity']) ? (int) $item['quantity'] : 1;
+
+                        $importPrice = 0;
+                        if (isset($item['variation_info']['last_imported_price'])) {
+                            $importPrice = (float) $item['variation_info']['last_imported_price'];
+                        }
+                        $totalGoodsCost += ($quantity * $importPrice);
+                    }
+                }
+            }
+        }
+
+        return [
+            'orders' => $totalOrders,
+            'goods_cost' => $totalGoodsCost,
+            'ship_cost' => $totalShipCost,
+            'revenue' => $totalRevenue
+        ];
     }
 
     /**
