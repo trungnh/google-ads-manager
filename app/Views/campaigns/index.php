@@ -219,17 +219,17 @@
         border-radius: 3px;
     }
 
-    .editable-budget {
+    .editable-budget, .editable-cflc {
         cursor: pointer;
         padding: 2px 5px;
         border-radius: 3px;
     }
 
-    .editable-budget:hover {
+    .editable-budget:hover, .editable-cflc:hover {
         background-color: #f8f9fa;
     }
 
-    .editable-budget input {
+    .editable-budget input, .editable-cflc input {
         width: 120px;
         padding: 2px 5px;
         border: 1px solid #ced4da;
@@ -570,7 +570,18 @@
                     <td>${(campaign.real_conversion_value > 0) ? formatNumber(campaign.real_conversion_value) : '-'}</td>
                     <td>${(campaign.real_conversion_rate > 0) ? formatPercent(campaign.real_conversion_rate) : '-'}</td>
                     <?php if (in_array(session()->get('role'), ['superadmin', 'admin'])): ?>
-                    <td class="cflc-value">${(campaign.last_cost_conversion > 0) ? formatNumber(campaign.cost - campaign.last_cost_conversion) : '-'}</td>
+                    <td>
+                        <span class="editable-cflc" 
+                              data-campaign-id="${campaign.campaign_id}"
+                              data-customer-id="${campaign.customer_id}"
+                              data-original="${(campaign.last_cost_conversion > 0) ? (campaign.cost - campaign.last_cost_conversion) : 0}">
+                            ${(campaign.last_cost_conversion > 0) ? formatNumber(campaign.cost - campaign.last_cost_conversion) : '-'}
+                        </span>
+                        <div class="button-group" style="display: none;">
+                            <button class="btn btn-sm btn-success save-cflc">✓</button>
+                            <button class="btn btn-sm btn-danger cancel-cflc">✗</button>
+                        </div>
+                    </td>
                     <?php endif; ?>
                     <td class="small text-muted">
                         ${campaign.bidding_strategy || '-'}
@@ -773,7 +784,9 @@
                         const cflcValue = row.find('.cflc-value');
 
                         // Cập nhật cflcValue
-                        cflcValue.text('0');
+                        const span = row.find('.editable-cflc');
+                        span.data('original', 0);
+                        span.text('0');
                     } else {
                         showNotification(response.message, 'error');
                     }
@@ -1429,6 +1442,142 @@
         }
 
         function cancelBudgetEdit(span) {
+            span.html(span.data('original-text'));
+            span.removeClass('editing');
+            span.next('.target-btn-group').remove();
+        }
+
+        // Xử lý chỉnh sửa CFLC
+        $(document).on('click', '.editable-cflc', function (e) {
+            const span = $(this);
+            if (span.hasClass('editing')) return;
+
+            // Đóng các editor khác nếu đang mở
+            $('.editable-cflc.editing').each(function () {
+                cancelCFLCEdit($(this));
+            });
+
+            const currentValue = span.data('original');
+            const campaignId = span.data('campaign-id');
+
+            // Lưu nội dung gốc để khôi phục nếu hủy
+            span.data('original-text', span.html());
+
+            // Tạo input và thêm vào span
+            span.html(`<input type="number" value="${currentValue}" class="form-control form-control-sm">`);
+            span.addClass('editing');
+
+            // Thêm nút save/cancel
+            const buttonGroup = $(`
+            <span class="target-btn-group ml-2">
+                <button class="btn btn-sm btn-success save-cflc" data-campaign-id="${campaignId}">
+                    <i class="fas fa-check"></i>
+                </button>
+                <button class="btn btn-sm btn-danger cancel-cflc" data-campaign-id="${campaignId}">
+                    <i class="fas fa-times"></i>
+                </button>
+            </span>
+        `);
+            span.after(buttonGroup);
+
+            // Focus vào input
+            const input = span.find('input');
+            input.focus();
+            input.select();
+        });
+
+        // Xử lý phím tắt khi nhập (CFLC)
+        $(document).on('keydown', '.editable-cflc.editing input', function (e) {
+            const span = $(this).closest('.editable-cflc');
+
+            if (e.which === 13) {
+                e.preventDefault();
+                saveCFLCEdit(span);
+                return false;
+            }
+
+            if (e.which === 27) {
+                e.preventDefault();
+                cancelCFLCEdit(span);
+                return false;
+            }
+
+            const allowedKeys = [8, 9, 37, 38, 39, 40, 46];
+            const isAllowedKey = allowedKeys.indexOf(e.which) !== -1;
+            const isNumber = (e.which >= 48 && e.which <= 57) || (e.which >= 96 && e.which <= 105);
+
+            if (!isNumber && !isAllowedKey) {
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        $(document).on('click', '.save-cflc', function (e) {
+            e.preventDefault();
+            const span = $(this).closest('td').find('.editable-cflc');
+            saveCFLCEdit(span);
+        });
+
+        $(document).on('click', '.cancel-cflc', function (e) {
+            e.preventDefault();
+            const span = $(this).closest('td').find('.editable-cflc');
+            cancelCFLCEdit(span);
+        });
+
+        $(document).on('click', function (e) {
+            if ($(e.target).closest('.editable-cflc, .target-btn-group').length === 0) {
+                $('.editable-cflc.editing').each(function () {
+                    cancelCFLCEdit($(this));
+                });
+            }
+        });
+
+        function saveCFLCEdit(span) {
+            const input = span.find('input');
+            const newValue = parseInt(input.val());
+            const originalValue = span.data('original');
+            const campaignId = span.data('campaign-id');
+            const customerId = span.data('customer-id');
+
+            if (isNaN(newValue) || newValue < 0) {
+                cancelCFLCEdit(span);
+                showNotification('Giá trị không hợp lệ! Vui lòng nhập số lớn hơn hoặc bằng 0.', 'error');
+                return;
+            }
+
+            if (newValue === originalValue) {
+                cancelCFLCEdit(span);
+                return;
+            }
+
+            $.ajax({
+                url: `/campaigns/updateCFLCValue/${customerId}/${campaignId}`,
+                method: 'POST',
+                data: {
+                    cflc: newValue
+                },
+                success: function (response) {
+                    if (response.success) {
+                        span.data('original', newValue);
+                        span.html(formatNumber(newValue));
+                        showNotification('Cập nhật CFLC thành công');
+                    } else {
+                        span.html(span.data('original-text'));
+                        showNotification(response.message, 'error');
+                    }
+                },
+                error: function () {
+                    span.html(span.data('original-text'));
+                    showNotification('Có lỗi xảy ra khi cập nhật CFLC', 'error');
+                },
+                complete: function () {
+                    span.removeClass('editing');
+                    span.next('.target-btn-group').remove();
+                }
+            });
+        }
+
+        function cancelCFLCEdit(span) {
             span.html(span.data('original-text'));
             span.removeClass('editing');
             span.next('.target-btn-group').remove();

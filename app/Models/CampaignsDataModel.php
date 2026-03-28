@@ -257,6 +257,30 @@ class CampaignsDataModel extends Model
             ->update($data);
     }
 
+    public function updateCFLCValue($customerId, $campaignId, $newCFLCValue)
+    {
+        $campaign = $this->where('customer_id', $customerId)
+            ->where('campaign_id', $campaignId)
+            ->where('date', date('Y-m-d'))
+            ->first();
+
+        // New last_cost_conversion
+        $lastCostConversion = $campaign['cost'] - $newCFLCValue;
+
+        $data = [
+            'customer_id' => $customerId,
+            'campaign_id' => $campaignId,
+            'last_cost_conversion' => $lastCostConversion,
+            'last_count_conversion' => $campaign['real_conversions'],
+            'last_count_conversion_value' => $campaign['real_conversion_value'],
+        ];
+
+        $this->db->table('campaigns_data')
+            ->where('customer_id', $customerId)
+            ->where('campaign_id', $campaignId)
+            ->update($data);
+    }
+
     public function getCampaignsByID($customerId, $campaignId)
     {
         return $this->where([

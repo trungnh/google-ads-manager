@@ -109,6 +109,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     // Route chỉ dành cho role admin và superadmin
     $routes->group('', ['filter' => 'role:admin,superadmin'], function ($routes) {
         $routes->post('campaigns/updateCFLC/(:segment)/(:segment)', 'Campaigns::updateCFLC/$1/$2');
+        $routes->post('campaigns/updateCFLCValue/(:segment)/(:segment)', 'Campaigns::updateCFLCValue/$1/$2');
 
         // Campaign Details routes
         $routes->get('campaign-details/campaign/(:segment)/(:segment)', 'CampaignDetails::campaign/$1/$2');

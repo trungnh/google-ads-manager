@@ -707,6 +707,35 @@ class Campaigns extends BaseController
         }
     }
 
+    public function updateCFLCValue($customerId, $campaignId)
+    {
+        if (!session()->get('isLoggedIn')) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Unauthorized']);
+        }
+
+        try {
+            $newCFLC = $this->request->getPost('cflc');
+
+            if (!isset($newCFLC)) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Thiếu tham số cần thiết']);
+            }
+            
+            $this->campaignsDataModel->updateCFLCValue($customerId, $campaignId, $newCFLC);
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Cập nhật CFLC thành công',
+                'new_cflc' => $newCFLC
+            ]);
+        } catch (\Exception $e) {
+            log_message('error', 'Lỗi khi cập nhật CFLC: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Lỗi khi cập nhật CFLC: ' . $e->getMessage()
+            ]);
+        }
+    }
+
     public function getChartData($customerId, $campaignId)
     {
         if (!session()->get('isLoggedIn')) {
