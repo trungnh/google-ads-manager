@@ -61,13 +61,13 @@ class ReportsModel extends Model
     {
         $report = [
             'user_id' => $data['user_id'],
-            'customer_id' => $data['customer_id'], 
+            'customer_id' => $data['customer_id'],
             'date' => date('Y-m-d'),
             'cost' => $data['cost'] ?? 0,
             'conversions' => $data['conversions'] ?? 0,
             'conversion_value' => $data['conversion_value'] ?? 0,
-            'running' => $data['running']?? 0,
-            'paused' => $data['paused']?? 0,
+            'running' => $data['running'] ?? 0,
+            'paused' => $data['paused'] ?? 0,
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s')
         ];
@@ -84,7 +84,7 @@ class ReportsModel extends Model
         }
     }
 
-    public function saveReportByCampaigns($userId, $customerId, $campaigns) 
+    public function saveReportByCampaigns($userId, $customerId, $campaigns)
     {
         $totalCost = 0;
         $totalConversions = 0;
@@ -98,13 +98,13 @@ class ReportsModel extends Model
             }
 
             $totalCost += $campaign['cost'];
-            $totalConversions += $campaign['real_conversions'];
-            $totalConversionValue += $campaign['real_conversion_value'];
-            
+            $totalConversions += $campaign['real_conversions'] ?? 0;
+            $totalConversionValue += $campaign['real_conversion_value'] ?? 0;
+
             if ($campaign['status'] == 'ENABLED') {
-                $running++; 
+                $running++;
             } else {
-                $paused++; 
+                $paused++;
             }
         }
 
@@ -112,7 +112,7 @@ class ReportsModel extends Model
             'user_id' => $userId,
             'customer_id' => $customerId,
             'date' => date('Y-m-d'),
-            'cost' => $totalCost,  
+            'cost' => $totalCost,
             'conversions' => $totalConversions,
             'conversion_value' => $totalConversionValue,
             'running' => $running,
@@ -123,4 +123,4 @@ class ReportsModel extends Model
 
         return $this->saveReport($report);
     }
-} 
+}
