@@ -13,11 +13,12 @@ class PancakeService
      * 
      * @param string $shopId ID của shop trên Pancake
      * @param string $apiKey API key để xác thực với Pancake API
+     * @param string $sku SKU của sản phẩm
      * @param string $startDateTime Thời gian bắt đầu lấy dữ liệu (Y-m-d H:i:s)
      * @param string $endDateTime Thời gian kết thúc lấy dữ liệu (Y-m-d H:i:s)
      * @return array Mảng dữ liệu đơn hàng
      */
-    public function getOrders($shopId, $apiKey, $startDateTime, $endDateTime)
+    public function getOrders($shopId, $apiKey, $sku, $startDateTime, $endDateTime)
     {
         if (empty($shopId) || empty($apiKey)) {
             log_message('error', 'Pancake POS API: Missing shop ID or API key');
@@ -33,8 +34,12 @@ class PancakeService
             return [];
         }
 
+        $pancakeProductId = $this->getPancakeProductId($shopId, $apiKey, $sku);
         // Build API URL với Unix timestamp
-        $url = $this->apiEnpoint . $this->apiVersion . "/shops/{$shopId}/orders?api_key={$apiKey}&option_sort=inserted_at_desc&startDateTime={$startTimestamp}&endDateTime={$endTimestamp}";
+        $url = $this->apiEnpoint . $this->apiVersion . "/shops/{$shopId}/orders?api_key={$apiKey}&option_sort=inserted_at_desc&startDateTime={$startTimestamp}&endDateTime={$endTimestamp}&page=1&page_size=1000";
+        if ($pancakeProductId) {
+            $url .= "&product_id[]={$pancakeProductId}";
+        }
 
         try {
             // Initialize cURL session
@@ -71,7 +76,6 @@ class PancakeService
                 log_message('info', 'Pancake POS API: No orders found in response');
                 return [];
             }
-
             return $data['data'];
         } catch (\Exception $e) {
             log_message('error', 'Pancake POS API Exception: ' . $e->getMessage());
@@ -129,10 +133,14 @@ class PancakeService
         $startDateTime = $startDate . ' 00:00:00';
         $endDateTime = $endDate . ' 23:59:59';
 
+        // Lọc sản phẩm theo product_id nếu được cấu hình
+        $productId = $settings['pancake_product_id'] ?? null;
+
         // Lấy danh sách đơn hàng từ Pancake POS API
         $orders = $this->getOrders(
             $settings['pancake_shop_id'],
             $settings['pancake_api_key'],
+            $productId,
             $startDateTime,
             $endDateTime
         );
@@ -174,9 +182,6 @@ class PancakeService
         ];
         $processedOrderIds = []; // Để đảm bảo mỗi đơn hàng chỉ được tính một lần
 
-        // Lọc sản phẩm theo product_id nếu được cấu hình
-        $productId = $settings['pancake_product_id'] ?? null;
-
         // Định nghĩa các trạng thái đơn hàng
         $canceledStatuses = [6, 7]; // Đã hủy, Đã xóa
         $pendingStatuses = [0, 10, 21]; // Mới, Webcake, Storecake
@@ -200,9 +205,9 @@ class PancakeService
             $campaignId = $order['p_utm_campaign'] ?? '';
 
             // Kiểm tra sản phẩm nếu có cấu hình product_id
-            if (!empty($productId) && !$this->orderContainsProduct($order, $productId)) {
-                continue;
-            }
+            // if (!empty($productId) && !$this->orderContainsProduct($order, $productId)) {
+            //     continue;
+            // }
 
             // Lấy trạng thái đơn hàng
             $orderStatus = isset($order['status']) ? (int) $order['status'] : null;
@@ -734,6 +739,75 @@ class PancakeService
 
             // Trả về danh sách thẻ
             return $data['data'];
+
+        } catch (Exception $e) {
+            log_message('error', 'Pancake POS API Exception: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Lấy Product ID từ Pancake POS API
+     * 
+     * @param string $shopId ID của shop trên Pancake
+     * @param string $apiKey API key để xác thực với Pancake API
+     * @param string $sku SKU của sản phẩm
+     * @return array|bool Mảng danh sách thẻ hoặc false nếu có lỗi
+     */
+    public function getPancakeProductId($shopId, $apiKey, $sku)
+    {
+        if (empty($shopId) || empty($apiKey)) {
+            log_message('error', 'Pancake POS API: Missing shop ID or API key');
+            return false;
+        }
+
+        // Build API URL để lấy danh sách thẻ
+        $url = $this->apiEnpoint . $this->apiVersion . "/shops/{$shopId}/products/{$sku}?api_key={$apiKey}";
+
+        try {
+            // Initialize cURL session
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+            curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+
+            // Execute cURL request
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+            // Check for cURL errors
+            if (curl_errno($ch)) {
+                $error = curl_error($ch);
+                curl_close($ch);
+                log_message('error', 'Pancake POS API cURL Error: ' . $error);
+                return false;
+            }
+
+            curl_close($ch);
+
+            // Check HTTP response code
+            if ($httpCode != 200) {
+                log_message('error', 'Pancake POS API HTTP Error: ' . $httpCode . ' - Response: ' . $response);
+                return false;
+            }
+
+            // Parse JSON response
+            $data = json_decode($response, true);
+
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                log_message('error', 'Pancake POS API JSON Error: ' . json_last_error_msg() . ' - Response: ' . $response);
+                return false;
+            }
+
+            // Kiểm tra cấu trúc dữ liệu trả về
+            if (!isset($data['data']) || !is_array($data['data'])) {
+                log_message('error', 'Pancake POS API Invalid Response Structure: ' . $response);
+                return false;
+            }
+
+            // Trả về danh sách thẻ
+            return $data['data']['id'];
 
         } catch (Exception $e) {
             log_message('error', 'Pancake POS API Exception: ' . $e->getMessage());
