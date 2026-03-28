@@ -39,12 +39,8 @@ class GoogleAdsService
             }
             // Nếu không sử dụng Pancake POS, sử dụng Google Sheet
             else {
-                if (!empty($gsheetUrl)) {
-                    $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, $startDate, $endDate, $settings);
-                }
-                if (!empty($gsheetUrl2)) {
-                    $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl2, $startDate, $endDate, $settings);
-                }
+                $gsheetUrl = $settings['gsheet1'] ?? null;
+                $campaigns = $this->googleSheetService->processRealConversions($campaigns, $gsheetUrl, $startDate, $endDate, $settings);
             }
         }
 
