@@ -12,13 +12,14 @@ class UserSettingsModel extends Model
     protected $returnType = 'array';
     protected $useSoftDeletes = false;
     protected $allowedFields = [
-        'user_id', 
-        'telegram_chat_id', 
+        'user_id',
+        'mcc_id',
+        'telegram_chat_id',
         'report_telegram_chat_id',
         'telegram_proxy',
         'use_telegram_proxy'
     ];
-    
+
     protected $validationRules = [
         'user_id' => 'required|integer',
         'mcc_id' => 'permit_empty|numeric',
@@ -37,7 +38,7 @@ class UserSettingsModel extends Model
         'telegram_chat_id' => [
             'integer' => 'Telegram Chat ID must be an integer'
         ],
-       'report_telegram_chat_id' => [
+        'report_telegram_chat_id' => [
             'integer' => 'Report Telegram Chat ID must be an integer'
         ]
     ];
