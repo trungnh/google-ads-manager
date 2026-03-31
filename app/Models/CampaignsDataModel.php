@@ -13,7 +13,7 @@ class CampaignsDataModel extends Model
     protected $useAutoIncrement = true;
     protected $returnType = 'array';
     protected $useSoftDeletes = false;
-    protected $allowedFields = [
+        protected $allowedFields = [
         'customer_id',
         'campaign_id',
         'date',
@@ -30,6 +30,18 @@ class CampaignsDataModel extends Model
         'ctr',
         'clicks',
         'average_cpc',
+        'external_metrics',
+        'last_cost_conversion',
+        'last_count_conversion',
+        'last_count_conversion_value',
+        'last_updated_at'
+    ];
+
+    protected $beforeInsert = ['encodeJsonColumns'];
+    protected $beforeUpdate = ['encodeJsonColumns'];
+    protected $afterFind = ['decodeJsonColumns'];
+
+    protected $externalMetricKeys = [
         'real_conversions',
         'real_conversions_total',
         'real_conversions_pending',
@@ -42,12 +54,55 @@ class CampaignsDataModel extends Model
         'real_cpa_total',
         'real_cpa_success',
         'real_roas_total',
-        'real_roas_success',
-        'last_cost_conversion',
-        'last_count_conversion',
-        'last_count_conversion_value',
-        'last_updated_at'
+        'real_roas_success'
     ];
+
+    protected function encodeJsonColumns(array $data)
+    {
+        if (isset($data['data'])) {
+            $externalMetrics = [];
+            foreach ($data['data'] as $key => $value) {
+                if (in_array($key, $this->externalMetricKeys)) {
+                    $externalMetrics[$key] = $value;
+                    unset($data['data'][$key]);
+                }
+            }
+            if (!empty($externalMetrics)) {
+                $data['data']['external_metrics'] = json_encode($externalMetrics);
+            }
+        }
+        return $data;
+    }
+
+    protected function decodeJsonColumns(array $data)
+    {
+        if (isset($data['data'])) {
+            if (isset($data['id'])) {
+                // single item
+                $this->parseExternalJson($data['data']);
+            } else {
+                // multiple items
+                foreach ($data['data'] as &$row) {
+                    $this->parseExternalJson($row);
+                }
+            }
+        }
+        return $data;
+    }
+
+    protected function parseExternalJson(&$row)
+    {
+        if (isset($row['external_metrics']) && !empty($row['external_metrics'])) {
+            $decoded = json_decode($row['external_metrics'], true);
+            if (is_array($decoded)) {
+                foreach ($decoded as $k => $v) {
+                    $row[$k] = $v;
+                }
+            }
+            unset($row['external_metrics']);
+        }
+    }
+
     protected $useTimestamps = true;
     protected $createdField = 'created_at';
     protected $updatedField = 'updated_at';

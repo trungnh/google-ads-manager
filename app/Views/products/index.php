@@ -70,34 +70,33 @@
                                     <tr>
                                         <td>
                                             <div class="d-flex px-3 py-1">
-                                                <span class="text-white text-sm font-weight-bold"
-                                                    style="color: #00F4FF!important">
+                                                <span class="text-black text-sm font-weight-bold">
                                                     <?= esc($p['product_code']) ?>
                                                 </span>
                                             </div>
                                         </td>
                                         <td>
-                                            <p class="text-sm font-weight-bold mb-0 text-white">
+                                            <p class="text-sm font-weight-bold mb-0 text-black">
                                                 <?= esc($p['name']) ?>
                                             </p>
                                         </td>
                                         <td class="align-middle text-end">
-                                            <span class="text-sm text-white font-weight-bold">
+                                            <span class="text-sm text-black font-weight-bold">
                                                 <?= number_format($p['import_price'], 0, ',', '.') ?> đ
                                             </span>
                                         </td>
                                         <td class="align-middle text-end">
-                                            <span class="text-sm text-white font-weight-bold">
+                                            <span class="text-sm text-black font-weight-bold">
                                                 <?= number_format($p['selling_price'], 0, ',', '.') ?> đ
                                             </span>
                                         </td>
                                         <td class="align-middle text-end">
-                                            <span class="text-sm text-white">
+                                            <span class="text-sm text-black">
                                                 <?= number_format($p['shipping_fee'], 0, ',', '.') ?> đ
                                             </span>
                                         </td>
                                         <td class="align-middle text-center">
-                                            <span class="text-sm text-white font-weight-bold"
+                                            <span class="text-sm text-black font-weight-bold"
                                                 style="color: #FF5E5E!important">
                                                 <?= rtrim(rtrim(number_format($p['return_rate'] * 100, 2), '0'), '.') ?>%
                                             </span>
@@ -108,7 +107,7 @@
                                             if (!empty($mappedAccounts)) {
                                                 foreach ($mappedAccounts as $acc) {
                                                     $name = isset($adsAccountMap[$acc]) ? $adsAccountMap[$acc] : $acc;
-                                                    echo '<span class="badge badge-sm bg-gradient-info me-1 mb-1">' . $name . '</span>';
+                                                    echo '<span class="badge badge-sm bg-gradient-info me-1 mb-1 text-black">' . $name . '</span>';
                                                 }
                                             } else {
                                                 echo '<span class="text-xs text-secondary">Chưa map tài khoản</span>';

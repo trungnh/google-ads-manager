@@ -53,3 +53,15 @@ Events::on('pre_system', static function (): void {
         }
     }
 });
+
+
+/*
+ * --------------------------------------------------------------------
+ * Optimization Campaign Events
+ * --------------------------------------------------------------------
+ */
+use App\Listeners\OptimizationListener;
+
+Events::on('campaign_optimized', [OptimizationListener::class, 'onOptimizationAction']);
+Events::on('campaign_optimization_error', [OptimizationListener::class, 'onOptimizationError']);
+Events::on('campaign_info_message', [OptimizationListener::class, 'onInfoMessage']);

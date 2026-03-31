@@ -67,59 +67,36 @@ class GoogleAdsService
         }
     }
 
+    protected function getApiClient($accessToken)
+    {
+        if (is_array($accessToken)) {
+            $tokenData = $accessToken;
+            return new \App\Services\ApiClient\GoogleAdsApiClient(
+                $tokenData['access_token'] ?? null,
+                $tokenData['refresh_token'] ?? null,
+                null,
+                function ($newTokenData) use ($tokenData) {
+                    $tokenId = $tokenData['id'] ?? null;
+                    if ($tokenId) {
+                        $tokenModel = new \App\Models\GoogleTokenModel();
+                        $tokenModel->update($tokenId, [
+                            'access_token' => $newTokenData['access_token'],
+                            'expires_at'   => date('Y-m-d H:i:s', time() + $newTokenData['expires_in']),
+                            'updated_at'   => date('Y-m-d H:i:s')
+                        ]);
+                        log_message('info', "[GoogleAdsService] Đã lưu thành công token mới cho record ID: {$tokenId}");
+                    }
+                }
+            );
+        } else {
+            return new \App\Services\ApiClient\GoogleAdsApiClient($accessToken);
+        }
+    }
+
     protected function makeAccountListRequest($url, $method, $accessToken, $data = null, $loginCustomerId = null)
     {
-        $ch = curl_init();
-
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
-
-        $headers = [
-            'Authorization: Bearer ' . $accessToken,
-            'Content-Type: application/json',
-            'Accept: application/json',
-            'developer-token: ' . getenv('GOOGLE_ADS_DEVELOPER_TOKEN')
-        ];
-
-        // Thêm login-customer-id header nếu có
-        if ($loginCustomerId) {
-            $formattedLoginCustomerId = $this->formatCustomerId($loginCustomerId);
-            $headers[] = 'login-customer-id: ' . $formattedLoginCustomerId;
-            log_message('debug', '[Account List] Using login-customer-id: ' . $formattedLoginCustomerId);
-        }
-
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-
-        if ($data && $method !== 'GET') {
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-            log_message('debug', '[Account List] Request body: ' . $data);
-        }
-
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-
-        if (curl_errno($ch)) {
-            $error = curl_error($ch);
-            curl_close($ch);
-            log_message('error', '[Account List] cURL Error: ' . $error);
-            throw new Exception('cURL error: ' . $error);
-        }
-
-        curl_close($ch);
-
-        $decodedResponse = json_decode($response, true);
-
-        if ($httpCode >= 400) {
-            $errorMessage = isset($decodedResponse['error']['message'])
-                ? $decodedResponse['error']['message']
-                : 'API request failed with status ' . $httpCode . '. Response: ' . $response;
-
-            log_message('error', '[Account List] Google Ads API Error: ' . $errorMessage);
-            throw new Exception('API request failed with status ' . $httpCode . '. Response: ' . $response);
-        }
-
-        return $decodedResponse;
+        $client = $this->getApiClient($accessToken);
+        return $client->makeRequest($url, $method, $data, $loginCustomerId);
     }
 
     protected function getAccountDetails($accessToken, $customerId, $mccId = null)
@@ -343,68 +320,8 @@ class GoogleAdsService
 
     protected function makeCurlRequest($url, $method, $accessToken, $data = null, $loginCustomerId = null)
     {
-        $ch = curl_init();
-
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
-
-        $headers = [
-            'Authorization: Bearer ' . $accessToken,
-            'Content-Type: application/json',
-            'Accept: application/json',
-            'developer-token: ' . getenv('GOOGLE_ADS_DEVELOPER_TOKEN')
-        ];
-
-        // Thêm login-customer-id header nếu có
-        if ($loginCustomerId) {
-            // Đảm bảo ID được định dạng đúng (không có dấu gạch ngang)
-            $formattedLoginCustomerId = $this->formatCustomerId($loginCustomerId);
-            $headers[] = 'login-customer-id: ' . $formattedLoginCustomerId;
-
-            // Log để debug
-            log_message('debug', '[CURL] Using login-customer-id header: ' . $formattedLoginCustomerId);
-        } else {
-            log_message('debug', '[CURL] No login-customer-id provided');
-        }
-
-        // Log tất cả các header để debug
-        log_message('debug', '[CURL] Headers: ' . json_encode($headers));
-
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-
-        if ($data && $method !== 'GET') {
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-            log_message('debug', '[CURL] Request body: ' . $data);
-        }
-
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-
-        log_message('debug', '[CURL] HTTP Status Code: ' . $httpCode);
-
-        if (curl_errno($ch)) {
-            $error = curl_error($ch);
-            curl_close($ch);
-            log_message('error', '[CURL] Error: ' . $error);
-            throw new Exception('cURL error: ' . $error);
-        }
-
-        curl_close($ch);
-
-        $decodedResponse = json_decode($response, true);
-
-        // Kiểm tra và xử lý lỗi
-        if ($httpCode >= 400) {
-            $errorMessage = isset($decodedResponse['error']['message'])
-                ? $decodedResponse['error']['message']
-                : 'API request failed with status ' . $httpCode . '. Response: ' . $response;
-
-            log_message('error', '[CURL] Google Ads API Error: ' . $errorMessage);
-            throw new Exception('API request failed with status ' . $httpCode . '. Response: ' . $response);
-        }
-
-        return $decodedResponse;
+        $client = $this->getApiClient($accessToken);
+        return $client->makeRequest($url, $method, $data, $loginCustomerId);
     }
 
     public function getCampaigns($customerId, $accessToken, $mccId = null, $showPaused = false, $startDate = null, $endDate = null)
@@ -654,56 +571,8 @@ class GoogleAdsService
 
     protected function makeCampaignBudgetRequest($url, $method, $accessToken, $data, $loginCustomerId = null)
     {
-        $ch = curl_init();
-
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
-
-        $headers = [
-            'Authorization: Bearer ' . $accessToken,
-            'Content-Type: application/json',
-            'Accept: application/json',
-            'developer-token: ' . getenv('GOOGLE_ADS_DEVELOPER_TOKEN')
-        ];
-
-        if ($loginCustomerId) {
-            $formattedLoginCustomerId = $this->formatCustomerId($loginCustomerId);
-            $headers[] = 'login-customer-id: ' . $formattedLoginCustomerId;
-            log_message('debug', '[Budget Request] Using login-customer-id: ' . $formattedLoginCustomerId);
-        }
-
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-
-        if ($data && $method !== 'GET') {
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-            log_message('debug', '[Budget Request] Request body: ' . $data);
-        }
-
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-
-        if (curl_errno($ch)) {
-            $error = curl_error($ch);
-            curl_close($ch);
-            log_message('error', '[Budget Request] cURL Error: ' . $error);
-            throw new Exception('cURL error: ' . $error);
-        }
-
-        curl_close($ch);
-
-        $decodedResponse = json_decode($response, true);
-
-        if ($httpCode >= 400) {
-            $errorMessage = isset($decodedResponse['error']['message'])
-                ? $decodedResponse['error']['message']
-                : 'API request failed with status ' . $httpCode . '. Response: ' . $response;
-
-            log_message('error', '[Budget Request] Google Ads API Error: ' . $errorMessage);
-            throw new Exception('API request failed with status ' . $httpCode . '. Response: ' . $response);
-        }
-
-        return $decodedResponse;
+        $client = $this->getApiClient($accessToken);
+        return $client->makeRequest($url, $method, $data, $loginCustomerId);
     }
 
     public function updateCampaignBudget($accessToken, $customerId, $campaignId, $newBudget, $mccId = null)

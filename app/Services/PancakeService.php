@@ -94,101 +94,84 @@ class PancakeService
      */
     public function processRealConversions($campaigns, $settings, $startDate, $endDate)
     {
-        // Kiểm tra input
         if (empty($campaigns) || !is_array($campaigns)) {
             log_message('error', 'Invalid campaigns data: ' . json_encode($campaigns));
             return [];
         }
 
-        // Kiểm tra cài đặt Pancake POS
         if (empty($settings['pancake_shop_id']) || empty($settings['pancake_api_key'])) {
             log_message('error', 'Pancake POS: Missing shop ID or API key in settings');
-            // Nếu không có dữ liệu chuyển đổi, đặt giá trị mặc định
-            foreach ($campaigns as &$tmpCampaign) {
-                $tmpCampaign['real_conversions'] = 0;
-                $tmpCampaign['real_conversion_value'] = 0;
-                $tmpCampaign['real_conversion_rate'] = 0;
-                $tmpCampaign['real_cpa'] = 0;
-                $tmpCampaign['real_roas'] = 0;
-                // Thêm các trường mới
-                $tmpCampaign['real_conversions_total'] = 0;
-                $tmpCampaign['real_conversions_pending'] = 0;
-                $tmpCampaign['real_conversions_success'] = 0;
-                $tmpCampaign['real_conversion_value_total'] = 0;
-                $tmpCampaign['real_conversion_value_success'] = 0;
-                $tmpCampaign['real_cpa_total'] = 0;
-                $tmpCampaign['real_cpa_success'] = 0;
-                $tmpCampaign['real_roas_total'] = 0;
-                $tmpCampaign['real_roas_success'] = 0;
-            }
-
-            return $campaigns;
+            return $this->fillEmptyConversions($campaigns);
         }
 
-        // Kiểm tra cài đặt quy đổi USD
         $useUsd = isset($settings['pancake_use_usd']) && $settings['pancake_use_usd'];
         $usdRate = isset($settings['pancake_usd_rate']) && is_numeric($settings['pancake_usd_rate']) ? (float) $settings['pancake_usd_rate'] : 27000;
 
-        // Thêm thời gian vào ngày để lấy dữ liệu cả ngày
         $startDateTime = $startDate . ' 00:00:00';
         $endDateTime = $endDate . ' 23:59:59';
-
-        // Lọc sản phẩm theo product_id nếu được cấu hình
         $productId = $settings['pancake_product_id'] ?? null;
 
-        // Lấy danh sách đơn hàng từ Pancake POS API
-        $orders = $this->getOrders(
-            $settings['pancake_shop_id'],
-            $settings['pancake_api_key'],
-            $productId,
-            $startDateTime,
-            $endDateTime
-        );
+        $orders = $this->getOrders($settings['pancake_shop_id'], $settings['pancake_api_key'], $productId, $startDateTime, $endDateTime);
 
         if (empty($orders)) {
             log_message('info', 'Pancake POS: No orders found for the specified date range');
-            // Nếu không có dữ liệu chuyển đổi, đặt giá trị mặc định
-            foreach ($campaigns as &$tmpCampaign) {
-                $tmpCampaign['real_conversions'] = 0;
-                $tmpCampaign['real_conversion_value'] = 0;
-                $tmpCampaign['real_conversion_rate'] = 0;
-                $tmpCampaign['real_cpa'] = 0;
-                $tmpCampaign['real_roas'] = 0;
-                // Thêm các trường mới
-                $tmpCampaign['real_conversions_total'] = 0;
-                $tmpCampaign['real_conversions_pending'] = 0;
-                $tmpCampaign['real_conversions_success'] = 0;
-                $tmpCampaign['real_conversion_value_total'] = 0;
-                $tmpCampaign['real_conversion_value_success'] = 0;
-                $tmpCampaign['real_cpa_total'] = 0;
-                $tmpCampaign['real_cpa_success'] = 0;
-                $tmpCampaign['real_roas_total'] = 0;
-                $tmpCampaign['real_roas_success'] = 0;
-            }
-
-            return $campaigns;
+            return $this->fillEmptyConversions($campaigns);
         }
 
-        // Khởi tạo mảng để lưu trữ dữ liệu cho mỗi chiến dịch
+        $excludeTags = $settings['pancake_exclude_tags'] ?? '';
+        $aggregatedData = $this->aggregateOrderData($orders, $excludeTags);
+        
+        $processedIds = [];
+        $processedCampaigns = $this->mapConversionsToCampaigns($campaigns, $aggregatedData['campaignData'], $useUsd, $usdRate, $processedIds);
+        
+        // Handle offline and unmatched online campaigns
+        $processedCampaigns = $this->processUnmatchedCampaignData(
+            $processedCampaigns, 
+            $aggregatedData['offlineOrderData'], 
+            $aggregatedData['campaignData'], 
+            $processedIds, 
+            $useUsd, 
+            $usdRate
+        );
+
+        return $processedCampaigns;
+    }
+
+    protected function fillEmptyConversions($campaigns)
+    {
+        foreach ($campaigns as &$tmpCampaign) {
+            $tmpCampaign['real_conversions'] = 0;
+            $tmpCampaign['real_conversion_value'] = 0;
+            $tmpCampaign['real_conversion_rate'] = 0;
+            $tmpCampaign['real_cpa'] = 0;
+            $tmpCampaign['real_roas'] = 0;
+            $tmpCampaign['real_conversions_total'] = 0;
+            $tmpCampaign['real_conversions_pending'] = 0;
+            $tmpCampaign['real_conversions_success'] = 0;
+            $tmpCampaign['real_conversion_value_total'] = 0;
+            $tmpCampaign['real_conversion_value_success'] = 0;
+            $tmpCampaign['real_cpa_total'] = 0;
+            $tmpCampaign['real_cpa_success'] = 0;
+            $tmpCampaign['real_roas_total'] = 0;
+            $tmpCampaign['real_roas_success'] = 0;
+        }
+        return $campaigns;
+    }
+
+    protected function aggregateOrderData(array $orders, $excludeTags)
+    {
         $campaignData = [];
-        // Khởi tạo mảng để lưu trữ dữ liệu đơn hàng offline (không có p_utm_campaign)
         $offlineOrderData = [
-            'unique_phones' => [],
-            'total_value' => 0,
-            'pending_phones' => [],
-            'pending_value' => 0,
-            'success_phones' => [],
-            'success_value' => 0
+            'unique_phones' => [], 'total_value' => 0,
+            'pending_phones' => [], 'pending_value' => 0,
+            'success_phones' => [], 'success_value' => 0
         ];
-        $processedOrderIds = []; // Để đảm bảo mỗi đơn hàng chỉ được tính một lần
+        $processedOrderIds = [];
 
-        // Định nghĩa các trạng thái đơn hàng
-        $canceledStatuses = [6, 7]; // Đã hủy, Đã xóa
-        $pendingStatuses = [0, 10, 21]; // Mới, Webcake, Storecake
+        $canceledStatuses = [6, 7];
+        $pendingStatuses = [0, 10, 21];
 
-        // Xử lý từng đơn hàng
         foreach ($orders as $order) {
-            // Kiểm tra xem đơn hàng đã được xử lý chưa
             $orderId = $order['id'] ?? '';
             if (empty($orderId) || in_array($orderId, $processedOrderIds)) {
                 continue;
@@ -201,72 +184,28 @@ class PancakeService
                 continue;
             }
 
-            // Lấy campaign ID từ trường p_utm_campaign
-            $campaignId = $order['p_utm_campaign'] ?? '';
-
-            // Kiểm tra sản phẩm nếu có cấu hình product_id
-            // if (!empty($productId) && !$this->orderContainsProduct($order, $productId)) {
-            //     continue;
-            // }
-
-            // Lấy trạng thái đơn hàng
             $orderStatus = isset($order['status']) ? (int) $order['status'] : null;
-
-            // Bỏ qua đơn hàng đã hủy hoặc đã xóa
             if (in_array($orderStatus, $canceledStatuses)) {
                 continue;
             }
 
-            // Kiểm tra thẻ đơn hàng nếu có cấu hình exclude_tags
-            $excludeTags = isset($settings['pancake_exclude_tags']) ? $settings['pancake_exclude_tags'] : '';
-            $hasExcludedTag = !empty($excludeTags) && $this->orderContainsExcludedTag($order, $excludeTags);
-            if ($hasExcludedTag) {
+            if (!empty($excludeTags) && $this->orderContainsExcludedTag($order, $excludeTags)) {
                 continue;
             }
 
-            // Lấy thời gian tạo đơn hàng và kiểm tra xem có nằm trong khoảng thời gian cần lấy không
-            // $insertedAt = $order['inserted_at'] ?? null;
-            // if (!empty($insertedAt)) {
-            //     // Kiểm tra nếu inserted_at là timestamp (số nguyên) thì chuyển đổi thành chuỗi datetime
-            //     if (is_numeric($insertedAt)) {
-            //         $conversionTime = (int)$insertedAt;
-            //     } else {
-            //         $conversionTime = strtotime($insertedAt);
-            //     }
-
-            //     if ($conversionTime) {
-            //         $conversionDate = date('Y-m-d', $conversionTime);
-
-            //         // Chỉ xử lý đơn hàng trong khoảng thời gian được chọn
-            //         if ($conversionDate < $startDate || $conversionDate > $endDate) {
-            //             continue;
-            //         }
-            //     }
-            // }
-
-            // Lấy giá trị đơn hàng và số điện thoại
             $orderValue = $order['total_price'] ?? 0;
             $phone = $order['bill_phone_number'] ?? '';
-
-            // Bỏ qua nếu không có số điện thoại
             if (empty($phone)) {
                 continue;
             }
 
-            // Xác định loại đơn hàng (đang chốt hay thành công)
-            //$isPendingOrder = in_array($orderStatus, $pendingStatuses) && !$hasExcludedTag;
             $isPendingOrder = in_array($orderStatus, $pendingStatuses);
+            $campaignId = $order['p_utm_campaign'] ?? '';
 
-            // Xử lý đơn hàng dựa vào campaignId
             if (empty($campaignId)) {
-                // Đơn hàng offline (không có p_utm_campaign)
-                // Nếu số điện thoại chưa xuất hiện trong đơn hàng offline
                 if (!isset($offlineOrderData['unique_phones'][$phone])) {
-                    // Thêm vào tổng đơn hàng offline
                     $offlineOrderData['unique_phones'][$phone] = true;
                     $offlineOrderData['total_value'] += $orderValue;
-
-                    // Phân loại đơn hàng offline
                     if ($isPendingOrder) {
                         $offlineOrderData['pending_phones'][$phone] = true;
                         $offlineOrderData['pending_value'] += $orderValue;
@@ -276,26 +215,16 @@ class PancakeService
                     }
                 }
             } else {
-                // Đơn hàng online (có p_utm_campaign)
-                // Khởi tạo dữ liệu chiến dịch nếu chưa có
                 if (!isset($campaignData[$campaignId])) {
                     $campaignData[$campaignId] = [
-                        'unique_phones' => [],
-                        'total_value' => 0,
-                        'pending_phones' => [],
-                        'pending_value' => 0,
-                        'success_phones' => [],
-                        'success_value' => 0
+                        'unique_phones' => [], 'total_value' => 0,
+                        'pending_phones' => [], 'pending_value' => 0,
+                        'success_phones' => [], 'success_value' => 0
                     ];
                 }
-
-                // Nếu số điện thoại chưa xuất hiện trong chiến dịch này
                 if (!isset($campaignData[$campaignId]['unique_phones'][$phone])) {
-                    // Thêm vào tổng đơn hàng
                     $campaignData[$campaignId]['unique_phones'][$phone] = true;
                     $campaignData[$campaignId]['total_value'] += $orderValue;
-
-                    // Phân loại đơn hàng
                     if ($isPendingOrder) {
                         $campaignData[$campaignId]['pending_phones'][$phone] = true;
                         $campaignData[$campaignId]['pending_value'] += $orderValue;
@@ -305,184 +234,118 @@ class PancakeService
                     }
                 }
             }
-
-            // Đánh dấu đơn hàng đã được xử lý
             $processedOrderIds[] = $orderId;
         }
 
-        // Tạo mảng mới để lưu kết quả
-        $processedCampaigns = [];
-        $processedCampaignIds = [];
+        return ['campaignData' => $campaignData, 'offlineOrderData' => $offlineOrderData];
+    }
 
-        // Cập nhật dữ liệu chiến dịch với thông tin chuyển đổi thực tế
+    protected function mapConversionsToCampaigns(array $campaigns, array $campaignData, $useUsd, $usdRate, &$processedCampaignIds)
+    {
+        $processedCampaigns = [];
         foreach ($campaigns as $campaign) {
-            // Đảm bảo campaign là array và có campaign_id
             if (!is_array($campaign) || !isset($campaign['campaign_id'])) {
-                log_message('error', 'Invalid campaign data: ' . json_encode($campaign));
                 continue;
             }
 
-            // Tạo bản sao của campaign để tránh tham chiếu
             $processedCampaign = $campaign;
             $campaignId = $campaign['campaign_id'];
 
-            // Nếu có dữ liệu chuyển đổi cho chiến dịch này
             if (isset($campaignData[$campaignId])) {
-                // Tính toán giá trị chuyển đổi, áp dụng quy đổi USD nếu được bật
                 $totalValue = $campaignData[$campaignId]['total_value'];
                 $pendingValue = $campaignData[$campaignId]['pending_value'];
                 $successValue = $campaignData[$campaignId]['success_value'];
 
                 if ($useUsd && $usdRate > 0) {
-                    // Quy đổi từ VND sang USD theo tỷ giá
-                    $totalValue = $totalValue / $usdRate;
-                    $pendingValue = $pendingValue / $usdRate;
-                    $successValue = $successValue / $usdRate;
-                    log_message('info', 'Converting value from VND to USD with rate: ' . $usdRate);
+                    $totalValue /= $usdRate;
+                    $pendingValue /= $usdRate;
+                    $successValue /= $usdRate;
                 }
 
-                // Số lượng chuyển đổi theo từng loại
                 $totalConversions = count($campaignData[$campaignId]['unique_phones']);
                 $pendingConversions = count($campaignData[$campaignId]['pending_phones']);
                 $successConversions = count($campaignData[$campaignId]['success_phones']);
 
-                // Gán giá trị cho các trường mới
                 $processedCampaign['real_conversions_total'] = $totalConversions;
                 $processedCampaign['real_conversions_pending'] = $pendingConversions;
                 $processedCampaign['real_conversions_success'] = $successConversions;
                 $processedCampaign['real_conversion_value_total'] = $totalValue;
                 $processedCampaign['real_conversion_value_success'] = $successValue;
 
-                // Tính CPA
-                $processedCampaign['real_cpa_total'] = $totalConversions > 0
-                    ? ($campaign['cost'] ?? 0) / $totalConversions
-                    : 0;
-                $processedCampaign['real_cpa_success'] = $successConversions > 0
-                    ? ($campaign['cost'] ?? 0) / $successConversions
-                    : 0;
+                $processedCampaign['real_cpa_total'] = $totalConversions > 0 ? ($campaign['cost'] ?? 0) / $totalConversions : 0;
+                $processedCampaign['real_cpa_success'] = $successConversions > 0 ? ($campaign['cost'] ?? 0) / $successConversions : 0;
 
-                // Tính ROAS
-                $processedCampaign['real_roas_total'] = isset($campaign['cost']) && $campaign['cost'] > 0
-                    ? $totalValue / $campaign['cost']
-                    : 0;
-                $processedCampaign['real_roas_success'] = isset($campaign['cost']) && $campaign['cost'] > 0
-                    ? $successValue / $campaign['cost']
-                    : 0;
+                $processedCampaign['real_roas_total'] = ($campaign['cost'] ?? 0) > 0 ? $totalValue / $campaign['cost'] : 0;
+                $processedCampaign['real_roas_success'] = ($campaign['cost'] ?? 0) > 0 ? $successValue / $campaign['cost'] : 0;
 
-                // Giữ lại các trường cũ để tương thích ngược
                 $processedCampaign['real_conversions'] = $totalConversions;
                 $processedCampaign['real_conversion_value'] = $totalValue;
-                $processedCampaign['real_conversion_rate'] = isset($campaign['clicks']) && $campaign['clicks'] > 0
-                    ? ($totalConversions / $campaign['clicks'])
-                    : 0;
-                $processedCampaign['real_cpa'] = $totalConversions > 0
-                    ? ($campaign['cost'] ?? 0) / $totalConversions
-                    : 0;
-                $processedCampaign['real_roas'] = isset($campaign['cost']) && $campaign['cost'] > 0
-                    ? $totalValue / $campaign['cost']
-                    : 0;
+                $processedCampaign['real_conversion_rate'] = ($campaign['clicks'] ?? 0) > 0 ? ($totalConversions / $campaign['clicks']) : 0;
+                $processedCampaign['real_cpa'] = $processedCampaign['real_cpa_total'];
+                $processedCampaign['real_roas'] = $processedCampaign['real_roas_total'];
             } else {
-                // Nếu không có dữ liệu chuyển đổi, đặt giá trị mặc định
-                $processedCampaign['real_conversions'] = 0;
-                $processedCampaign['real_conversion_value'] = 0;
-                $processedCampaign['real_conversion_rate'] = 0;
-                $processedCampaign['real_cpa'] = 0;
-                $processedCampaign['real_roas'] = 0;
-                // Thêm các trường mới
-                $processedCampaign['real_conversions_total'] = 0;
-                $processedCampaign['real_conversions_pending'] = 0;
-                $processedCampaign['real_conversions_success'] = 0;
-                $processedCampaign['real_conversion_value_total'] = 0;
-                $processedCampaign['real_conversion_value_success'] = 0;
-                $processedCampaign['real_cpa_total'] = 0;
-                $processedCampaign['real_cpa_success'] = 0;
-                $processedCampaign['real_roas_total'] = 0;
-                $processedCampaign['real_roas_success'] = 0;
+                $processedCampaign = array_merge($processedCampaign, [
+                    'real_conversions' => 0, 'real_conversion_value' => 0, 'real_conversion_rate' => 0,
+                    'real_cpa' => 0, 'real_roas' => 0, 'real_conversions_total' => 0, 'real_conversions_pending' => 0,
+                    'real_conversions_success' => 0, 'real_conversion_value_total' => 0, 'real_conversion_value_success' => 0,
+                    'real_cpa_total' => 0, 'real_cpa_success' => 0, 'real_roas_total' => 0, 'real_roas_success' => 0
+                ]);
             }
 
-            // Lưu ID chiến dịch vào 1 mảng
             if (!in_array($campaignId, $processedCampaignIds)) {
                 $processedCampaignIds[] = $campaignId;
             }
-
             $processedCampaigns[] = $processedCampaign;
         }
 
-        // Xử lý đơn hàng offline và thêm vào danh sách chiến dịch
-        $offlineCampaign = [];
+        return $processedCampaigns;
+    }
 
+    protected function processUnmatchedCampaignData(array $processedCampaigns, array $offlineOrderData, array $campaignData, array $processedCampaignIds, $useUsd, $usdRate)
+    {
+        $offlineCampaign = [];
         if (!empty($offlineOrderData['unique_phones'])) {
-            // Tính toán giá trị chuyển đổi cho đơn hàng offline, áp dụng quy đổi USD nếu được bật
             $totalValue = $offlineOrderData['total_value'];
-            $pendingValue = $offlineOrderData['pending_value'];
             $successValue = $offlineOrderData['success_value'];
 
             if ($useUsd && $usdRate > 0) {
-                // Quy đổi từ VND sang USD theo tỷ giá
-                $totalValue = $totalValue / $usdRate;
-                $pendingValue = $pendingValue / $usdRate;
-                $successValue = $successValue / $usdRate;
+                $totalValue /= $usdRate;
+                $successValue /= $usdRate;
             }
 
-            // Số lượng chuyển đổi theo từng loại
             $totalConversions = count($offlineOrderData['unique_phones']);
             $pendingConversions = count($offlineOrderData['pending_phones']);
             $successConversions = count($offlineOrderData['success_phones']);
 
-            // Tạo chiến dịch mới cho đơn hàng offline
-            $this->processOfflineCampaign(
-                $offlineCampaign,
-                $totalConversions,
-                $pendingConversions,
-                $successConversions,
-                $totalValue,
-                $successValue
-            );
+            $this->processOfflineCampaign($offlineCampaign, $totalConversions, $pendingConversions, $successConversions, $totalValue, $successValue);
         }
 
-        // Xử lý những đơn hàng có utm campaign ID nhưng không đến từ Google Ads
         foreach ($campaignData as $campID => $data) {
             if (in_array($campID, $processedCampaignIds)) {
                 continue;
             }
 
-            // Tính toán giá trị chuyển đổi, áp dụng quy đổi USD nếu được bật
             $totalValue = $data['total_value'];
-            $pendingValue = $data['pending_value'];
             $successValue = $data['success_value'];
 
             if ($useUsd && $usdRate > 0) {
-                // Quy đổi từ VND sang USD theo tỷ giá
-                $totalValue = $totalValue / $usdRate;
-                $pendingValue = $pendingValue / $usdRate;
-                $successValue = $successValue / $usdRate;
-                log_message('info', 'Converting value from VND to USD with rate: ' . $usdRate);
+                $totalValue /= $usdRate;
+                $successValue /= $usdRate;
             }
 
-            // Số lượng chuyển đổi theo từng loại
             $totalConversions = count($data['unique_phones']);
             $pendingConversions = count($data['pending_phones']);
             $successConversions = count($data['success_phones']);
 
-            // Gán giá trị cho offline Campaign
-            $this->processOfflineCampaign(
-                $offlineCampaign,
-                $totalConversions,
-                $pendingConversions,
-                $successConversions,
-                $totalValue,
-                $successValue
-            );
+            $this->processOfflineCampaign($offlineCampaign, $totalConversions, $pendingConversions, $successConversions, $totalValue, $successValue);
         }
 
-        // Thêm chiến dịch offline vào danh sách
         if (!empty($offlineCampaign)) {
             $processedCampaigns[] = $offlineCampaign;
         }
 
         return $processedCampaigns;
     }
-
     protected function processOfflineCampaign(
         &$offlineCampaign,
         $totalConversions,

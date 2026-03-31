@@ -11,23 +11,12 @@ class AdsAccountSettingsModel extends Model
     protected $useAutoIncrement = true;
     protected $returnType = 'array';
     protected $useSoftDeletes = false;
-    protected $allowedFields = [
+        protected $allowedFields = [
         'account_id',
         'auto_optimize',
         'cpa_threshold',
         'roas_threshold',
         'increase_budget',
-        'gsheet1',
-        'gsheet_date_col',
-        'gsheet_phone_col',
-        'gsheet_value_col',
-        'gsheet_campaign_col',
-        'gsheet2',
-        'use_ggsheet_api',
-        'ggsheet_id',
-        'ggsheet_name',
-        'ggsheet2_id',
-        'ggsheet2_name',
         'last_optimize_run',
         'cost_threshold',
         'auto_on_off',
@@ -36,14 +25,69 @@ class AdsAccountSettingsModel extends Model
         'default_paused_campaigns',
         'exclude_campaign_ids',
         'customer_id',
-        'pancake_shop_id',
-        'pancake_api_key',
-        'pancake_product_id',
-        'pancake_exclude_tags',
-        'use_pancake',
-        'pancake_use_usd',
-        'pancake_usd_rate',
+        'integration_settings'
     ];
+
+    protected $beforeInsert = ['encodeJsonColumns'];
+    protected $beforeUpdate = ['encodeJsonColumns'];
+    protected $afterFind = ['decodeJsonColumns'];
+
+    protected $integrationKeys = [
+        'gsheet1', 'gsheet_date_col', 'gsheet_phone_col', 'gsheet_value_col', 'gsheet_campaign_col', 'gsheet2',
+        'use_ggsheet_api', 'ggsheet_id', 'ggsheet_name', 'ggsheet2_id', 'ggsheet2_name',
+        'use_pancake', 'pancake_shop_id', 'pancake_api_key', 'pancake_product_id', 'pancake_exclude_tags',
+        'pancake_use_usd', 'pancake_usd_rate'
+    ];
+
+    protected function encodeJsonColumns(array $data)
+    {
+        if (isset($data['data'])) {
+            $integrationSettings = [];
+            foreach ($data['data'] as $key => $value) {
+                if (in_array($key, $this->integrationKeys)) {
+                    $integrationSettings[$key] = $value;
+                    unset($data['data'][$key]);
+                }
+            }
+            if (!empty($integrationSettings)) {
+                // If there's an existing row we are updating, we should technically merge. 
+                // But CodeIgniter's saveSettings usually provides all keys or we update carefully.
+                // Assuming $data['data']['integration_settings'] has the JSON now.
+                $data['data']['integration_settings'] = json_encode($integrationSettings);
+            }
+        }
+        return $data;
+    }
+
+    protected function decodeJsonColumns(array $data)
+    {
+        if (isset($data['data'])) {
+            if (isset($data['id'])) {
+                // single item
+                $this->parseIntegrationJson($data['data']);
+            } else {
+                // multiple items
+                foreach ($data['data'] as &$row) {
+                    $this->parseIntegrationJson($row);
+                }
+            }
+        }
+        return $data;
+    }
+
+    protected function parseIntegrationJson(&$row)
+    {
+        if (isset($row['integration_settings']) && !empty($row['integration_settings'])) {
+            $decoded = json_decode($row['integration_settings'], true);
+            if (is_array($decoded)) {
+                foreach ($decoded as $k => $v) {
+                    $row[$k] = $v;
+                }
+            }
+            unset($row['integration_settings']);
+        }
+    }
+
     protected $useTimestamps = true;
     protected $createdField = 'created_at';
     protected $updatedField = 'updated_at';
