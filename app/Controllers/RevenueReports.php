@@ -21,6 +21,8 @@ class RevenueReports extends BaseController
     protected $googleTokenModel;
     protected $userSettingsModel;
     protected $googleAdsService;
+    protected $adsAccountSettingsModel;
+    protected $pancakeService;
 
     public function __construct()
     {
@@ -32,6 +34,8 @@ class RevenueReports extends BaseController
         $this->googleTokenModel = new GoogleTokenModel();
         $this->userSettingsModel = new UserSettingsModel();
         $this->googleAdsService = new GoogleAdsService();
+        $this->adsAccountSettingsModel = new \App\Models\AdsAccountSettingsModel();
+        $this->pancakeService = new \App\Services\PancakeService();
     }
 
     public function index()
@@ -306,6 +310,135 @@ class RevenueReports extends BaseController
         return $this->response->setJSON([
             'success' => true,
             'ads_cost' => $totalCost
+        ]);
+    }
+
+    public function fetchPancakeData()
+    {
+        $userId = session()->get('user_id');
+        $reportId = $this->request->getPost('report_id');
+        $date = $this->request->getPost('date');
+
+        if (!$reportId || !$date) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Thiếu dữ liệu.']);
+        }
+
+        $report = $this->reportModel->find($reportId);
+        if (!$report || $report['user_id'] != $userId) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Báo cáo không hợp lệ.']);
+        }
+
+        // Lấy thông tin tài khoản ads và settings để có shop_id và api_key của pancake
+        // Ở đây ta cần lấy shop_id và api_key từ settings của AdsAccount. 
+        // Vì 1 sản phẩm có thể map với nhiều AdsAccount, ta sẽ lấy AdsAccount đầu tiên có cấu hình Pancake.
+        $mappings = $this->productAdsAccountModel->where('product_id', $report['product_id'])->findAll();
+        if (empty($mappings)) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Sản phẩm chưa được gán cho tài khoản Ads nào.']);
+        }
+
+        $pancakeSettings = null;
+        foreach ($mappings as $mapping) {
+            $settings = $this->adsAccountSettingsModel->getSettingsByCustomerId($mapping['customer_id']);
+            if ($settings && !empty($settings['use_pancake']) && !empty($settings['pancake_shop_id']) && !empty($settings['pancake_api_key'])) {
+                $pancakeSettings = $settings;
+                break;
+            }
+        }
+
+        if (!$pancakeSettings) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Không tìm thấy cấu hình Pancake API cho các tài khoản Ads liên kết.']);
+        }
+
+        // Lấy dữ liệu từ Pancake
+        $startDateTime = $date . ' 00:00:00';
+        $endDateTime = $date . ' 23:59:59';
+        $productId = $pancakeSettings['pancake_product_id'] ?? null;
+
+        // Lấy orders từ Pancake
+        $orders = [];
+        $skus = array_map('trim', explode(',', $productId));
+        foreach ($skus as $sku) {
+            $pancakeProductId = $this->pancakeService->getPancakeProductId($pancakeSettings['pancake_shop_id'], $pancakeSettings['pancake_api_key'], $sku);
+            $tmpOrders = $this->pancakeService->getOrders(
+                $pancakeSettings['pancake_shop_id'],
+                $pancakeSettings['pancake_api_key'],
+                $pancakeProductId,
+                $startDateTime,
+                $endDateTime
+            );
+            $orders = array_merge($orders, $tmpOrders);
+        }
+
+        if (empty($orders)) {
+            return $this->response->setJSON([
+                'success' => true,
+                'orders' => 0,
+                'revenue' => 0,
+                'goods_cost' => 0
+            ]);
+        }
+
+        // Lọc đơn hàng và tính toán theo logic PancakeService
+        // Định nghĩa các trạng thái đơn hàng và thẻ loại trừ
+        $canceledStatuses = [6, 7]; // Đã hủy, Đã xóa
+        $excludeTags = $pancakeSettings['pancake_exclude_tags'] ?? '';
+        
+        $validOrdersCount = 0;
+        $totalRevenue = 0;
+        $totalGoodsCost = 0;
+        $processedOrderIds = [];
+
+        foreach ($orders as $order) {
+            $orderId = $order['id'] ?? '';
+            if (empty($orderId) || in_array($orderId, $processedOrderIds)) {
+                continue;
+            }
+
+            // Lọc theo status và tag
+            $orderStatus = isset($order['status']) ? (int) $order['status'] : null;
+            if (in_array($orderStatus, $canceledStatuses)) {
+                continue;
+            }
+
+            if (!empty($excludeTags)) {
+                $excludeTagsArr = array_map('trim', explode(',', $excludeTags));
+                $hasExcludedTag = false;
+                if (isset($order['tags']) && is_array($order['tags'])) {
+                    foreach ($order['tags'] as $tag) {
+                        if (in_array($tag['id'], $excludeTagsArr)) {
+                            $hasExcludedTag = true;
+                            break;
+                        }
+                    }
+                }
+                if ($hasExcludedTag) {
+                    continue;
+                }
+            }
+
+            // Tính toán doanh thu và tiền hàng
+            $validOrdersCount++;
+            $totalRevenue += isset($order['money_to_collect']) ? (float) $order['money_to_collect'] : 0;
+
+            if (isset($order['items']) && is_array($order['items'])) {
+                foreach ($order['items'] as $item) {
+                    $quantity = isset($item['quantity']) ? (int) $item['quantity'] : 1;
+                    $importPrice = 0;
+                    if (isset($item['variation_info']['last_imported_price'])) {
+                        $importPrice = (float) $item['variation_info']['last_imported_price'];
+                    }
+                    $totalGoodsCost += ($quantity * $importPrice);
+                }
+            }
+
+            $processedOrderIds[] = $orderId;
+        }
+
+        return $this->response->setJSON([
+            'success' => true,
+            'orders' => $validOrdersCount,
+            'revenue' => $totalRevenue,
+            'goods_cost' => $totalGoodsCost
         ]);
     }
 }

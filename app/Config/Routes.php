@@ -131,6 +131,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->get('revenue_reports/edit/(:num)', 'RevenueReports::edit/$1');
     $routes->post('revenue_reports/update/(:num)', 'RevenueReports::update/$1');
     $routes->post('revenue_reports/fetchAdsCost', 'RevenueReports::fetchAdsCost');
+    $routes->post('revenue_reports/fetchPancakeData', 'RevenueReports::fetchPancakeData');
 
     // Route chỉ dành cho role superadmin - quản lý người dùng
     $routes->group('', ['filter' => 'role:superadmin'], function ($routes) {

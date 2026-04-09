@@ -222,14 +222,14 @@
                         <thead>
                             <tr>
                                 <th style="width: 80px;">NGÀY</th>
-                                <th style="width: 70px;">ĐƠN</th>
+                                <th style="width: 90px;">ĐƠN</th>
                                 <th style="width: 70px;">SL</th>
-                                <th>TIỀN HÀNG</th>
+                                <th style="width: 130px;">TIỀN HÀNG</th>
                                 <th>TIỀN ADS</th>
                                 <th>VẬN CHUYỂN</th>
                                 <th>TIỀN HOÀN</th>
                                 <th>TỔNG CHI</th>
-                                <th>DOANH THU</th>
+                                <th style="width: 130px;">DOANH THU</th>
                                 <th>LỢI NHUẬN</th>
                                 <th style="width: 70px;">CPA</th>
                                 <th style="width: 60px;">% ADS</th>
@@ -244,12 +244,28 @@
                                     </td>
 
                                     <!-- Editables -->
-                                    <td><input type="text" class="editable-input inp-orders"
-                                            value="<?= esc((int) $r['orders']) ?>"></td>
+                                    <td>
+                                        <div class="d-flex justify-content-between align-items-center" style="height: 100%; padding: 0 5px;">
+                                            <input type="text" class="editable-input inp-orders w-100" value="<?= esc((int) $r['orders']) ?>">
+                                            <button class="btn btn-outline-info btn-xs mb-0 btn-fetch-pancake px-1 py-0" 
+                                                type="button" data-date="<?= esc($r['date']) ?>" data-report="<?= $report['id'] ?>" title="Load data từ Pancake">
+                                                <i class="fas fa-sync-alt" style="font-size: 0.7rem;"></i>
+                                            </button>
+                                        </div>
+                                    </td>
                                     <td><input type="text" class="editable-input inp-quantity"
                                             value="<?= esc((int) $r['quantity']) ?>"></td>
 
-                                    <td class="calc-val out-goods-cost">-</td>
+                                    <td>
+                                        <div class="d-flex justify-content-between align-items-center" style="height: 100%; padding: 0 5px;">
+                                            <input type="hidden" class="inp-goods-cost" value="<?= esc((float) ($r['goods_cost'] ?? 0)) ?>">
+                                            <span class="calc-val out-goods-cost fw-bold w-100 text-end pe-1">-</span>
+                                            <button class="btn btn-outline-info btn-xs mb-0 btn-fetch-pancake px-1 py-0" 
+                                                type="button" data-date="<?= esc($r['date']) ?>" data-report="<?= $report['id'] ?>" title="Load data từ Pancake">
+                                                <i class="fas fa-sync-alt" style="font-size: 0.7rem;"></i>
+                                            </button>
+                                        </div>
+                                    </td>
 
                                     <td>
                                         <div class="d-flex justify-content-between align-items-center"
@@ -269,8 +285,15 @@
                                     <td class="calc-val out-return-cost">-</td>
                                     <td class="calc-val out-total-cost">-</td>
 
-                                    <td><input type="text" class="editable-input inp-revenue"
-                                            value="<?= esc((float) $r['revenue']) ?>"></td>
+                                    <td>
+                                        <div class="d-flex justify-content-between align-items-center" style="height: 100%; padding: 0 5px;">
+                                            <input type="text" class="editable-input inp-revenue w-100" value="<?= esc((float) $r['revenue']) ?>">
+                                            <button class="btn btn-outline-info btn-xs mb-0 btn-fetch-pancake px-1 py-0" 
+                                                type="button" data-date="<?= esc($r['date']) ?>" data-report="<?= $report['id'] ?>" title="Load data từ Pancake">
+                                                <i class="fas fa-sync-alt" style="font-size: 0.7rem;"></i>
+                                            </button>
+                                        </div>
+                                    </td>
 
                                     <td class="calc-val fw-bold out-profit">-</td>
 
@@ -329,6 +352,14 @@
 
             // Calc Basic
             let goodsCost = qty * cfgImportPrice;
+            // Nếu có giá trị tiền hàng được load từ pancake, ta có thể ưu tiên nó hoặc cộng thêm. 
+            // Ở đây ta ưu tiên input bằng tay hoặc tính theo SL * giá nhập. 
+            // Tuy nhiên user muốn TIỀN HÀNG cũng có nút load, vậy ta nên dùng giá trị từ inp-goods-cost nếu có.
+            let loadedGoodsCost = parseNum(row.find('.inp-goods-cost').val());
+            if (loadedGoodsCost > 0) {
+                goodsCost = loadedGoodsCost;
+            }
+            
             let shipCost = orders * cfgShippingFee;
 
             // Calc Tiền hoàn
@@ -431,6 +462,61 @@
                     btn.removeClass('btn-outline-info').addClass('btn-outline-danger').html('<i class="fas fa-exclamation"></i>');
                     setTimeout(() => {
                         btn.removeClass('btn-outline-danger').addClass('btn-outline-info').html('<i class="fas fa-sync-alt"></i>');
+                    }, 2000);
+                },
+                complete: function () {
+                    btn.prop('disabled', false);
+                }
+            });
+        });
+
+        // AJAX Fetch Pancake Data function
+        $('.btn-fetch-pancake').click(function (e) {
+            e.preventDefault();
+            let btn = $(this);
+            let row = btn.closest('.daily-row');
+            let date = btn.data('date');
+            let reportId = btn.data('report');
+            
+            let ordersInput = row.find('.inp-orders');
+            let revenueInput = row.find('.inp-revenue');
+            let goodsCostInput = row.find('.inp-goods-cost');
+
+            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+
+            $.ajax({
+                url: '<?= base_url('revenue_reports/fetchPancakeData') ?>',
+                type: 'POST',
+                data: {
+                    report_id: reportId,
+                    date: date
+                },
+                success: function (resp) {
+                    if (resp.success) {
+                        ordersInput.val(resp.orders);
+                        revenueInput.val(resp.revenue);
+                        goodsCostInput.val(resp.goods_cost);
+                        
+                        calculateGrid(); // Trigger recalculation
+                        
+                        // Highlight all pancake buttons in this row to show success
+                        row.find('.btn-fetch-pancake').removeClass('btn-outline-info').addClass('btn-outline-success').html('<i class="fas fa-check"></i>');
+                        setTimeout(() => {
+                            row.find('.btn-fetch-pancake').removeClass('btn-outline-success').addClass('btn-outline-info').html('<i class="fas fa-sync-alt" style="font-size: 0.7rem;"></i>');
+                        }, 2000);
+                    } else {
+                        alert(resp.message || 'Lỗi lấy dữ liệu từ Pancake.');
+                        btn.removeClass('btn-outline-info').addClass('btn-outline-danger').html('<i class="fas fa-exclamation"></i>');
+                        setTimeout(() => {
+                            btn.removeClass('btn-outline-danger').addClass('btn-outline-info').html('<i class="fas fa-sync-alt" style="font-size: 0.7rem;"></i>');
+                        }, 2000);
+                    }
+                },
+                error: function () {
+                    alert('Đã xảy ra lỗi mạng kết nối hệ thống.');
+                    btn.removeClass('btn-outline-info').addClass('btn-outline-danger').html('<i class="fas fa-exclamation"></i>');
+                    setTimeout(() => {
+                        btn.removeClass('btn-outline-danger').addClass('btn-outline-info').html('<i class="fas fa-sync-alt" style="font-size: 0.7rem;"></i>');
                     }, 2000);
                 },
                 complete: function () {
