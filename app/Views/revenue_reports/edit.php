@@ -5,7 +5,7 @@
     .report-header {
         font-size: 1.1rem;
         font-weight: 600;
-        color: #00F4FF;
+        /* color: #00F4FF; */
     }
 
     .config-table td {
@@ -27,7 +27,7 @@
     .config-input {
         background-color: transparent !important;
         border: 1px solid #3b3b54 !important;
-        color: white !important;
+        /* color: white !important; */
         padding: 6px 10px !important;
         width: 150px;
         border-radius: 4px;
@@ -38,6 +38,7 @@
         align-items: stretch;
         margin-bottom: 5px;
         height: 40px;
+        border: 1px solid #ccc !important;
     }
 
     .summary-label {

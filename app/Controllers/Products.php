@@ -49,6 +49,7 @@ class Products extends BaseController
             'import_price' => $this->request->getPost('import_price') ? str_replace(',', '', $this->request->getPost('import_price')) : 0,
             'selling_price' => $this->request->getPost('selling_price') ? str_replace(',', '', $this->request->getPost('selling_price')) : 0,
             'return_rate' => $this->request->getPost('return_rate') ?: 0,
+            'keyword_campaign' => $this->request->getPost('keyword_campaign'),
             'user_id' => $userId
         ];
 
@@ -73,6 +74,7 @@ class Products extends BaseController
             'import_price' => $this->request->getPost('import_price') ? str_replace(',', '', $this->request->getPost('import_price')) : 0,
             'selling_price' => $this->request->getPost('selling_price') ? str_replace(',', '', $this->request->getPost('selling_price')) : 0,
             'return_rate' => $this->request->getPost('return_rate') ?: 0,
+            'keyword_campaign' => $this->request->getPost('keyword_campaign'),
         ];
 
         $customerIds = $this->request->getPost('customer_ids'); // array

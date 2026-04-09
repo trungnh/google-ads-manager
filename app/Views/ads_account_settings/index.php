@@ -185,7 +185,7 @@
                                     name="pancake_product_id"
                                     value="<?= isset($settings['pancake_product_id']) ? $settings['pancake_product_id'] : '' ?>">
                                 <small class="form-text text-muted">
-                                    <i>Mã sản phẩm để mapping đơn hàng với chiến dịch quảng cáo</i>
+                                    <i>Mã sản phẩm để mapping đơn hàng với chiến dịch quảng cáo. Có thể nhập nhiều mã, phân cách bằng dấu ","</i>
                                 </small>
                             </div>
 

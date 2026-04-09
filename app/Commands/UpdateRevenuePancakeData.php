@@ -81,7 +81,8 @@ class UpdateRevenuePancakeData extends BaseCommand
             // 4. Gọi PancakeService lấy danh sách đơn của ngày targetDate
             $startDateTime = $targetDate . ' 00:00:00';
             $endDateTime = $targetDate . ' 23:59:59';
-            $orders = $pancakeService->getOrders($pancakeShopId, $pancakeApiKey, $startDateTime, $endDateTime);
+            $pancakeProductId = $pancakeService->getPancakeProductId($pancakeShopId, $pancakeApiKey, $product['product_code']);
+            $orders = $pancakeService->getOrders($pancakeShopId, $pancakeApiKey, $pancakeProductId, $startDateTime, $endDateTime);
 
             if (empty($orders)) {
                 CLI::write("-> Không có đơn hàng nào từ CRM trong ngày.", 'yellow');

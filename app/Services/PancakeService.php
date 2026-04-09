@@ -13,12 +13,12 @@ class PancakeService
      * 
      * @param string $shopId ID của shop trên Pancake
      * @param string $apiKey API key để xác thực với Pancake API
-     * @param string $sku SKU của sản phẩm
+     * @param string $pancakeProductId ID của sản phẩm bên Pancake
      * @param string $startDateTime Thời gian bắt đầu lấy dữ liệu (Y-m-d H:i:s)
      * @param string $endDateTime Thời gian kết thúc lấy dữ liệu (Y-m-d H:i:s)
      * @return array Mảng dữ liệu đơn hàng
      */
-    public function getOrders($shopId, $apiKey, $sku, $startDateTime, $endDateTime)
+    public function getOrders($shopId, $apiKey, $pancakeProductId, $startDateTime, $endDateTime)
     {
         if (empty($shopId) || empty($apiKey)) {
             log_message('error', 'Pancake POS API: Missing shop ID or API key');
@@ -34,13 +34,11 @@ class PancakeService
             return [];
         }
 
-        $pancakeProductId = $this->getPancakeProductId($shopId, $apiKey, $sku);
         // Build API URL với Unix timestamp
         $url = $this->apiEnpoint . $this->apiVersion . "/shops/{$shopId}/orders?api_key={$apiKey}&option_sort=inserted_at_desc&startDateTime={$startTimestamp}&endDateTime={$endTimestamp}&page=1&page_size=1000";
         if ($pancakeProductId) {
             $url .= "&product_id[]={$pancakeProductId}";
         }
-
         try {
             // Initialize cURL session
             $ch = curl_init();
@@ -137,13 +135,22 @@ class PancakeService
         $productId = $settings['pancake_product_id'] ?? null;
 
         // Lấy danh sách đơn hàng từ Pancake POS API
-        $orders = $this->getOrders(
-            $settings['pancake_shop_id'],
-            $settings['pancake_api_key'],
-            $productId,
-            $startDateTime,
-            $endDateTime
-        );
+        $orders = [];
+        $skus = array_map('trim', explode(',', $productId)); // Lọc các mã sản phẩm
+        foreach ($skus as $s) {
+                // Lấy orders theo các mã sản phẩm
+                $pancakeProductId = $this->getPancakeProductId($settings['pancake_shop_id'], $settings['pancake_api_key'], $s);
+                $tmpOrders = $this->getOrders(
+                    $settings['pancake_shop_id'],
+                    $settings['pancake_api_key'],
+                    $pancakeProductId,
+                    $startDateTime,
+                    $endDateTime
+                );
+                $orders = array_merge($orders, $tmpOrders);
+            }
+        
+        
 
         if (empty($orders)) {
             log_message('info', 'Pancake POS: No orders found for the specified date range');
@@ -580,14 +587,19 @@ class PancakeService
 
             // Tiền hàng: tổng (item.quantity * item.variation_info.last_imported_price)
             if (isset($order['items']) && is_array($order['items'])) {
+                $productCodes = array_map('trim', explode(',', $productCode));
                 foreach ($order['items'] as $item) {
                     $isMatch = empty($productCode);
                     if (!$isMatch) {
                         // Check matching items corresponding to the product
-                        if (isset($item['product_display_id']) && $item['product_display_id'] == $productCode) {
-                            $isMatch = true;
-                        } elseif (isset($item['variation_info']['product_display_id']) && $item['variation_info']['product_display_id'] == $productCode) {
-                            $isMatch = true;
+                        foreach ($productCodes as $pc) {
+                            if (isset($item['product_display_id']) && $item['product_display_id'] == $pc) {
+                                $isMatch = true;
+                                break;
+                            } elseif (isset($item['variation_info']['product_display_id']) && $item['variation_info']['product_display_id'] == $pc) {
+                                $isMatch = true;
+                                break;
+                            }
                         }
                     }
 
@@ -619,9 +631,14 @@ class PancakeService
      * @param string $productId ID sản phẩm cần kiểm tra
      * @return bool True nếu đơn hàng chứa sản phẩm, ngược lại là False
      */
-    private function orderContainsProduct($order, $productId)
+    private function orderContainsProduct($order, $productIdString)
     {
-        $productId = trim($productId);
+        if (empty($productIdString)) {
+            return false;
+        }
+
+        $productIds = array_map('trim', explode(',', $productIdString));
+
         // Kiểm tra xem đơn hàng có chứa thông tin sản phẩm không
         if (!isset($order['items']) || !is_array($order['items'])) {
             return false;
@@ -629,12 +646,14 @@ class PancakeService
 
         // Kiểm tra từng sản phẩm trong đơn hàng
         foreach ($order['items'] as $item) {
-            if (isset($item['product_display_id']) && $item['product_display_id'] == $productId) {
-                return true;
-            }
-            if (isset($item['variation_info'])) {
-                if (isset($item['variation_info']['product_display_id']) && $item['variation_info']['product_display_id'] == $productId) {
+            foreach ($productIds as $productId) {
+                if (isset($item['product_display_id']) && $item['product_display_id'] == $productId) {
                     return true;
+                }
+                if (isset($item['variation_info'])) {
+                    if (isset($item['variation_info']['product_display_id']) && $item['variation_info']['product_display_id'] == $productId) {
+                        return true;
+                    }
                 }
             }
         }

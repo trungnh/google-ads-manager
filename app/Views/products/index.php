@@ -192,6 +192,13 @@
                                                             </div>
                                                         </div>
                                                         <div class="mb-3">
+                                                            <label class="form-label text-white">Keyword Campaign (Lọc campaign theo từ khoá)</label>
+                                                            <input type="text" name="keyword_campaign" class="form-control"
+                                                                style="background-color: #151521; border-color: #2b2b40; color: white;"
+                                                                value="<?= esc($p['keyword_campaign']) ?>">
+                                                            <small class="text-muted">Dùng để lọc các chiến dịch có tên chứa từ khoá này</small>
+                                                        </div>
+                                                        <div class="mb-3">
                                                             <label class="form-label text-white">Mapping Tài Khoản
                                                                 Ads</label>
                                                             <p class="text-xs text-muted mb-1">Giữ Ctrl / Cmd để chọn nhiều
@@ -271,6 +278,12 @@
                                 style="background-color: #151521; border-color: #2b2b40; color: white;"
                                 placeholder="0.000" required>
                         </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-white">Keyword Campaign (Lọc campaign theo từ khoá)</label>
+                        <input type="text" name="keyword_campaign" class="form-control"
+                            style="background-color: #151521; border-color: #2b2b40; color: white;">
+                        <small class="text-muted">Dùng để lọc các chiến dịch có tên chứa từ khoá này</small>
                     </div>
                     <div class="mb-3">
                         <label class="form-label text-white">Mapping Tài Khoản Ads</label>

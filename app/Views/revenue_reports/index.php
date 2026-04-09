@@ -54,31 +54,32 @@
                             <tbody>
                                 <?php if (empty($reports)): ?>
                                     <tr>
-                                        <td colspan="5" class="text-center text-white py-4">Chưa có báo cáo nào.</td>
+                                        <td colspan="5" class="text-center py-4">Chưa có báo cáo nào.</td>
                                     </tr>
                                 <?php endif; ?>
                                 <?php foreach ($reports as $r): ?>
                                     <tr>
                                         <td>
                                             <div class="d-flex px-3 py-1">
-                                                <span class="text-white text-sm font-weight-bold"
-                                                    style="color: #00F4FF!important">
+                                                <span class="text-sm font-weight-bold">
+                                                    <a href="<?= base_url('revenue_reports/edit/' . $r['id']) ?>" class="text-xs mb-0" style="text-decoration: none;">
                                                     <?= esc($r['name']) ?>
+                                                    </a>
                                                 </span>
                                             </div>
                                         </td>
                                         <td>
-                                            <p class="text-sm font-weight-bold mb-0 text-white">
+                                            <p class="text-sm font-weight-bold mb-0">
                                                 <?= esc($r['product_name']) ?>
                                             </p>
                                         </td>
                                         <td class="align-middle text-center">
-                                            <span class="text-sm text-white">
+                                            <span class="text-sm">
                                                 <?= str_pad($r['month'], 2, '0', STR_PAD_LEFT) . '/' . $r['year'] ?>
                                             </span>
                                         </td>
                                         <td class="align-middle text-center">
-                                            <span class="text-sm text-white">
+                                            <span class="text-sm">
                                                 <?= date('d/m/Y H:i', strtotime($r['created_at'])) ?>
                                             </span>
                                         </td>

@@ -293,16 +293,19 @@ class GoogleAdsService
         return null;
     }
 
-    public function getDailyCost($customerId, $accessToken, $date, $mccId = null)
+    public function getDailyCost($customerId, $accessToken, $date, $mccId = null, $keyword = null)
     {
         $formattedCustomerId = $this->formatCustomerId($customerId);
         $url = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedCustomerId . '/googleAds:searchStream';
 
         $query = "
             SELECT
+                campaign.id,
+                campaign.name,
                 metrics.cost_micros
-            FROM customer
+            FROM campaign
             WHERE segments.date = '$date'
+              AND campaign.status != 'REMOVED'
         ";
 
         $data = [
@@ -312,18 +315,40 @@ class GoogleAdsService
         try {
             $response = $this->makeCurlRequest($url, 'POST', $accessToken, json_encode($data), $mccId);
             $totalCost = 0;
+            $keywords = null;
+            if ($keyword && trim($keyword) !== '') {
+                $keywords = array_values(array_filter(array_map('trim', explode(',', $keyword))));
+            }
+            $names = [];
 
             if (is_array($response)) {
                 foreach ($response as $batch) {
                     if (isset($batch['results'])) {
                         foreach ($batch['results'] as $result) {
-                            if (isset($result['metrics']['costMicros'])) {
-                                $totalCost += $this->microToStandard($result['metrics']['costMicros']);
+                            $costMicros = $result['metrics']['costMicros'] ?? null;
+                            $campName = $result['campaign']['name'] ?? '';
+                            if ($costMicros === null) {
+                                continue;
                             }
+                            if (is_array($keywords) && !empty($keywords)) {
+                                $matched = false;
+                                foreach ($keywords as $kw) {
+                                    if ($kw !== '' && stripos($campName, $kw) !== false) {
+                                        $matched = true;
+                                        break;
+                                    }
+                                }
+                                if (!$matched) {
+                                    continue;
+                                }
+                            }
+                            $totalCost += $this->microToStandard($costMicros);
+                            $names[] = $campName;
                         }
                     }
                 }
             }
+            //var_dump($names);die;
 
             return $totalCost;
         } catch (Exception $e) {

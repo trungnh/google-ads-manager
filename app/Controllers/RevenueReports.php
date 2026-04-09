@@ -166,6 +166,7 @@ class RevenueReports extends BaseController
         $userId = session()->get('user_id');
         $reportId = $this->request->getPost('report_id');
         $date = $this->request->getPost('date');
+        $keyword = null;
 
         if (!$reportId || !$date) {
             return $this->response->setJSON(['success' => false, 'message' => 'Thiếu dữ liệu.']);
@@ -174,6 +175,11 @@ class RevenueReports extends BaseController
         $report = $this->reportModel->find($reportId);
         if (!$report || $report['user_id'] != $userId) {
             return $this->response->setJSON(['success' => false, 'message' => 'Báo cáo không hợp lệ.']);
+        }
+
+        $product = $this->productModel->find($report['product_id']);
+        if ($product) {
+            $keyword = $product['keyword_campaign'] ?? null;
         }
 
         // Lấy danh sách customer_id được map với sản phẩm này
@@ -195,7 +201,7 @@ class RevenueReports extends BaseController
 
         $totalCost = 0;
         foreach ($customerIds as $customerId) {
-            $cost = $this->googleAdsService->getDailyCost($customerId, $accessToken, $date, $mccId);
+            $cost = $this->googleAdsService->getDailyCost($customerId, $accessToken, $date, $mccId, $keyword);
             $totalCost += $cost;
         }
 
