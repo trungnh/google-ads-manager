@@ -23,8 +23,16 @@
             </li>
 
             <li class="nav-item">
+                <a href="<?= base_url('revenue_reports/overview') ?>"
+                    class="nav-link <?= str_replace('/index.php', '', current_url()) == base_url('revenue_reports/overview') ? 'active' : '' ?>">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>Tổng quan doanh thu</span>
+                </a>
+            </li>
+
+            <li class="nav-item">
                 <a href="<?= base_url('revenue_reports') ?>"
-                    class="nav-link <?= str_replace('/index.php', '', current_url()) == base_url('revenue_reports') ? 'active' : '' ?>">
+                    class="nav-link <?= (str_replace('/index.php', '', current_url()) == base_url('revenue_reports') || str_replace('/index.php', '', current_url()) == base_url('revenue_reports/index')) ? 'active' : '' ?>">
                     <i class="fas fa-file-invoice-dollar"></i>
                     <span>Báo cáo doanh thu</span>
                 </a>

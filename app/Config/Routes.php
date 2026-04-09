@@ -126,6 +126,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
 
     // Revenue Reports
     $routes->get('revenue_reports', 'RevenueReports::index');
+    $routes->get('revenue_reports/overview', 'RevenueReports::overview');
     $routes->post('revenue_reports/create', 'RevenueReports::create');
     $routes->get('revenue_reports/edit/(:num)', 'RevenueReports::edit/$1');
     $routes->post('revenue_reports/update/(:num)', 'RevenueReports::update/$1');

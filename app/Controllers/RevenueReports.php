@@ -37,13 +37,111 @@ class RevenueReports extends BaseController
     public function index()
     {
         $userId = session()->get('user_id');
-        $reports = $this->reportModel->getReportsByUser($userId);
         $products = $this->productModel->where('user_id', $userId)->findAll();
+
+        $filterMonth = $this->request->getGet('month');
+        $filterProductId = $this->request->getGet('product_id');
+        $reportByTime = $this->request->getGet('report_by_time') === 'true';
+        $filterStartMonth = $this->request->getGet('start_month');
+        $filterEndMonth = $this->request->getGet('end_month');
+
+        $reports = $this->reportModel->getReportsByUser($userId, $filterMonth, $filterProductId, $reportByTime, $filterStartMonth, $filterEndMonth);
 
         return view('revenue_reports/index', [
             'title' => 'Báo cáo doanh thu',
             'reports' => $reports,
-            'products' => $products
+            'products' => $products,
+            'filterMonth' => $filterMonth,
+            'filterProductId' => $filterProductId,
+            'reportByTime' => $reportByTime,
+            'filterStartMonth' => $filterStartMonth,
+            'filterEndMonth' => $filterEndMonth,
+        ]);
+    }
+
+    public function overview()
+    {
+        $userId = session()->get('user_id');
+        
+        // Get month and year from request, default to current
+        $monthYear = $this->request->getGet('month_year') ?: date('m-Y');
+        list($month, $year) = explode('-', $monthYear);
+        $month = (int)$month;
+        $year = (int)$year;
+
+        // Get reports for current month
+        $reports = $this->reportModel->where('user_id', $userId)
+            ->where('month', $month)
+            ->where('year', $year)
+            ->findAll();
+        
+        $reportIds = array_column($reports, 'id');
+        $dailyData = $this->dailyModel->getAggregatedDailyDataByReports($reportIds);
+
+        // Calculate totals for current month
+        $totals = [
+            'orders' => 0,
+            'revenue' => 0,
+            'ads_cost' => 0,
+            'profit' => 0
+        ];
+
+        foreach ($dailyData as $day) {
+            $totals['orders'] += $day['orders'];
+            $totals['revenue'] += $day['revenue'];
+            $totals['ads_cost'] += $day['ads_cost'];
+            $totals['profit'] += $day['profit'];
+        }
+
+        // Calculate totals for previous month for comparison
+        $prevMonth = $month - 1;
+        $prevYear = $year;
+        if ($prevMonth == 0) {
+            $prevMonth = 12;
+            $prevYear--;
+        }
+
+        $prevReports = $this->reportModel->where('user_id', $userId)
+            ->where('month', $prevMonth)
+            ->where('year', $prevYear)
+            ->findAll();
+        
+        $prevReportIds = array_column($prevReports, 'id');
+        $prevDailyData = $this->dailyModel->getAggregatedDailyDataByReports($prevReportIds);
+
+        $prevTotals = [
+            'orders' => 0,
+            'revenue' => 0,
+            'ads_cost' => 0,
+            'profit' => 0
+        ];
+
+        foreach ($prevDailyData as $day) {
+            $prevTotals['orders'] += $day['orders'];
+            $prevTotals['revenue'] += $day['revenue'];
+            $prevTotals['ads_cost'] += $day['ads_cost'];
+            $prevTotals['profit'] += $day['profit'];
+        }
+
+        // Calculate percentage differences
+        $comparison = [];
+        foreach (['orders', 'revenue', 'ads_cost', 'profit'] as $key) {
+            if ($prevTotals[$key] > 0) {
+                $diff = $totals[$key] - $prevTotals[$key];
+                $comparison[$key] = ($diff / $prevTotals[$key]) * 100;
+            } else {
+                $comparison[$key] = null; // Mark as NaN/null if no previous data
+            }
+        }
+
+        return view('revenue_reports/overview', [
+            'title' => 'Tổng quan báo cáo doanh thu',
+            'month' => $month,
+            'year' => $year,
+            'totals' => $totals,
+            'comparison' => $comparison,
+            'dailyData' => $dailyData,
+            'monthYear' => $monthYear
         ]);
     }
 

@@ -39,6 +39,28 @@ class RevenueReportDailyModel extends Model
             ->findAll();
     }
 
+    public function getAggregatedDailyDataByReports($reportIds)
+    {
+        if (empty($reportIds)) {
+            return [];
+        }
+
+        return $this->select('date, 
+                             SUM(orders) as orders, 
+                             SUM(quantity) as quantity, 
+                             SUM(ads_cost) as ads_cost, 
+                             SUM(revenue) as revenue, 
+                             SUM(goods_cost) as goods_cost, 
+                             SUM(ship_cost) as ship_cost, 
+                             SUM(return_cost) as return_cost, 
+                             SUM(total_cost) as total_cost, 
+                             SUM(profit) as profit')
+            ->whereIn('report_id', $reportIds)
+            ->groupBy('date')
+            ->orderBy('date', 'ASC')
+            ->findAll();
+    }
+
     // Nhận mảng dữ liệu nhiều ngày gửi lên từ client và upsert
     public function upsertDailyData($reportId, $dailyData)
     {

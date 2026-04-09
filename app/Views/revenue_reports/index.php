@@ -29,6 +29,116 @@
         </div>
     <?php endif; ?>
 
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header pb-0">
+                    <h6 class="mb-0">Bộ lọc</h6>
+                </div>
+                <div class="card-body px-0 pt-0 pb-2">
+                    <form id="filterForm" class="p-3">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="filter_month" class="form-label">Tháng</label>
+                                    <select class="form-control" id="filter_month" name="month">
+                                        <option value="">Tất cả</option>
+                                        <?php
+                                        $currentYear = date('Y');
+                                        $lastYear = $currentYear - 1;
+                                        $options = [];
+                                        for ($m = 1; $m <= 12; $m++) {
+                                            $options[] = sprintf("%02d-%d", $m, $currentYear);
+                                        }
+                                        for ($m = 1; $m <= 12; $m++) {
+                                            $options[] = sprintf("%02d-%d", $m, $lastYear);
+                                        }
+                                        foreach ($options as $opt):
+                                            list($mo, $yr) = explode('-', $opt);
+                                            ?>
+                                            <option value="<?= $opt ?>" <?= (isset($filterMonth) && $filterMonth == $opt) ? 'selected' : '' ?>>
+                                                Tháng <?= $mo ?> Năm <?= $yr ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="filter_product" class="form-label">Sản phẩm</label>
+                                    <select class="form-control" id="filter_product" name="product_id">
+                                        <option value="">Tất cả</option>
+                                        <?php if (!empty($products))
+                                            foreach ($products as $p): ?>
+                                                <option value="<?= $p['id'] ?>" <?= (isset($filterProductId) && $filterProductId == $p['id']) ? 'selected' : '' ?>>
+                                                    <?= esc($p['name']) ?> (<?= esc($p['product_code']) ?>)
+                                                </option>
+                                            <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4 d-flex align-items-center">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="report_by_time_checkbox" name="report_by_time" <?= (isset($reportByTime) && $reportByTime) ? 'checked' : '' ?>>
+                                    <label class="form-check-label" for="report_by_time_checkbox">Báo cáo theo thời gian</label>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4" id="time_range_filter_section" style="display: <?= (isset($reportByTime) && $reportByTime) ? 'block' : 'none' ?>;">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header pb-0">
+                    <h6 class="mb-0">Chọn thời gian</h6>
+                </div>
+                <div class="card-body px-0 pt-0 pb-2">
+                    <form id="timeRangeFilterForm" class="p-3">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="start_month" class="form-label">Tháng Bắt đầu</label>
+                                    <select class="form-control" id="start_month" name="start_month">
+                                        <?php
+                                        foreach ($options as $opt):
+                                            list($mo, $yr) = explode('-', $opt);
+                                            ?>
+                                            <option value="<?= $opt ?>" <?= (isset($filterStartMonth) && $filterStartMonth == $opt) ? 'selected' : '' ?>>
+                                                Tháng <?= $mo ?> Năm <?= $yr ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="end_month" class="form-label">Tháng Kết thúc</label>
+                                    <select class="form-control" id="end_month" name="end_month">
+                                        <?php
+                                        foreach ($options as $opt):
+                                            list($mo, $yr) = explode('-', $opt);
+                                            ?>
+                                            <option value="<?= $opt ?>" <?= (isset($filterEndMonth) && $filterEndMonth == $opt) ? 'selected' : '' ?>>
+                                                Tháng <?= $mo ?> Năm <?= $yr ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary">Xem báo cáo</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row">
         <div class="col-12">
             <div class="card mb-4">
@@ -162,3 +272,52 @@
     </div>
 </div>
 <?= $this->include('templates/footer') ?>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const reportByTimeCheckbox = document.getElementById('report_by_time_checkbox');
+        const timeRangeFilterSection = document.getElementById('time_range_filter_section');
+        const filterForm = document.getElementById('filterForm');
+        const timeRangeFilterForm = document.getElementById('timeRangeFilterForm');
+
+        // Function to update URL parameters
+        function updateUrlParams(formId) {
+            const form = document.getElementById(formId);
+            const formData = new FormData(form);
+            const params = new URLSearchParams(window.location.search);
+
+            for (const [key, value] of formData.entries()) {
+                if (value) {
+                    params.set(key, value);
+                } else {
+                    params.delete(key);
+                }
+            }
+
+            // Handle checkbox specifically
+            if (formId === 'filterForm') {
+                if (reportByTimeCheckbox.checked) {
+                    params.set('report_by_time', 'true');
+                } else {
+                    params.delete('report_by_time');
+                    // Clear time range filters if checkbox is unchecked
+                    params.delete('start_month');
+                    params.delete('end_month');
+                }
+            }
+            
+            window.location.search = params.toString();
+        }
+
+        // Event listener for filter form (month, product, report_by_time checkbox)
+        filterForm.addEventListener('change', function () {
+            updateUrlParams('filterForm');
+        });
+
+        // Event listener for time range filter form (start_month, end_month, submit button)
+        timeRangeFilterForm.addEventListener('submit', function (event) {
+            event.preventDefault(); // Prevent default form submission
+            updateUrlParams('timeRangeFilterForm');
+        });
+    });
+</script>
