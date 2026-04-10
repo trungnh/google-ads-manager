@@ -610,14 +610,12 @@ class OptimizeCampaigns extends BaseCommand
         }
     }
 
-    protected function sendTelegramMessage($message, $telegramChatIds = [])
+    protected function sendTelegramMessage($message, $telegramChatId)
     {
         $hour = date('H');
         if ($hour < 5 || $hour > 21) {
             return;
         }
-        foreach ($telegramChatIds as $telegramChatId) {
-            $this->telegramService->sendMessage($message, $telegramChatId);
-        }
+        $this->telegramService->sendMessage($message, $telegramChatId);
     }
 }

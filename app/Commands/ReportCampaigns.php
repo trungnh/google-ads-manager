@@ -80,15 +80,7 @@ class ReportCampaigns extends BaseCommand
                 }
                 
                 $this->telegramService->loadProxySettings($account['user_id']);
-                $linkedUsers = $this->adsAccountsModel->getLinkedUsers($account['customer_id']);
-                $telegramChatIds = [];
-                foreach($linkedUsers as $linkedUser){
-                    $userSettings = $this->userSettingsModel->where('user_id', $linkedUser['user_id'])->first();
-                    $telegramChatId = $userSettings['report_telegram_chat_id'] ?? null;
-                    if($telegramChatId){
-                        $telegramChatIds[] = $telegramChatId;
-                    }
-                }
+                $telegramChatId = $userSettings['report_telegram_chat_id'] ?? null;
 
                 // Kiểm tra và refresh token trước khi xử lý
                 $tokenData = $this->ensureValidToken($account['user_id']);
@@ -96,20 +88,18 @@ class ReportCampaigns extends BaseCommand
                     throw new \Exception('Không thể lấy token hợp lệ');
                 }
 
-                $this->reportCampaigns($account, $tokenData['access_token'], $mccId, $telegramChatIds);
+                $this->reportCampaigns($account, $tokenData['access_token'], $mccId, $telegramChatId);
                 $processedAccounts[] = $account['customer_id'];
                 
             }
         } catch (\Exception $e) {
             log_message('error', 'Lỗi khi báo cáo chiến dịch: ' . $e->getMessage());
-            foreach($telegramChatIds as $telegramChatId){
-                $this->telegramService->sendMessage("❌ Lỗi khi báo cáo chiến dịch: " . $account['customer_id'], $telegramChatId);
-            }
+            $this->telegramService->sendMessage("❌ Lỗi khi báo cáo chiến dịch: " . $account['customer_id'], $telegramChatId);
             CLI::write('Lỗi khi báo cáo chiến dịch: ' . $e->getMessage(), 'red');
         }
     }
 
-    protected function reportCampaigns($account, $accessToken, $mccId, $telegramChatIds)
+    protected function reportCampaigns($account, $accessToken, $mccId, $telegramChatId)
     {
         // Kiểm tra các trường bắt buộc
         if (!isset($account['customer_id']) || !isset($account['id'])) {
@@ -144,9 +134,7 @@ class ReportCampaigns extends BaseCommand
                 $campaigns = $this->googleAdsService->getCampaignsWithRealConv($settings, $account['customer_id'], $newToken, $mccId, true, date('Y-m-d'), date('Y-m-d'));
             } else {
                 log_message('error', 'Lỗi tài khoản: ' . $account['customer_id'] . ' - ' . $e->getMessage());
-                foreach($telegramChatIds as $telegramChatId){
-                    $this->telegramService->sendMessage("❌ Lỗi tài khoản - " . $account['customer_id'], $telegramChatId);
-                }
+                $this->telegramService->sendMessage("❌ Lỗi tài khoản - " . $account['customer_id'], $telegramChatId);
                 return;
             }
         }
@@ -167,9 +155,7 @@ class ReportCampaigns extends BaseCommand
             foreach ($campaigns as $campaign) {
                 if (!isset($campaign['campaign_id']) || !isset($campaign['cost']) || !isset($campaign['budget'])) {
                     CLI::write("Bỏ qua chiến dịch không hợp lệ: thiếu thông tin bắt buộc", 'yellow');
-                    foreach($telegramChatIds as $telegramChatId){
-                        $this->telegramService->sendMessage("❌ Bỏ qua chiến dịch không hợp lệ: thiếu thông tin bắt buộc", $telegramChatId);
-                    }   
+                    $this->telegramService->sendMessage("❌ Bỏ qua chiến dịch không hợp lệ: thiếu thông tin bắt buộc", $telegramChatId);  
                     continue;
                 }
 
@@ -254,14 +240,10 @@ class ReportCampaigns extends BaseCommand
             
             $reportMessage .= "========== END ==========\n";
 
-            foreach($telegramChatIds as $telegramChatId){
-                $this->telegramService->sendMessage($reportMessage, $telegramChatId);
-            }
+            $this->telegramService->sendMessage($reportMessage, $telegramChatId);
         } catch (\Exception $e) {
             log_message('error', 'Lỗi report tổng conversions: ' . $account['customer_id'] . ' - ' . $e->getMessage());
-            foreach($telegramChatIds as $telegramChatId){
-                $this->telegramService->sendMessage("❌ Lỗi report tổng conversions - " . $account['customer_id'] . ': ' . $e->getMessage(), $telegramChatId);
-            }
+            $this->telegramService->sendMessage("❌ Lỗi report tổng conversions - " . $account['customer_id'] . ': ' . $e->getMessage(), $telegramChatId);
             return;
         }
     }
