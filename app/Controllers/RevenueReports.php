@@ -263,6 +263,24 @@ class RevenueReports extends BaseController
         return $this->response->setJSON(['success' => true, 'message' => 'Đã lưu báo cáo.']);
     }
 
+    public function delete($id)
+    {
+        $userId = session()->get('user_id');
+        $report = $this->reportModel->find($id);
+
+        if (!$report || $report['user_id'] != $userId) {
+            return redirect()->to('/revenue_reports')->with('error', 'Báo cáo không tồn tại.');
+        }
+
+        if ($this->reportModel->delete($id)) {
+            // Delete daily data as well
+            $this->dailyModel->where('report_id', $id)->delete();
+            return redirect()->to('/revenue_reports')->with('success', 'Đã xóa báo cáo thành công.');
+        }
+
+        return redirect()->to('/revenue_reports')->with('error', 'Có lỗi xảy ra khi xóa báo cáo.');
+    }
+
     public function fetchAdsCost()
     {
         $userId = session()->get('user_id');

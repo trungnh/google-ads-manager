@@ -33,7 +33,7 @@
         <div class="col-12">
             <div class="card mb-4">
                 <div class="card-header pb-0">
-                    <h6 class="mb-0">Bộ lọc</h6>
+                    <h6 class="mb-3">Bộ lọc</h6>
                 </div>
                 <div class="card-body px-0 pt-0 pb-2">
                     <form id="filterForm" class="p-3">
@@ -139,66 +139,137 @@
         </div>
     </div>
 
+    <style>
+        .table-dark-custom thead th {
+            background-color: #1c345d !important;
+            color: white !important;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.025em;
+            padding: 12px 15px;
+        }
+        .total-row {
+            background-color: #f8f9fe;
+            font-weight: bold;
+        }
+    </style>
+
     <div class="row">
         <div class="col-12">
             <div class="card mb-4">
+                <div class="card-header pb-0">
+                    <h6 class="mb-0">Danh sách báo cáo</h6>
+                </div>
                 <div class="card-body px-0 pt-0 pb-2">
                     <div class="table-responsive p-0">
-                        <table class="table align-items-center mb-0">
+                        <table class="table align-items-center mb-0 table-dark-custom">
                             <thead>
                                 <tr>
-                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Tên
-                                        Báo Cáo</th>
-                                    <th
-                                        class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
-                                        Sản phẩm</th>
-                                    <th
-                                        class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2 text-center">
-                                        Tháng/Năm</th>
-                                    <th
-                                        class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2 text-center">
-                                        Ngày tạo</th>
-                                    <th class="text-secondary opacity-7 text-end">Thao tác</th>
+                                    <th class="text-uppercase text-xxs font-weight-bolder opacity-7">#</th>
+                                    <th class="text-uppercase text-xxs font-weight-bolder opacity-7">Tên Báo Cáo</th>
+                                    <th class="text-uppercase text-xxs font-weight-bolder opacity-7 text-center">THÁNG</th>
+                                    <th class="text-uppercase text-xxs font-weight-bolder opacity-7 text-center">SẢN PHẨM</th>
+                                    <th class="text-uppercase text-xxs font-weight-bolder opacity-7 text-center">TỔNG ĐƠN</th>
+                                    <th class="text-uppercase text-xxs font-weight-bolder opacity-7 text-center">TIỀN ADS</th>
+                                    <th class="text-uppercase text-xxs font-weight-bolder opacity-7 text-center">LỢI NHUẬN</th>
+                                    <th class="text-uppercase text-xxs font-weight-bolder opacity-7 text-center">DOANH THU</th>
+                                    <th class="text-uppercase text-xxs font-weight-bolder opacity-7 text-center">ROAS</th>
+                                    <th class="opacity-7"></th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php if (empty($reports)): ?>
                                     <tr>
-                                        <td colspan="5" class="text-center py-4">Chưa có báo cáo nào.</td>
+                                        <td colspan="10" class="text-center py-4">Chưa có báo cáo nào.</td>
                                     </tr>
-                                <?php endif; ?>
-                                <?php foreach ($reports as $r): ?>
+                                <?php else: 
+                                    $grandOrders = 0;
+                                    $grandAdsCost = 0;
+                                    $grandProfit = 0;
+                                    $grandRevenue = 0;
+                                    foreach ($reports as $index => $r): 
+                                        $grandOrders += $r['total_orders'];
+                                        $grandAdsCost += $r['total_ads_cost'];
+                                        $grandProfit += $r['total_profit'];
+                                        $grandRevenue += $r['total_revenue'];
+                                        $roas = $r['total_ads_cost'] > 0 ? $r['total_revenue'] / $r['total_ads_cost'] : 0;
+                                        $profitPercent = $r['total_revenue'] > 0 ? ($r['total_profit'] / $r['total_revenue']) * 100 : 0;
+                                ?>
                                     <tr>
+                                        <td class="ps-4">
+                                            <span class="text-xs font-weight-bold"><?= $index + 1 ?></span>
+                                        </td>
                                         <td>
                                             <div class="d-flex px-3 py-1">
                                                 <span class="text-sm font-weight-bold">
-                                                    <a href="<?= base_url('revenue_reports/edit/' . $r['id']) ?>" class="text-xs mb-0" style="text-decoration: none;">
+                                                    <a href="<?= base_url('revenue_reports/edit/' . $r['id']) ?>" class="text-xs mb-0" style="text-decoration: none; color: #2dce89;">
                                                     <?= esc($r['name']) ?>
                                                     </a>
                                                 </span>
                                             </div>
                                         </td>
-                                        <td>
-                                            <p class="text-sm font-weight-bold mb-0">
+                                        <td class="align-middle text-center">
+                                            <span class="text-sm font-weight-bold text-primary">
+                                                <?= $r['year'] . '-' . $r['month'] ?>
+                                            </span>
+                                        </td>
+                                        <td class="align-middle text-center">
+                                            <span class="text-sm font-weight-bold" style="color: #5e72e4;">
                                                 <?= esc($r['product_name']) ?>
-                                            </p>
-                                        </td>
-                                        <td class="align-middle text-center">
-                                            <span class="text-sm">
-                                                <?= str_pad($r['month'], 2, '0', STR_PAD_LEFT) . '/' . $r['year'] ?>
                                             </span>
                                         </td>
                                         <td class="align-middle text-center">
-                                            <span class="text-sm">
-                                                <?= date('d/m/Y H:i', strtotime($r['created_at'])) ?>
+                                            <span class="text-sm font-weight-bold"><?= number_format($r['total_orders'], 0) ?></span>
+                                        </td>
+                                        <td class="align-middle text-center">
+                                            <span class="text-sm font-weight-bold text-secondary">
+                                                <?= $r['total_ads_cost'] > 0 ? number_format($r['total_ads_cost'], 0, ',', '.') : '-' ?>
                                             </span>
+                                        </td>
+                                        <td class="align-middle text-center">
+                                            <span class="text-sm font-weight-bold <?= $r['total_profit'] >= 0 ? 'text-success' : 'text-danger' ?>">
+                                                <?= $r['total_profit'] != 0 ? number_format($r['total_profit'], 0, ',', '.') : '-' ?>
+                                                <?php if ($r['total_revenue'] > 0): ?>
+                                                    <small class="text-xs text-muted">(<?= number_format($profitPercent, 1) ?>%)</small>
+                                                <?php endif; ?>
+                                            </span>
+                                        </td>
+                                        <td class="align-middle text-center">
+                                            <span class="text-sm font-weight-bold text-danger">
+                                                <?= $r['total_revenue'] > 0 ? number_format($r['total_revenue'], 0, ',', '.') : '-' ?>
+                                            </span>
+                                        </td>
+                                        <td class="align-middle text-center">
+                                            <span class="text-sm font-weight-bold"><?= $roas > 0 ? number_format($roas, 2) : '-' ?></span>
                                         </td>
                                         <td class="align-middle text-end px-4">
-                                            <a href="<?= base_url('revenue_reports/edit/' . $r['id']) ?>"
-                                                class="btn btn-sm btn-info text-xs mb-0">Xem / Sửa Báo Cáo</a>
+                                            <div class="dropdown">
+                                                <a href="javascript:;" class="text-secondary" id="dropdownMenuButton<?= $r['id'] ?>" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="fas fa-ellipsis-v"></i>
+                                                </a>
+                                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton<?= $r['id'] ?>">
+                                                    <li><a class="dropdown-item" href="<?= base_url('revenue_reports/edit/' . $r['id']) ?>">Xem / Sửa</a></li>
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li><a class="dropdown-item text-danger" href="javascript:;" onclick="if(confirm('Bạn có chắc chắn muốn xóa báo cáo này?')) window.location.href='<?= base_url('revenue_reports/delete/' . $r['id']) ?>'">Xóa</a></li>
+                                                </ul>
+                                            </div>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
+                                    <tr class="total-row">
+                                        <td colspan="4" class="text-end pe-4">Tổng:</td>
+                                        <td class="text-center"><?= number_format($grandOrders, 0) ?></td>
+                                        <td class="text-center"><?= $grandAdsCost > 0 ? number_format($grandAdsCost, 0, ',', '.') : '-' ?></td>
+                                        <td class="text-center <?= $grandProfit >= 0 ? 'text-success' : 'text-danger' ?>">
+                                            <?= $grandProfit != 0 ? number_format($grandProfit, 0, ',', '.') : '-' ?>
+                                        </td>
+                                        <td class="text-center text-danger"><?= $grandRevenue > 0 ? number_format($grandRevenue, 0, ',', '.') : '-' ?></td>
+                                        <td class="text-center">
+                                            <?= $grandAdsCost > 0 ? number_format($grandRevenue / $grandAdsCost, 2) : '-' ?>
+                                        </td>
+                                        <td></td>
+                                    </tr>
+                                <?php endif; ?>
                             </tbody>
                         </table>
                     </div>

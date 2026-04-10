@@ -129,6 +129,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->get('revenue_reports/overview', 'RevenueReports::overview');
     $routes->post('revenue_reports/create', 'RevenueReports::create');
     $routes->get('revenue_reports/edit/(:num)', 'RevenueReports::edit/$1');
+    $routes->get('revenue_reports/delete/(:num)', 'RevenueReports::delete/$1');
     $routes->post('revenue_reports/update/(:num)', 'RevenueReports::update/$1');
     $routes->post('revenue_reports/fetchAdsCost', 'RevenueReports::fetchAdsCost');
     $routes->post('revenue_reports/fetchPancakeData', 'RevenueReports::fetchPancakeData');

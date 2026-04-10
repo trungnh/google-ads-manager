@@ -35,8 +35,13 @@ class RevenueReportModel extends Model
     public function getReportsByUser($userId, $filterMonth = null, $filterProductId = null, $reportByTime = false, $filterStartMonth = null, $filterEndMonth = null)
     {
         $builder = $this->db->table($this->table);
-        $builder->select('revenue_reports.*, products.name as product_name');
+        $builder->select('revenue_reports.*, products.name as product_name, 
+                         SUM(revenue_report_daily.orders) as total_orders,
+                         SUM(revenue_report_daily.ads_cost) as total_ads_cost,
+                         SUM(revenue_report_daily.revenue) as total_revenue,
+                         SUM(revenue_report_daily.profit) as total_profit');
         $builder->join('products', 'products.id = revenue_reports.product_id', 'left');
+        $builder->join('revenue_report_daily', 'revenue_report_daily.report_id = revenue_reports.id', 'left');
         $builder->where('revenue_reports.user_id', $userId);
 
         if ($reportByTime && $filterStartMonth && $filterEndMonth) {
@@ -61,6 +66,7 @@ class RevenueReportModel extends Model
             $builder->where('revenue_reports.product_id', $filterProductId);
         }
 
+        $builder->groupBy('revenue_reports.id');
         $builder->orderBy('revenue_reports.year', 'DESC');
         $builder->orderBy('revenue_reports.month', 'DESC');
         return $builder->get()->getResultArray();

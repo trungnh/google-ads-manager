@@ -12,18 +12,18 @@
     </div>
 
     <?php if (session()->getFlashdata('success')): ?>
-        <div class="alert alert-success bg-gradient-success text-white border-0 alert-dismissible fade show" role="alert">
+        <div class="alert alert-success bg-gradient-success border-0 alert-dismissible fade show" role="alert">
             <?= session()->getFlashdata('success') ?>
-            <button type="button" class="btn-close text-white" data-bs-dismiss="alert" aria-label="Close">
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">
                 <span aria-hidden="true">&times;</span>
             </button>
         </div>
     <?php endif; ?>
 
     <?php if (session()->getFlashdata('error')): ?>
-        <div class="alert alert-danger bg-gradient-danger text-white border-0 alert-dismissible fade show" role="alert">
+        <div class="alert alert-danger bg-gradient-danger border-0 alert-dismissible fade show" role="alert">
             <?= session()->getFlashdata('error') ?>
-            <button type="button" class="btn-close text-white" data-bs-dismiss="alert" aria-label="Close">
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">
                 <span aria-hidden="true">&times;</span>
             </button>
         </div>
@@ -63,41 +63,41 @@
                             <tbody>
                                 <?php if (empty($products)): ?>
                                     <tr>
-                                        <td colspan="8" class="text-center text-white py-4">Chưa có sản phẩm nào.</td>
+                                        <td colspan="8" class="text-center py-4">Chưa có sản phẩm nào.</td>
                                     </tr>
                                 <?php endif; ?>
                                 <?php foreach ($products as $p): ?>
                                     <tr>
                                         <td>
                                             <div class="d-flex px-3 py-1">
-                                                <span class="text-white text-sm font-weight-bold"
-                                                    style="color: #00F4FF!important">
+                                                <span class="text-sm font-weight-bold"
+                                                    style="">
                                                     <?= esc($p['product_code']) ?>
                                                 </span>
                                             </div>
                                         </td>
                                         <td>
-                                            <p class="text-sm font-weight-bold mb-0 text-white">
+                                            <p class="text-sm font-weight-bold mb-0">
                                                 <?= esc($p['name']) ?>
                                             </p>
                                         </td>
                                         <td class="align-middle text-end">
-                                            <span class="text-sm text-white font-weight-bold">
+                                            <span class="text-sm font-weight-bold">
                                                 <?= number_format($p['import_price'], 0, ',', '.') ?> đ
                                             </span>
                                         </td>
                                         <td class="align-middle text-end">
-                                            <span class="text-sm text-white font-weight-bold">
+                                            <span class="text-sm font-weight-bold">
                                                 <?= number_format($p['selling_price'], 0, ',', '.') ?> đ
                                             </span>
                                         </td>
                                         <td class="align-middle text-end">
-                                            <span class="text-sm text-white">
+                                            <span class="text-sm">
                                                 <?= number_format($p['shipping_fee'], 0, ',', '.') ?> đ
                                             </span>
                                         </td>
                                         <td class="align-middle text-center">
-                                            <span class="text-sm text-white font-weight-bold"
+                                            <span class="text-sm font-weight-bold"
                                                 style="color: #FF5E5E!important">
                                                 <?= rtrim(rtrim(number_format($p['return_rate'] * 100, 2), '0'), '.') ?>%
                                             </span>
@@ -108,7 +108,7 @@
                                             if (!empty($mappedAccounts)) {
                                                 foreach ($mappedAccounts as $acc) {
                                                     $name = isset($adsAccountMap[$acc]) ? $adsAccountMap[$acc] : $acc;
-                                                    echo '<span class="badge badge-sm bg-gradient-info me-1 mb-1">' . $name . '</span>';
+                                                    echo '<span class="badge badge-success badge-sm bg-gradient-info me-1 mb-1">' . $name . '</span>';
                                                 }
                                             } else {
                                                 echo '<span class="text-xs text-secondary">Chưa map tài khoản</span>';
