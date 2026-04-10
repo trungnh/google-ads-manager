@@ -258,8 +258,7 @@
 
                                     <td>
                                         <div class="d-flex justify-content-between align-items-center" style="height: 100%; padding: 0 5px;">
-                                            <input type="hidden" class="inp-goods-cost" value="<?= esc((float) ($r['goods_cost'] ?? 0)) ?>">
-                                            <span class="calc-val out-goods-cost fw-bold w-100 text-end pe-1">-</span>
+                                            <input type="text" class="editable-input inp-goods-cost w-100" value="<?= esc((float) ($r['goods_cost'] ?? 0)) ?>">
                                             <button class="btn btn-outline-info btn-xs mb-0 btn-fetch-pancake px-1 py-0" 
                                                 type="button" data-date="<?= esc($r['date']) ?>" data-report="<?= $report['id'] ?>" title="Load data từ Pancake">
                                                 <i class="fas fa-sync-alt" style="font-size: 0.7rem;"></i>
@@ -351,13 +350,10 @@
             let revenue = parseNum(row.find('.inp-revenue').val());
 
             // Calc Basic
-            let goodsCost = qty * cfgImportPrice;
-            // Nếu có giá trị tiền hàng được load từ pancake, ta có thể ưu tiên nó hoặc cộng thêm. 
-            // Ở đây ta ưu tiên input bằng tay hoặc tính theo SL * giá nhập. 
-            // Tuy nhiên user muốn TIỀN HÀNG cũng có nút load, vậy ta nên dùng giá trị từ inp-goods-cost nếu có.
-            let loadedGoodsCost = parseNum(row.find('.inp-goods-cost').val());
-            if (loadedGoodsCost > 0) {
-                goodsCost = loadedGoodsCost;
+            let goodsCost = parseNum(row.find('.inp-goods-cost').val());
+            if (goodsCost <= 0) {
+                goodsCost = qty * cfgImportPrice;
+                row.find('.inp-goods-cost').val(goodsCost);
             }
             
             let shipCost = orders * cfgShippingFee;
@@ -382,7 +378,8 @@
 
             // Output row values
             row.find('.out-ads-cost').text(fmt(adsCost));
-            row.find('.out-goods-cost').text(fmt(goodsCost));
+            // row.find('.inp-goods-cost').val(goodsCost); // No, don't auto-update if it's an input to avoid overriding manual edits easily, but we need to show it somewhere.
+            
             row.find('.out-ship-cost').text(fmt(shipCost));
             row.find('.out-return-cost').text(fmt(returnCost));
             row.find('.out-total-cost').text(fmt(totalCost));
@@ -548,6 +545,11 @@
                 let cfgPaymentFee = parseNum($('#cfg_payment_fee').val());
 
                 let goodsCost = qty * cfgImportPrice;
+                let loadedGoodsCost = parseNum(r.find('.inp-goods-cost').val());
+                if (loadedGoodsCost > 0) {
+                    goodsCost = loadedGoodsCost;
+                }
+                
                 let shipCost = orders * cfgShippingFee;
                 let returnCost = ((revenue - goodsCost) * cfgReturnRate) + (orders * cfgReturnRate * (cfgShippingFee / 2));
                 if (returnCost < 0) returnCost = 0;
