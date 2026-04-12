@@ -44,10 +44,10 @@
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" id="auto_optimize" name="auto_optimize"
                                     <?= isset($settings['auto_optimize']) && $settings['auto_optimize'] ? 'checked' : '' ?>>
-                                <label class="form-check-label" for="auto_optimize">Tự động tối ưu</label>
+                                <label class="form-check-label" for="auto_optimize">Tự động quét chiến dịch</label>
                             </div>
                             <small class="form-text text-muted">
-                                <i>Khi bật, hệ thống sẽ tự động kiểm tra và tối ưu chiến dịch</i>
+                                <i>Khi bật, hệ thống sẽ tự động quét để lấy data chiền dịch, kiểm tra và tối ưu</i>
                             </small>
                         </div>
 
