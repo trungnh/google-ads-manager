@@ -351,6 +351,10 @@
 
             // Calc Basic
             let goodsCost = parseNum(row.find('.inp-goods-cost').val());
+            if (qty > 0) {
+                goodsCost = qty * cfgImportPrice;
+                row.find('.inp-goods-cost').val(goodsCost);
+            }
             if (goodsCost <= 0) {
                 goodsCost = qty * cfgImportPrice;
                 row.find('.inp-goods-cost').val(goodsCost);
