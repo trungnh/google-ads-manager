@@ -69,12 +69,25 @@
                                 value="<?= isset($settings['increase_budget']) ? $settings['increase_budget'] : '' ?>">
                             <small class="form-text text-muted">
                                 <i>
-                                    Số tiền tăng thêm khi chiến dịch đã chi tiêu > 50% ngân sách
+                                    Số tiền tăng thêm khi chiến dịch đã chi tiêu vượt ngưỡng % ngân sách bên dưới
                                     <br>
                                     Nếu không muốn tăng ngân sách thì để 0
                                     <br>
                                     (Nếu chiến dịch thoả mãn điều kiện ngưỡng ROAS/CPA bên dưới thì mới tăng NS)
                                 </i>
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="budget_spending_threshold" class="form-label">% Chi tiêu / Ngân sách</label>
+                            <div class="input-group">
+                                <input type="number" step="0.01" class="form-control" id="budget_spending_threshold"
+                                    name="budget_spending_threshold"
+                                    value="<?= isset($settings['budget_spending_threshold']) ? $settings['budget_spending_threshold'] : '50' ?>">
+                                <span class="input-group-text">%</span>
+                            </div>
+                            <small class="form-text text-muted">
+                                <i>Ngưỡng % chi tiêu so với ngân sách để thực hiện tăng ngân sách (Mặc định 50%)</i>
                             </small>
                         </div>
 
@@ -649,6 +662,7 @@
                 'roas_threshold': $('#roas_threshold').val() || '0',
                 'extended_cpa_threshold': $('#extended_cpa_threshold').val() || '0',
                 'increase_budget': $('#increase_budget').val() || '0',
+                'budget_spending_threshold': $('#budget_spending_threshold').val() || '50',
                 'gsheet1': $('#gsheet1').val(),
                 'gsheet2': $('#gsheet2').val(),
                 'gsheet_date_col': $('#gsheet_date_col').val().toUpperCase(),

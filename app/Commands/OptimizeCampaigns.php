@@ -327,15 +327,18 @@ class OptimizeCampaigns extends BaseCommand
                 }
 
                 // Kiểm tra tăng ngân sách nếu chiến dịch không bị tạm dừng
+                $budgetThresholdPercent = $account['budget_spending_threshold'] ?? 50;
+                $budgetThreshold = $campaign['budget'] * ($budgetThresholdPercent / 100);
+
                 if (
                     !$shouldPause &&
                     $realConversions > 0 &&
                     isset($account['increase_budget']) &&
                     $account['increase_budget'] > 0 &&
-                    $campaign['cost'] > ($campaign['budget'] * 0.5)
+                    $campaign['cost'] > $budgetThreshold
                 ) {
                     $shouldIncreaseBudget = true;
-                    $action = "Chi tiêu (" . number_format($campaign['cost'], 0, '', '.') . ") vượt 50% ngân sách (" . number_format($campaign['budget'], 0, '', '.') . ")";
+                    $action = "Chi tiêu (" . number_format($campaign['cost'], 0, '', '.') . ") vượt {$budgetThresholdPercent}% ngân sách (" . number_format($campaign['budget'], 0, '', '.') . ")";
                 }
                 if ($shouldPause || $shouldIncreaseBudget) {
                     if (in_array($campaign['campaign_id'], $excludeCampaignIds)) {
