@@ -296,8 +296,8 @@ class OptimizeCampaigns extends BaseCommand
                                     $action = "Chi tiêu thêm (" . number_format($costExtendFromLastConversion, 0, '', '.') . ") từ lần ra đơn cuối cùng - Không có đơn thực tế";
                                 }
                             } else {
-                                $cpaExtendFromLastConversion = $costExtendFromLastConversion / $conversionsExtendFromLastConversion;
-                                $roasExtendFromLastConversion = $conversionValueExtendFromLastConversion / $costExtendFromLastConversion;
+                                $cpaExtendFromLastConversion = ($conversionsExtendFromLastConversion > 0) ? $costExtendFromLastConversion / $conversionsExtendFromLastConversion : $costExtendFromLastConversion;
+                                $roasExtendFromLastConversion = ($costExtendFromLastConversion > 0) ? $conversionValueExtendFromLastConversion / $costExtendFromLastConversion : $realRoas;
                                 if ($account['use_roas_threshold']) {
                                     // Check theo ROAS
                                     // Nếu ROAS thực tế thấp hơn ngưỡng

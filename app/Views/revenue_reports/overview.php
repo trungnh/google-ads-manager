@@ -189,10 +189,15 @@
                                         <td class="text-end"><?= number_format($day['ship_cost'], 0, ',', '.') ?></td>
                                         <td class="text-end"><?= number_format($day['return_cost'], 0, ',', '.') ?></td>
                                         <td class="text-end"><?= number_format($day['total_cost'], 0, ',', '.') ?></td>
-                                        <td class="text-end font-weight-bold" style="color: #f5365c;"><?= number_format($day['revenue'], 0, ',', '.') ?></td>
-                                        <td class="text-end font-weight-bold" style="color: #2dce89;"><?= number_format($day['profit'], 0, ',', '.') ?></td>
+                                        <td class="text-end font-weight-bold fw-bold" style="color: #f5365c;"><?= number_format($day['revenue'], 0, ',', '.') ?></td>
+                                        <td class="text-end font-weight-bold fw-bold" style="color: #2dce89;">
+                                            <?= number_format($day['profit'], 0, ',', '.') ?>
+                                            <?php if ($day['revenue'] > 0): ?>
+                                                <small class="text-xs text-muted fw-bold <?= $day['profit'] >= 0 ? 'text-success' : 'text-danger' ?>"">(<?= number_format(($day['profit'] / $day['revenue']) * 100, 1) ?>%)</small>
+                                            <?php endif; ?>
+                                        </td>
                                         <td class="text-center"><?= number_format($adsPercent, 1) ?>%</td>
-                                        <td class="text-center font-weight-bold"><?= number_format($roas, 2) ?></td>
+                                        <td class="text-center font-weight-bold fw-bold"><?= number_format($roas, 2) ?></td>
                                     </tr>
                                 <?php endforeach; ?>
                             <?php endif; ?>

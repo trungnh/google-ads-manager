@@ -227,20 +227,20 @@
                                             </span>
                                         </td>
                                         <td class="align-middle text-center">
-                                            <span class="text-sm font-weight-bold <?= $r['total_profit'] >= 0 ? 'text-success' : 'text-danger' ?>">
+                                            <span class="text-sm font-weight-bold fw-bold <?= $r['total_profit'] >= 0 ? 'text-success' : 'text-danger' ?>">
                                                 <?= $r['total_profit'] != 0 ? number_format($r['total_profit'], 0, ',', '.') : '-' ?>
                                                 <?php if ($r['total_revenue'] > 0): ?>
-                                                    <small class="text-xs text-muted">(<?= number_format($profitPercent, 1) ?>%)</small>
+                                                    <small class="text-xs text-muted <?= $r['total_profit'] >= 0 ? 'text-success' : 'text-danger' ?>"">(<?= number_format($profitPercent, 1) ?>%)</small>
                                                 <?php endif; ?>
                                             </span>
                                         </td>
                                         <td class="align-middle text-center">
-                                            <span class="text-sm font-weight-bold text-danger">
+                                            <span class="text-sm font-weight-bold fw-bold text-danger">
                                                 <?= $r['total_revenue'] > 0 ? number_format($r['total_revenue'], 0, ',', '.') : '-' ?>
                                             </span>
                                         </td>
                                         <td class="align-middle text-center">
-                                            <span class="text-sm font-weight-bold"><?= $roas > 0 ? number_format($roas, 2) : '-' ?></span>
+                                            <span class="text-sm font-weight-bold fw-bold"><?= $roas > 0 ? number_format($roas, 2) : '-' ?></span>
                                         </td>
                                         <td class="align-middle text-end px-4">
                                             <div class="dropdown">
