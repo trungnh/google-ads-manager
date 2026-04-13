@@ -4,6 +4,9 @@ namespace App\Services;
 
 class GoogleSheetService
 {
+    protected $apiVersion = 'v4';
+    protected $apiEnpoint = 'https://sheets.googleapis.com/';
+
     /**
      * Lấy dữ liệu chuyển đổi từ Google Sheet
      * 
@@ -16,6 +19,44 @@ class GoogleSheetService
     {
         $result = [];
 
+        if (!empty($settings['ggsheet_id']) && !empty($settings['ggsheet_name'])) {
+            // Sử dụng Google Sheet API cho sheet 1
+            $result = $this->getConversionsFromGoogleSheetApi(
+                $settings['ggsheet_id'],
+                $settings['ggsheet_name'],
+                $startDate,
+                $endDate,
+                $settings
+            );
+        }
+
+        // Xử lý Google Sheet 2 nếu có
+        if (!empty($settings['ggsheet2_id']) && !empty($settings['ggsheet2_name'])) {
+            // Sử dụng Google Sheet API cho sheet 2
+            $sheet2Data = $this->getConversionsFromGoogleSheetApi(
+                $settings['ggsheet2_id'],
+                $settings['ggsheet2_name'],
+                $startDate,
+                $endDate,
+                $settings
+            );
+
+            // Gộp dữ liệu từ sheet 2 vào kết quả
+            foreach ($sheet2Data as $campaignId => $data) {
+                if (isset($result[$campaignId])) {
+                    // Nếu campaign đã tồn tại, cộng dồn giá trị
+                    $result[$campaignId]['conversions'] += $data['conversions'];
+                    $result[$campaignId]['conversion_value'] += $data['conversion_value'];
+                } else {
+                    // Nếu campaign chưa tồn tại, thêm mới
+                    $result[$campaignId] = $data;
+                }
+            }
+        }
+
+        return $result;
+
+        /*
         // Kiểm tra xem có sử dụng Google Sheet API không
         if (isset($settings['use_ggsheet_api']) && $settings['use_ggsheet_api'] == 1) {
             // Xử lý Google Sheet 1
@@ -87,7 +128,7 @@ class GoogleSheetService
             }
 
             return $result;
-        }
+        }*/
     }
 
     /**
@@ -132,7 +173,7 @@ class GoogleSheetService
             $apiKey = getenv('GOOGLE_SHEET_API_KEY') ?: 'YOUR_API_KEY';
 
             // Tạo URL API
-            $url = "https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheetId}/values/{$sheetName}?key={$apiKey}";
+            $url = $this->apiEnpoint . $this->apiVersion . "/spreadsheets/{$spreadsheetId}/values/{$sheetName}?key={$apiKey}";
 
             // Gọi API
             $response = file_get_contents($url);
@@ -301,9 +342,8 @@ class GoogleSheetService
         }
 
         // Kiểm tra nếu không có URL Google Sheet và không sử dụng API
-        if (
-            empty($gsheetUrl) && !(isset($settings['use_ggsheet_api']) && $settings['use_ggsheet_api'] == 1
-                && !empty($settings['ggsheet_id']) && !empty($settings['ggsheet_name']))
+        if ((empty($settings['ggsheet_id']) || empty($settings['ggsheet_name'])) && 
+        (empty($settings['ggsheet2_id']) || empty($settings['ggsheet2_name'])) 
         ) {
             return $campaigns;
         }

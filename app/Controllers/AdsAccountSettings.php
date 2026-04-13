@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Models\AdsAccountModel;
 use App\Models\AdsAccountSettingsModel;
+use App\Services\PancakeService;
 
 class AdsAccountSettings extends BaseController
 {
@@ -223,6 +224,11 @@ class AdsAccountSettings extends BaseController
                 'use_pancake' => $this->request->getPost('use_pancake'),
                 'pancake_use_usd' => $this->request->getPost('pancake_use_usd'),
                 'pancake_usd_rate' => $this->request->getPost('pancake_usd_rate'),
+                'use_ggsheet_api' => $this->request->getPost('use_ggsheet_api'),
+                'ggsheet_id' => $this->request->getPost('ggsheet_id'),
+                'ggsheet_name' => $this->request->getPost('ggsheet_name'),
+                'ggsheet2_id' => $this->request->getPost('ggsheet2_id'),
+                'ggsheet2_name' => $this->request->getPost('ggsheet2_name'),
                 'account_id' => $account['id'],
             ];
 
@@ -273,7 +279,7 @@ class AdsAccountSettings extends BaseController
             }
 
             // Khởi tạo service Pancake
-            $pancakeService = new \App\Services\PancakeService();
+            $pancakeService = new PancakeService();
 
             // Lấy danh sách thẻ từ Pancake POS
             $tags = $pancakeService->getTags($shopId, $apiKey);
