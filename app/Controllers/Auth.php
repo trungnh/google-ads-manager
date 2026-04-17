@@ -54,6 +54,13 @@ class Auth extends Controller
             return redirect()->back()->withInput()->with('error', 'Username/Email hoặc mật khẩu không đúng');
         }
         
+        // Kiểm tra thời hạn hết hạn cho user không phải superadmin
+        if ($user['role'] !== 'superadmin') {
+            if ($user['expire_date'] && strtotime($user['expire_date']) < time()) {
+                return redirect()->back()->withInput()->with('error', 'Tài khoản của bạn đã hết hạn. Vui lòng liên hệ quản trị viên để gia hạn.');
+            }
+        }
+        
         // Đăng nhập thành công, lưu thông tin vào session
         $this->setUserSession($user);
         // Update last login
@@ -71,6 +78,14 @@ class Auth extends Controller
         session()->destroy();
         return redirect()->to('/login');
     }
+
+    /**
+     * Hiển thị thông báo tài khoản hết hạn
+     */
+    public function expired()
+    {
+        return view('auth/expired');
+    }
     
     /**
      * Lưu thông tin user vào session
@@ -83,6 +98,7 @@ class Auth extends Controller
             'username' => $user['username'],
             'email' => $user['email'],
             'role' => $user['role'],
+            'expire_date' => $user['expire_date'],
             'isLoggedIn' => true,
         ];
         

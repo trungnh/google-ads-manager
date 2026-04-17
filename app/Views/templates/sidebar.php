@@ -95,6 +95,14 @@
                     <span>Kết nối Google Ads</span>
                 </a>
             </li>
+
+            <li class="nav-item">
+                <a href="<?= base_url('guide') ?>"
+                    class="nav-link <?= str_replace('/index.php', '', current_url()) == base_url('guide') ? 'active' : '' ?>">
+                    <i class="fas fa-book"></i>
+                    <span>Hướng dẫn sử dụng</span>
+                </a>
+            </li>
         </ul>
 
         <!-- Divider -->

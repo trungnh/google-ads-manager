@@ -44,8 +44,14 @@ class AdsAccountModel extends Model
 
     public function getAccountsForReporting()
     {
-        return $this->select("id, user_id, customer_id, customer_name, currency_code")
-                    ->where("status", "ACTIVE")
+        return $this->select("ads_accounts.id, ads_accounts.user_id, ads_accounts.customer_id, ads_accounts.customer_name, ads_accounts.currency_code")
+                    ->join('users', 'users.id = ads_accounts.user_id')
+                    ->where("ads_accounts.status", "ACTIVE")
+                    ->groupStart()
+                        ->where('users.role', 'superadmin')
+                        ->orWhere('users.expire_date >', date('Y-m-d H:i:s'))
+                        ->orWhere('users.expire_date', null)
+                    ->groupEnd()
                     ->findAll();
     }
 
@@ -54,6 +60,11 @@ class AdsAccountModel extends Model
         return $this->select('ads_accounts.*, users.username, users.status')
                     ->join('users', 'users.id = ads_accounts.user_id')
                     ->where('users.status', 'active')
+                    ->groupStart()
+                        ->where('users.role', 'superadmin')
+                        ->orWhere('users.expire_date >', date('Y-m-d H:i:s'))
+                        ->orWhere('users.expire_date', null)
+                    ->groupEnd()
                     ->findAll();
     }
 }

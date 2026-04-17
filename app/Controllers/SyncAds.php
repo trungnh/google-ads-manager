@@ -105,7 +105,11 @@ class SyncAds extends BaseController
     
     protected function saveAccountsToDatabase($userId, $accounts)
     {
+        $syncedCustomerIds = [];
+
         foreach ($accounts as $account) {
+            $syncedCustomerIds[] = $account['customer_id'];
+
             // Kiểm tra xem tài khoản đã tồn tại chưa
             $existingAccount = $this->adsAccountModel
                 ->where('user_id', $userId)
@@ -138,6 +142,20 @@ class SyncAds extends BaseController
                     'updated_at' => $now
                 ]);
             }
+        }
+
+        // Dọn các tài khoản cũ không còn nằm trong kết quả đồng bộ hiện tại,
+        // bao gồm cả các manager account đã từng bị sync nhầm trước đó.
+        $staleAccountsQuery = $this->adsAccountModel->where('user_id', $userId);
+
+        if (!empty($syncedCustomerIds)) {
+            $staleAccountsQuery->whereNotIn('customer_id', $syncedCustomerIds);
+        }
+
+        $staleAccounts = $staleAccountsQuery->findAll();
+
+        foreach ($staleAccounts as $staleAccount) {
+            $this->adsAccountModel->delete($staleAccount['id']);
         }
     }
 }

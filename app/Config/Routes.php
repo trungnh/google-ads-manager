@@ -48,6 +48,7 @@ $routes->get('terms', 'PublicPages::terms');
 $routes->get('login', 'Auth::login');
 $routes->post('login', 'Auth::attemptLogin');
 $routes->get('logout', 'Auth::logout');
+$routes->get('expired', 'Auth::expired');
 
 // Ads Accounts routes
 $routes->get('ads-accounts', 'AdsAccounts::index');
@@ -58,6 +59,9 @@ $routes->post('ads-accounts/store', 'AdsAccounts::store');
 $routes->group('', ['filter' => 'auth'], function ($routes) {
     // Dashboard route
     $routes->get('dashboard', 'Dashboard::index');
+
+    // Guide route
+    $routes->get('guide', 'Guide::index');
 
     // Các route cho role user, admin, superadmin
 
@@ -142,6 +146,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
         $routes->get('users/edit/(:num)', 'Users::edit/$1');
         $routes->post('users/update/(:num)', 'Users::update/$1');
         $routes->get('users/delete/(:num)', 'Users::delete/$1');
+        $routes->post('users/extend/(:num)', 'Users::extend/$1');
         $routes->get('optimize-logs/view/(:num)', 'OptimizeLogs::view/$1');
         $routes->get('reports/view/(:num)', 'Reports::view/$1');
 

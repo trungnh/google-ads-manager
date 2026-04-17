@@ -174,7 +174,13 @@ class AdsAccountSettingsModel extends Model
     {
         return $this->select('ads_account_settings.*, ads_accounts.customer_id, ads_accounts.customer_name, ads_accounts.user_id')
             ->join('ads_accounts', 'ads_accounts.id = ads_account_settings.account_id')
-            ->where('auto_optimize', 1)
+            ->join('users', 'users.id = ads_accounts.user_id')
+            ->where('ads_account_settings.auto_optimize', 1)
+            ->groupStart()
+                ->where('users.role', 'superadmin')
+                ->orWhere('users.expire_date >', date('Y-m-d H:i:s'))
+                ->orWhere('users.expire_date', null)
+            ->groupEnd()
             ->findAll();
     }
 }

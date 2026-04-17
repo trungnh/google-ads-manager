@@ -18,6 +18,7 @@
                                     <th>Tên đăng nhập</th>
                                     <th>Vai trò</th>
                                     <th>Trạng thái</th>
+                                    <th>Hết hạn</th>
                                     <th>Đăng nhập lần cuối</th>
                                     <th>Ngày tạo</th>
                                     <th>Logs</th>
@@ -41,6 +42,31 @@
                                                 <span class="badge bg-<?= $user['status'] === 'active' ? 'success' : 'secondary' ?>">
                                                     <?= $user['status'] === 'active' ? 'Đang hoạt động' : 'Không hoạt động' ?>
                                                 </span>
+                                            </td>
+                                            <td>
+                                                <?php if ($user['role'] !== 'superadmin'): ?>
+                                                    <?php if ($user['expire_date']): ?>
+                                                        <span class="badge bg-<?= strtotime($user['expire_date']) < time() ? 'danger' : 'info' ?>">
+                                                            <?= date('d/m/Y', strtotime($user['expire_date'])) ?>
+                                                        </span>
+                                                    <?php else: ?>
+                                                        <span class="badge bg-warning text-dark">Vĩnh viễn</span>
+                                                    <?php endif; ?>
+                                                    
+                                                    <div class="mt-1">
+                                                        <form action="<?= site_url('users/extend/'.$user['id']) ?>" method="post" class="d-inline-flex align-items-center">
+                                                            <select name="months" class="form-select form-select-sm" style="width: auto; padding-right: 25px;">
+                                                                <option value="1">+1th</option>
+                                                                <option value="3">+3th</option>
+                                                                <option value="6">+6th</option>
+                                                                <option value="12">+12th</option>
+                                                            </select>
+                                                            <button type="submit" class="btn btn-sm btn-success ms-1">Gia hạn</button>
+                                                        </form>
+                                                    </div>
+                                                <?php else: ?>
+                                                    <span class="badge bg-primary">Vĩnh viễn</span>
+                                                <?php endif; ?>
                                             </td>
                                             <td><?= $user['last_login'] ? date('d/m/Y H:i', strtotime($user['last_login'])) : 'Chưa đăng nhập' ?></td>
                                             <td><?= date('d/m/Y', strtotime($user['created_at'])) ?></td>

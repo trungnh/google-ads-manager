@@ -10,6 +10,7 @@ use CodeIgniter\Filters\InvalidChars;
 use CodeIgniter\Filters\SecureHeaders;
 use App\Filters\Auth;
 use App\Filters\RoleFilter;
+use App\Filters\ExpireFilter;
 
 class Filters extends BaseConfig
 {
@@ -27,6 +28,7 @@ class Filters extends BaseConfig
         'secureheaders' => SecureHeaders::class,
         'auth'          => Auth::class,
         'role'          => RoleFilter::class,
+        'expire'        => ExpireFilter::class,
     ];
 
     /**
@@ -40,6 +42,7 @@ class Filters extends BaseConfig
             // 'honeypot',
             // 'csrf',
             // 'invalidchars',
+            'expire',
         ],
         'after' => [
             'toolbar',

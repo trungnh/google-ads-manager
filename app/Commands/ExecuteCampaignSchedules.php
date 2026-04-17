@@ -52,9 +52,18 @@ class ExecuteCampaignSchedules extends BaseCommand
             // Get active schedules for current time that haven't been executed today
             $todayDate = date('Y-m-d');
             $schedules = $this->campaignScheduleModel
-                ->where('status', 'active')
-                ->where('execution_time', $currentTime->format('H:i:s'))
-                ->where("(last_executed_date IS NULL OR last_executed_date < '$todayDate')")
+                ->select('campaign_schedules.*')
+                ->join('ads_accounts', 'ads_accounts.customer_id = campaign_schedules.customer_id')
+                ->join('users', 'users.id = ads_accounts.user_id')
+                ->where('campaign_schedules.status', 'active')
+                ->where('campaign_schedules.execution_time', $currentTime->format('H:i:s'))
+                ->where("(campaign_schedules.last_executed_date IS NULL OR campaign_schedules.last_executed_date < '$todayDate')")
+                ->groupStart()
+                    ->where('users.role', 'superadmin')
+                    ->orWhere('users.expire_date >', date('Y-m-d H:i:s'))
+                    ->orWhere('users.expire_date', null)
+                ->groupEnd()
+                ->groupBy('campaign_schedules.id')
                 ->findAll();
 
             if (empty($schedules)) {

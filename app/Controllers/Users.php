@@ -192,4 +192,38 @@ class Users extends BaseController
         // Chuyển hướng về trang danh sách người dùng
         return redirect()->to('/users')->with('success', 'Người dùng đã được xóa thành công.');
     }
+
+    /**
+     * Gia hạn tài khoản người dùng
+     */
+    public function extend($id)
+    {
+        // Chỉ admin mới có quyền gia hạn
+        if (session()->get('role') !== 'superadmin' && session()->get('role') !== 'admin') {
+            return redirect()->to('/dashboard')->with('error', 'Bạn không có quyền thực hiện chức năng này.');
+        }
+
+        $user = $this->userModel->find($id);
+        if (!$user) {
+            return redirect()->to('/users')->with('error', 'Không tìm thấy người dùng.');
+        }
+
+        $months = $this->request->getPost('months') ?: 1;
+        
+        $currentExpireDate = $user['expire_date'] ? strtotime($user['expire_date']) : time();
+        // Nếu đã hết hạn thì gia hạn từ thời điểm hiện tại, nếu chưa thì cộng thêm vào ngày cũ
+        if ($currentExpireDate < time()) {
+            $currentExpireDate = time();
+        }
+        
+        $newExpireDate = date('Y-m-d H:i:s', strtotime("+{$months} months", $currentExpireDate));
+
+        $updated = $this->userModel->update($id, ['expire_date' => $newExpireDate]);
+
+        if ($updated) {
+            return redirect()->to('/users')->with('success', "Đã gia hạn tài khoản {$user['username']} thêm {$months} tháng. Hạn mới: " . date('d/m/Y', strtotime($newExpireDate)));
+        } else {
+            return redirect()->to('/users')->with('error', 'Có lỗi xảy ra khi gia hạn tài khoản.');
+        }
+    }
 } 

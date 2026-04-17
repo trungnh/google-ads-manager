@@ -175,11 +175,13 @@ class GoogleAdsService
                 customer_client.descriptive_name,
                 customer_client.currency_code,
                 customer_client.time_zone,
-                customer_client.status
+                customer_client.status,
+                customer_client.manager
             FROM
                 customer_client
             WHERE
                 customer_client.status = 'ENABLED'
+                AND customer_client.manager = FALSE
         ";
 
         $data = [
@@ -255,7 +257,8 @@ class GoogleAdsService
                 customer.descriptive_name,
                 customer.currency_code,
                 customer.time_zone,
-                customer.status
+                customer.status,
+                customer.manager
             FROM
                 customer
             WHERE
@@ -274,6 +277,14 @@ class GoogleAdsService
                         foreach ($batch['results'] as $result) {
                             if (isset($result['customer'])) {
                                 $customer = $result['customer'];
+
+                                // listAccessibleCustomers có thể trả về cả tài khoản manager,
+                                // nhưng hệ thống chỉ nên đồng bộ tài khoản quảng cáo thực tế.
+                                if (!empty($customer['manager'])) {
+                                    log_message('debug', 'Skip manager account while syncing: ' . $customer['id']);
+                                    return null;
+                                }
+
                                 return [
                                     'customer_id' => $customer['id'],
                                     'customer_name' => $customer['descriptiveName'] ?? 'Unknown',
