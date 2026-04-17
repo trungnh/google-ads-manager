@@ -226,6 +226,23 @@ class OptimizeCampaigns extends BaseCommand
 
                 try {
                     /* ============ Bật/tắt camp ============ */
+					// Lấy campaign data từ DB
+					$tmpCampaign = $this->campaignsDataModel->where('customer_id', $account['customer_id'])
+						->where('campaign_id', $campaign['campaign_id'])
+						->where('date', date('Y-m-d'))
+						->first();
+
+					// Check tồn tại
+					$lastCostConversion = $tmpCampaign['last_cost_conversion'] ?? 0;
+					$lastCountConversion = $tmpCampaign['last_count_conversion'] ?? 0;
+					$lastCountConversionValue = $tmpCampaign['last_count_conversion_value'] ?? 0;
+
+					// Tính chi tiêu từ lần ra cuối cùng ra chuyển đổi
+					$costExtendFromLastConversion = $tmpCampaign['cost'] - $lastCostConversion;
+					$conversionsExtendFromLastConversion = $realConversions - $lastCountConversion;
+					$conversionValueExtendFromLastConversion = $realConversionValue - $lastCountConversionValue;
+					$tmpCFLC = $costExtendFromLastConversion;
+							
                     // TH: Không có đơn
                     if ($realConversions == 0) {
                         // Nếu chi tiêu vượt ngưỡng CPA và không có chuyển đổi thực tế
@@ -274,22 +291,6 @@ class OptimizeCampaigns extends BaseCommand
                             }
                         } else {
                             // Check CPA giữa 2 lần chuyển đổi
-                            // Lấy campaign data từ DB
-                            $tmpCampaign = $this->campaignsDataModel->where('customer_id', $account['customer_id'])
-                                ->where('campaign_id', $campaign['campaign_id'])
-                                ->where('date', date('Y-m-d'))
-                                ->first();
-
-                            // Check tồn tại
-                            $lastCostConversion = $tmpCampaign['last_cost_conversion'] ?? 0;
-                            $lastCountConversion = $tmpCampaign['last_count_conversion'] ?? 0;
-                            $lastCountConversionValue = $tmpCampaign['last_count_conversion_value'] ?? 0;
-
-                            // Tính chi tiêu từ lần ra cuối cùng ra chuyển đổi
-                            $costExtendFromLastConversion = $tmpCampaign['cost'] - $lastCostConversion;
-                            $conversionsExtendFromLastConversion = $realConversions - $lastCountConversion;
-                            $conversionValueExtendFromLastConversion = $realConversionValue - $lastCountConversionValue;
-                            $tmpCFLC = $costExtendFromLastConversion;
                             if ($conversionsExtendFromLastConversion == 0) {
                                 if ($costExtendFromLastConversion > $account['cpa_threshold']) {
                                     $shouldPause = true;
