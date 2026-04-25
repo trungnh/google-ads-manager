@@ -120,7 +120,7 @@
                 <div class="icon-box icon-ads">
                     <i class="fas fa-ad"></i>
                 </div>
-                <div class="comparison <?= $comparison['ads_cost'] <= 0 ? 'up' : 'down' ?>">
+                <div class="comparison <?= $comparison['ads_cost'] <= 0 ? 'down' : 'up' ?>">
                     <i class="fas fa-arrow-<?= $comparison['ads_cost'] <= 0 ? 'down' : 'up' ?>"></i>
                     <?= $comparison['ads_cost'] !== null ? number_format(abs($comparison['ads_cost']), 1) . '%' : 'NaN%' ?>
                     <span class="text-muted ms-1">So với tháng trước</span>

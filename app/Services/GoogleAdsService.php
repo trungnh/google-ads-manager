@@ -20,7 +20,7 @@ class GoogleAdsService
         $this->pancakeService = new PancakeService();
     }
 
-    public function getCampaignsWithRealConv($settings, $customerId, $accessToken, $mccId, $showPaused, $startDate, $endDate)
+    public function getCampaignsWithRealConv($settings, $customerId, $accessToken, $mccId, $showPaused, $startDate, $endDate, $includeZeroSpend = true)
     {
         // Lấy danh sách chiến dịch từ API
         $campaigns = $this->getCampaigns(
@@ -29,7 +29,8 @@ class GoogleAdsService
             $mccId,
             $showPaused,
             $startDate,
-            $endDate
+            $endDate,
+            $includeZeroSpend
         );
         // Xử lý dữ liệu chuyển đổi thực tế
         if (!empty($campaigns)) {
@@ -443,7 +444,7 @@ class GoogleAdsService
         return $decodedResponse;
     }
 
-    public function getCampaigns($customerId, $accessToken, $mccId = null, $showPaused = false, $startDate = null, $endDate = null)
+    public function getCampaigns($customerId, $accessToken, $mccId = null, $showPaused = false, $startDate = null, $endDate = null, $includeZeroSpend = true)
     {
         $formattedCustomerId = $this->formatCustomerId($customerId);
 
@@ -472,7 +473,8 @@ class GoogleAdsService
             FROM campaign
             WHERE campaign.status != 'REMOVED'" .
             (!$showPaused ? " AND campaign.status = 'ENABLED'" : "") .
-            ($startDate && $endDate ? " AND segments.date BETWEEN '$startDate' AND '$endDate'" : "");
+            ($startDate && $endDate ? " AND segments.date BETWEEN '$startDate' AND '$endDate'" : "") .
+            (!$includeZeroSpend ? " AND metrics.cost_micros > 0" : "");
 
         $data = [
             'query' => $query

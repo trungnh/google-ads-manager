@@ -99,7 +99,7 @@ class Campaigns extends BaseController
                     return redirect()->to('/adsaccounts');
                 }
 
-                $campaigns = $this->googleAdsService->getCampaignsWithRealConv($settings, $customerId, $tokenData['access_token'], $mccId, $showPaused, $today, $today);
+                $campaigns = $this->googleAdsService->getCampaignsWithRealConv($settings, $customerId, $tokenData['access_token'], $mccId, $showPaused, $today, $today, $showPausedAndCost);
 
                 $this->campaignsDataModel->saveCampaignsData($customerId, $campaigns);
             }
@@ -181,7 +181,7 @@ class Campaigns extends BaseController
                     return redirect()->to('/adsaccounts/admin_view');
                 }
 
-                $campaigns = $this->googleAdsService->getCampaignsWithRealConv($settings, $customerId, $tokenData['access_token'], $mccId, $showPaused, $today, $today);
+                $campaigns = $this->googleAdsService->getCampaignsWithRealConv($settings, $customerId, $tokenData['access_token'], $mccId, $showPaused, $today, $today, $showPausedAndCost);
 
                 $this->campaignsDataModel->saveCampaignsData($customerId, $campaigns);
             }
@@ -271,7 +271,7 @@ class Campaigns extends BaseController
             // Nếu ngày bắt đầu và kết thúc là cùng ngày
             if ($startDate === $endDate) {
                 // Kiểm tra xem có data trong database không và không phải force update
-                if (!$forceUpdate) {
+                if (!$forceUpdate && !$showPausedAndCost) {
                     $campaigns = $this->campaignsDataModel->getCampaignsByDate($customerId, $startDate, $showPaused);
                     $lastUpdateTime = $this->campaignsDataModel->getLastUpdateTime($customerId, $startDate);
 
@@ -297,7 +297,7 @@ class Campaigns extends BaseController
             }
 
             // Lấy danh sách chiến dịch từ API
-            $campaigns = $this->googleAdsService->getCampaignsWithRealConv($settings, $customerId, $tokenData['access_token'], $mccId, $showPaused, $startDate, $endDate);
+            $campaigns = $this->googleAdsService->getCampaignsWithRealConv($settings, $customerId, $tokenData['access_token'], $mccId, $showPaused, $startDate, $endDate, $showPausedAndCost);
 
             // Chỉ lưu vào database nếu ngày bắt đầu và kết thúc là cùng ngày
             if ($startDate === $endDate) {
@@ -410,7 +410,7 @@ class Campaigns extends BaseController
             // Nếu ngày bắt đầu và kết thúc là cùng ngày
             if ($startDate === $endDate) {
                 // Kiểm tra xem có data trong database không và không phải force update
-                if (!$forceUpdate) {
+                if (!$forceUpdate && !$showPausedAndCost) {
                     $campaigns = $this->campaignsDataModel->getCampaignsByDate($customerId, $startDate, $showPaused);
                     $lastUpdateTime = $this->campaignsDataModel->getLastUpdateTime($customerId, $startDate);
 
@@ -436,7 +436,7 @@ class Campaigns extends BaseController
             }
 
             // Lấy danh sách chiến dịch từ API
-            $campaigns = $this->googleAdsService->getCampaignsWithRealConv($settings, $customerId, $tokenData['access_token'], $mccId, $showPaused, $startDate, $endDate);
+            $campaigns = $this->googleAdsService->getCampaignsWithRealConv($settings, $customerId, $tokenData['access_token'], $mccId, $showPaused, $startDate, $endDate, $showPausedAndCost);
 
             // Chỉ lưu vào database nếu ngày bắt đầu và kết thúc là cùng ngày
             if ($startDate === $endDate) {

@@ -370,22 +370,18 @@ class RevenueReports extends BaseController
         // Lấy dữ liệu từ Pancake
         $startDateTime = $date . ' 00:00:00';
         $endDateTime = $date . ' 23:59:59';
-        $productId = $pancakeSettings['pancake_product_id'] ?? null;
+        $productToFetch = $this->productModel->find($report['product_id']);
+        $sku = $productToFetch['product_code'] ?? null;
 
         // Lấy orders từ Pancake
-        $orders = [];
-        $skus = array_map('trim', explode(',', $productId));
-        foreach ($skus as $sku) {
-            $pancakeProductId = $this->pancakeService->getPancakeProductId($pancakeSettings['pancake_shop_id'], $pancakeSettings['pancake_api_key'], $sku);
-            $tmpOrders = $this->pancakeService->getOrders(
-                $pancakeSettings['pancake_shop_id'],
-                $pancakeSettings['pancake_api_key'],
-                $pancakeProductId,
-                $startDateTime,
-                $endDateTime
-            );
-            $orders = array_merge($orders, $tmpOrders);
-        }
+        $pancakeProductId = $this->pancakeService->getPancakeProductId($pancakeSettings['pancake_shop_id'], $pancakeSettings['pancake_api_key'], $sku);
+        $orders = $this->pancakeService->getOrders(
+            $pancakeSettings['pancake_shop_id'],
+            $pancakeSettings['pancake_api_key'],
+            $pancakeProductId,
+            $startDateTime,
+            $endDateTime
+        );
 
         if (empty($orders)) {
             return $this->response->setJSON([
