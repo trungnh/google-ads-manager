@@ -259,20 +259,50 @@
                         <div id="gsheet_settings" class="mb-4"
                             style="display: <?= isset($settings['use_pancake']) && $settings['use_pancake'] ? 'none' : 'block' ?>">
                             <h6 class="mb-3">Cài đặt Google Sheet</h6>
-                            <div class="mb-3">
-                                <label for="gsheet1" class="form-label">URL Google Sheet (CSV)</label>
-                                <input type="text" class="form-control" id="gsheet1" name="gsheet1"
-                                    value="<?= isset($settings['gsheet1']) ? $settings['gsheet1'] : '' ?>"
-                                    placeholder="https://docs.google.com/spreadsheets/d/.../export?format=csv">
-                            </div>
-                            <div class="mb-3">
-                                <label for="gsheet2" class="form-label">URL Google Sheet 2 (CSV)</label>
-                                <small class="form-text text-muted">
-                                    <i> - Đảm bảo thứ tự các cột giống nhau giữa 2 sheet</i>
-                                </small>
-                                <input type="text" class="form-control" id="gsheet2" name="gsheet2"
-                                    value="<?= isset($settings['gsheet2']) ? $settings['gsheet2'] : '' ?>"
-                                    placeholder="https://docs.google.com/spreadsheets/d/.../export?format=csv">
+                            <div class="row">
+                                <!-- <h6 class="mb-3">Google Sheet 1</h6> -->
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="ggsheet_id" class="form-label">Google Sheet ID <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="ggsheet_id" name="ggsheet_id" 
+                                                value="<?= isset($settings['ggsheet_id']) ? $settings['ggsheet_id'] : '' ?>"
+                                                placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms">
+                                            <div class="form-text">ID của Google Sheet (lấy từ URL)</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="ggsheet_name" class="form-label">Tên Sheet <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="ggsheet_name" name="ggsheet_name" 
+                                                value="<?= isset($settings['ggsheet_name']) ? $settings['ggsheet_name'] : '' ?>"
+                                                placeholder="Sheet1">
+                                            <div class="form-text">Tên của sheet trong Google Sheet</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- <h6 class="mb-3 mt-4">Google Sheet 2</h6> -->
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="ggsheet2_id" class="form-label">Google Sheet 2 ID</label>
+                                            <input type="text" class="form-control" id="ggsheet2_id" name="ggsheet2_id" 
+                                                value="<?= isset($settings['ggsheet2_id']) ? $settings['ggsheet2_id'] : '' ?>"
+                                                placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms">
+                                            <div class="form-text">ID của Google Sheet 2 (lấy từ URL)</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="ggsheet2_name" class="form-label">Tên Sheet 2</label>
+                                            <input type="text" class="form-control" id="ggsheet2_name" name="ggsheet2_name" 
+                                                value="<?= isset($settings['ggsheet2_name']) ? $settings['ggsheet2_name'] : '' ?>"
+                                                placeholder="Sheet1">
+                                            <div class="form-text">Tên của sheet trong Google Sheet 2</div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="row">
@@ -652,6 +682,7 @@
                 'use_roas_threshold': $('#use_roas_threshold').is(':checked') ? 'true' : 'false',
                 'default_paused_campaigns': $('#default_paused_campaigns').is(':checked') ? 'true' : 'false',
                 'use_pancake': $('#use_pancake').is(':checked') ? 'true' : 'false',
+                'use_ggsheet_api': $('#use_ggsheet_api').is(':checked') ? 'true' : 'false',
 
                 // Đảm bảo trường account_id được gửi đi
                 'account_id': '<?= $account['id'] ?>',
@@ -663,6 +694,10 @@
                 'extended_cpa_threshold': $('#extended_cpa_threshold').val() || '0',
                 'increase_budget': $('#increase_budget').val() || '0',
                 'budget_spending_threshold': $('#budget_spending_threshold').val() || '50',
+                'ggsheet_id': $('#ggsheet_id').val(),
+                'ggsheet_name': $('#ggsheet_name').val(),
+                'ggsheet2_id': $('#ggsheet2_id').val(),
+                'ggsheet2_name': $('#ggsheet2_name').val(),
                 'gsheet1': $('#gsheet1').val(),
                 'gsheet2': $('#gsheet2').val(),
                 'gsheet_date_col': $('#gsheet_date_col').val().toUpperCase(),
