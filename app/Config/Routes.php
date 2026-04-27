@@ -103,6 +103,9 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->post('adsaccounts/settings/toggleExcludeCampaign/(:segment)/(:num)', 'AdsAccountSettings::toggleExcludeCampaign/$1/$2');
 
     // Campaign Schedules Routes
+    $routes->get('campaignschedules', 'CampaignSchedules::index', ['filter' => 'auth']);
+    $routes->get('campaignschedules/index', 'CampaignSchedules::index', ['filter' => 'auth']);
+    $routes->get('campaignschedules/index/(:segment)', 'CampaignSchedules::index/$1', ['filter' => 'auth']);
     $routes->get('campaignschedules/(:segment)', 'CampaignSchedules::index/$1', ['filter' => 'auth']);
     $routes->get('campaignschedules/(:segment)/create', 'CampaignSchedules::create/$1', ['filter' => 'auth']);
     $routes->post('campaignschedules/(:segment)/create', 'CampaignSchedules::create/$1', ['filter' => 'auth']);

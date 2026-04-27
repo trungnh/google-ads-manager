@@ -10,7 +10,7 @@ class CampaignScheduleModel extends Model
     protected $primaryKey = 'id';
     protected $useAutoIncrement = true;
     protected $returnType = 'array';
-    protected $allowedFields = ['customer_id', 'action_type', 'execution_time', 'status', 'created_at', 'updated_at'];
+    protected $allowedFields = ['customer_id', 'name', 'action_type', 'execution_time', 'budget_value', 'budget_type', 'status', 'created_at', 'updated_at', 'last_executed_date'];
     protected $useTimestamps = true;
     protected $createdField = 'created_at';
     protected $updatedField = 'updated_at';

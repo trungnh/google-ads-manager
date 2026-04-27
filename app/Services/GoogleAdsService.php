@@ -843,6 +843,33 @@ class GoogleAdsService
         }
     }
 
+    public function getCampaignBudget($accessToken, $customerId, $campaignId, $mccId = null)
+    {
+        try {
+            $formattedCustomerId = $this->formatCustomerId($customerId);
+            $url = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedCustomerId . '/googleAds:searchStream';
+
+            $query = "
+                SELECT
+                    campaign_budget.amount_micros
+                FROM campaign
+                WHERE campaign.id = " . $campaignId;
+
+            $data = ['query' => $query];
+            $response = $this->makeCurlRequest($url, 'POST', $accessToken, json_encode($data), $mccId);
+
+            if (isset($response[0]['results'][0]['campaignBudget']['amountMicros'])) {
+                return $this->microToStandard($response[0]['results'][0]['campaignBudget']['amountMicros']);
+            }
+
+            return null;
+        } catch (Exception $e) {
+            log_message('error', 'Error getting campaign budget: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+
     public function refreshToken($refreshToken)
     {
         try {

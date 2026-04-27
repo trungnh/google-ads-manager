@@ -32,7 +32,7 @@ class CampaignSchedules extends BaseController
         $this->userSettingsModel = new UserSettingsModel();
     }
 
-    private function getCampaignsFromGoogleAds($customerId) 
+    private function getCampaignsFromGoogleAds($customerId)
     {
         try {
             $userId = session()->get('id');
@@ -65,7 +65,7 @@ class CampaignSchedules extends BaseController
         }
     }
 
-    public function index($customerId)
+    public function index($customerId = null)
     {
         if (!session()->get('isLoggedIn')) {
             return redirect()->to('/login');
@@ -75,17 +75,29 @@ class CampaignSchedules extends BaseController
 
         // Lấy danh sách tất cả tài khoản của user để hiển thị trong dropdown
         $accounts = $this->adsAccountModel
-                ->where('user_id', $userId)
-                ->orderBy('order', 'ASC')
-                ->findAll();
+            ->where('user_id', $userId)
+            ->orderBy('order', 'ASC')
+            ->findAll();
 
         try {
-            $schedules = $this->campaignScheduleModel->where('customer_id', $customerId)->findAll();
-            $account = $this->adsAccountModel->where('customer_id', $customerId)->first();
 
+            // Kiểm tra tài khoản hiện tại
+            $account = $this->adsAccountModel
+                ->where('user_id', $userId)
+                ->where('customer_id', $customerId)->first();
             if (!$account) {
+                $firstAccount = $this->adsAccountModel
+                    ->where('user_id', $userId)
+                    ->first();
+
+                if ($firstAccount) {
+                    return redirect()->to('/campaignschedules/index/' . $firstAccount['customer_id']);
+                }
+
                 throw new Exception('Tài khoản không tồn tại');
             }
+
+            $schedules = $this->campaignScheduleModel->where('customer_id', $customerId)->findAll();
 
             return view('campaign_schedules/index', [
                 'title' => 'Campaign Schedules - ' . $account['customer_name'],
@@ -110,9 +122,12 @@ class CampaignSchedules extends BaseController
             try {
                 // Validate input
                 $rules = [
-                    'action_type' => 'required|in_list[enable,disable]',
+                    'name' => 'permit_empty|max_length[255]',
+                    'action_type' => 'required|in_list[enable,disable,increase_budget,decrease_budget]',
                     'execution_time' => 'required',
-                    'campaign_ids' => 'required'
+                    'campaign_ids' => 'required',
+                    'budget_value' => 'required_if[action_type,increase_budget]|required_if[action_type,decrease_budget]',
+                    'budget_type' => 'required_if[action_type,increase_budget]|required_if[action_type,decrease_budget]'
                 ];
 
                 if (!$this->validate($rules)) {
@@ -122,8 +137,11 @@ class CampaignSchedules extends BaseController
                 // Create schedule
                 $scheduleId = $this->campaignScheduleModel->insert([
                     'customer_id' => $customerId,
+                    'name' => $this->request->getPost('name'),
                     'action_type' => $this->request->getPost('action_type'),
                     'execution_time' => $this->request->getPost('execution_time'),
+                    'budget_value' => $this->request->getPost('budget_value') ?: null,
+                    'budget_type' => $this->request->getPost('budget_type') ?: null,
                     'status' => 'active'
                 ]);
 
@@ -175,10 +193,13 @@ class CampaignSchedules extends BaseController
             try {
                 // Validate input
                 $rules = [
-                    'action_type' => 'required|in_list[enable,disable]',
+                    'name' => 'permit_empty|max_length[255]',
+                    'action_type' => 'required|in_list[enable,disable,increase_budget,decrease_budget]',
                     'execution_time' => 'required',
                     'status' => 'required|in_list[active,inactive]',
-                    'campaign_ids' => 'required'
+                    'campaign_ids' => 'required',
+                    'budget_value' => 'required_if[action_type,increase_budget]|required_if[action_type,decrease_budget]',
+                    'budget_type' => 'required_if[action_type,increase_budget]|required_if[action_type,decrease_budget]'
                 ];
 
                 if (!$this->validate($rules)) {
@@ -187,8 +208,11 @@ class CampaignSchedules extends BaseController
 
                 // Update schedule
                 $this->campaignScheduleModel->update($scheduleId, [
+                    'name' => $this->request->getPost('name'),
                     'action_type' => $this->request->getPost('action_type'),
                     'execution_time' => $this->request->getPost('execution_time'),
+                    'budget_value' => $this->request->getPost('budget_value') ?: null,
+                    'budget_type' => $this->request->getPost('budget_type') ?: null,
                     'status' => $this->request->getPost('status')
                 ]);
 
@@ -213,18 +237,18 @@ class CampaignSchedules extends BaseController
         try {
             $account = $this->adsAccountModel->where('customer_id', $customerId)->first();
             $schedule = $this->campaignScheduleModel->find($scheduleId);
-            
+
             if (!$account) {
                 throw new Exception('Tài khoản không tồn tại');
             }
-            
+
             if (!$schedule || $schedule['customer_id'] != $customerId) {
                 throw new Exception('Schedule không tồn tại');
             }
 
             // Get campaigns from Google Ads
             $campaigns = $this->getCampaignsFromGoogleAds($customerId);
-            
+
             // Get scheduled campaigns
             $scheduledCampaigns = $this->campaignScheduleItemModel->getCampaignsByScheduleId($scheduleId);
 
@@ -250,7 +274,7 @@ class CampaignSchedules extends BaseController
 
         try {
             $schedule = $this->campaignScheduleModel->find($scheduleId);
-            
+
             if (!$schedule || $schedule['customer_id'] != $customerId) {
                 throw new Exception('Schedule không tồn tại');
             }

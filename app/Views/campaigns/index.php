@@ -97,10 +97,8 @@
                                     <th class="sortable" data-sort="average_cpc">CPC</th>
                                     <th class="sortable" data-sort="conversion_value">Conv value</th>
                                     <th class="sortable" data-sort="conversion_rate">Conv rate</th>
-                                    <?php if (in_array(session()->get('role'), ['superadmin', 'admin'])): ?>
-                                        <th class="sortable" data-toggle="tooltip" data-placement="top"
-                                            title="Chi tiêu thêm từ lần ra đơn gần nhất">CFLC</th>
-                                    <?php endif; ?>
+                                    <th class="sortable" data-toggle="tooltip" data-placement="top"
+                                        title="Chi tiêu thêm từ lần ra đơn gần nhất">CFLC</th>
                                     <th class="" data-sort="bidding_strategy">Chiến lược</th>
                                     <th>Thao tác</th>
                                 </tr>
@@ -219,17 +217,20 @@
         border-radius: 3px;
     }
 
-    .editable-budget, .editable-cflc {
+    .editable-budget,
+    .editable-cflc {
         cursor: pointer;
         padding: 2px 5px;
         border-radius: 3px;
     }
 
-    .editable-budget:hover, .editable-cflc:hover {
+    .editable-budget:hover,
+    .editable-cflc:hover {
         background-color: #f8f9fa;
     }
 
-    .editable-budget input, .editable-cflc input {
+    .editable-budget input,
+    .editable-cflc input {
         width: 120px;
         padding: 2px 5px;
         border: 1px solid #ced4da;
@@ -569,7 +570,6 @@
                     <td>${formatNumber(campaign.average_cpc)}</td>
                     <td>${(campaign.real_conversion_value > 0) ? formatNumber(campaign.real_conversion_value) : '-'}</td>
                     <td>${(campaign.real_conversion_rate > 0) ? formatPercent(campaign.real_conversion_rate) : '-'}</td>
-                    <?php if (in_array(session()->get('role'), ['superadmin', 'admin'])): ?>
                     <td>
                         <span class="editable-cflc" 
                               data-campaign-id="${campaign.campaign_id}"
@@ -582,7 +582,6 @@
                             <button class="btn btn-sm btn-danger cancel-cflc">✗</button>
                         </div>
                     </td>
-                    <?php endif; ?>
                     <td class="small text-muted">
                         ${campaign.bidding_strategy || '-'}
                         ${campaign.target_cpa ?
@@ -623,14 +622,12 @@
 <i class="fas fa-eye"></i> Chi tiết
 </a>
 <?php endif; */ ?>
-                        <?php if (in_array(session()->get('role'), ['superadmin', 'admin'])): ?>
                         <button class="btn btn-primary btn-sm btn-cflc m-1"
                                 data-customer-id="${campaign.customer_id}"
                                 data-campaign-id="${campaign.campaign_id}">
                             <i class="fa fa-refresh"></i>
                             CFLC
                         </button>
-                        <?php endif; ?>
                         <button class="btn btn-info btn-sm btn-chart-campaign m-1"
                                 data-customer-id="${campaign.customer_id}"
                                 data-campaign-id="${campaign.campaign_id}"

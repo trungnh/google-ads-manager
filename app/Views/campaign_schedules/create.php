@@ -21,12 +21,39 @@
 
                     <form action="<?= base_url("campaignschedules/{$customerId}/create") ?>" method="post">
                         <div class="form-group mt-2">
+                            <label class="font-weight-bold" for="name">Tên Schedule</label>
+                            <input type="text" name="name" id="name" class="form-control" placeholder="Nhập tên schedule (tùy chọn)">
+                        </div>
+
+                        <div class="form-group mt-2">
                             <label class="font-weight-bold" for="action_type">Hành động</label>
-                            <select name="action_type" id="action_type" class="form-control" required>
+                            <select name="action_type" id="action_type" class="form-control" required onchange="toggleBudgets()">
                                 <option value="">==== Chọn hành động ====</option>
                                 <option value="enable">Bật</option>
                                 <option value="disable">Tắt</option>
+                                <option value="increase_budget">Tăng ngân sách</option>
+                                <option value="decrease_budget">Giảm ngân sách</option>
                             </select>
+                        </div>
+
+                        <div id="budget_fields" style="display: none;">
+                            <div class="row mt-2">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label class="font-weight-bold" for="budget_type">Loại thay đổi</label>
+                                        <select name="budget_type" id="budget_type" class="form-control">
+                                            <option value="percentage">Theo % ngân sách hiện tại</option>
+                                            <option value="absolute">Đến 1 số ngân sách nhập vào</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label class="font-weight-bold" for="budget_value">Giá trị (Nhập số)</label>
+                                        <input type="number" step="0.01" name="budget_value" id="budget_value" class="form-control">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="form-group mt-2">
@@ -96,6 +123,18 @@ document.getElementById('select-all').addEventListener('change', function() {
         checkbox.checked = this.checked;
     }, this);
 });
+
+function toggleBudgets() {
+    const actionType = document.getElementById('action_type').value;
+    const budgetFields = document.getElementById('budget_fields');
+    if (actionType === 'increase_budget' || actionType === 'decrease_budget') {
+        budgetFields.style.display = 'block';
+        document.getElementById('budget_value').setAttribute('required', 'required');
+    } else {
+        budgetFields.style.display = 'none';
+        document.getElementById('budget_value').removeAttribute('required');
+    }
+}
 </script>
 
 <?= $this->include('templates/footer') ?>

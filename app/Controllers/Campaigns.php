@@ -42,7 +42,7 @@ class Campaigns extends BaseController
         $this->campaignChart30mModel = new CampaignChart30mModel();
     }
 
-    public function index($customerId)
+    public function index($customerId = null)
     {
         // 1. Kiểm tra đăng nhập
         if (!session()->get('isLoggedIn')) {
@@ -719,7 +719,7 @@ class Campaigns extends BaseController
             if (!isset($newCFLC)) {
                 return $this->response->setJSON(['success' => false, 'message' => 'Thiếu tham số cần thiết']);
             }
-            
+
             $this->campaignsDataModel->updateCFLCValue($customerId, $campaignId, $newCFLC);
 
             return $this->response->setJSON([

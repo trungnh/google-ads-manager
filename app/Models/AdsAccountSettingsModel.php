@@ -113,7 +113,8 @@ class AdsAccountSettingsModel extends Model
                 'auto_optimize' => ($data['auto_optimize'] === 'true' || $data['auto_optimize'] === true || $data['auto_optimize'] === 1) ? 1 : 0,
                 'cpa_threshold' => $data['cpa_threshold'] ?? 0,
                 'roas_threshold' => $data['roas_threshold'] ?? 0,
-                'increase_budget' => ($data['increase_budget'] === 'true' || $data['increase_budget'] === true || $data['increase_budget'] === 1) ? 1 : 0,
+                'increase_budget' => $data['increase_budget'] ?? 0,
+                'budget_spending_threshold' => $data['budget_spending_threshold'] ?? 0,
                 'gsheet1' => $data['gsheet1'] ?? null,
                 'gsheet_date_col' => strtoupper($data['gsheet_date_col'] ?? ''),
                 'gsheet_phone_col' => strtoupper($data['gsheet_phone_col'] ?? ''),
@@ -177,9 +178,9 @@ class AdsAccountSettingsModel extends Model
             ->join('users', 'users.id = ads_accounts.user_id')
             ->where('ads_account_settings.auto_optimize', 1)
             ->groupStart()
-                ->where('users.role', 'superadmin')
-                ->orWhere('users.expire_date >', date('Y-m-d H:i:s'))
-                ->orWhere('users.expire_date', null)
+            ->where('users.role', 'superadmin')
+            ->orWhere('users.expire_date >', date('Y-m-d H:i:s'))
+            ->orWhere('users.expire_date', null)
             ->groupEnd()
             ->findAll();
     }

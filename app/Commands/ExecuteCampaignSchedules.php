@@ -106,16 +106,57 @@ class ExecuteCampaignSchedules extends BaseCommand
                     // Process each campaign
                     foreach ($scheduledCampaigns as $campaign) {
                         try {
-                            $status = $schedule['action_type'] === 'enable' ? 'ENABLED' : 'PAUSED';
+                            if ($schedule['action_type'] === 'enable' || $schedule['action_type'] === 'disable') {
+                                $status = $schedule['action_type'] === 'enable' ? 'ENABLED' : 'PAUSED';
 
-                            $this->googleAdsService->toggleCampaignStatus(
-                                $tokenData['access_token'],
-                                $schedule['customer_id'],
-                                $campaign['campaign_id'],
-                                $status,
-                                $mccId
-                            );
-                            CLI::write("Successfully {$schedule['action_type']}d campaign: {$campaign['campaign_id']}", 'green');
+                                $this->googleAdsService->toggleCampaignStatus(
+                                    $tokenData['access_token'],
+                                    $schedule['customer_id'],
+                                    $campaign['campaign_id'],
+                                    $status,
+                                    $mccId
+                                );
+                                CLI::write("Successfully {$schedule['action_type']}d campaign: {$campaign['campaign_id']}", 'green');
+                            } 
+                            elseif ($schedule['action_type'] === 'increase_budget' || $schedule['action_type'] === 'decrease_budget') {
+                                $currentBudget = $this->googleAdsService->getCampaignBudget(
+                                    $tokenData['access_token'],
+                                    $schedule['customer_id'],
+                                    $campaign['campaign_id'],
+                                    $mccId
+                                );
+
+                                if ($currentBudget === null) {
+                                    CLI::error("Could not fetch current budget for campaign {$campaign['campaign_id']}");
+                                    continue;
+                                }
+
+                                $newValue = (float) $schedule['budget_value'];
+                                $newBudget = 0;
+
+                                if ($schedule['budget_type'] === 'percentage') {
+                                    if ($schedule['action_type'] === 'increase_budget') {
+                                        $newBudget = $currentBudget * (1 + $newValue / 100);
+                                    } else {
+                                        $newBudget = $currentBudget * (1 - $newValue / 100);
+                                    }
+                                } else {
+                                    // Absolute
+                                    $newBudget = $newValue;
+                                }
+
+                                // Ensure budget is at least 0.01
+                                if ($newBudget < 0.01) $newBudget = 0.01;
+
+                                $this->googleAdsService->updateCampaignBudget(
+                                    $tokenData['access_token'],
+                                    $schedule['customer_id'],
+                                    $campaign['campaign_id'],
+                                    $newBudget,
+                                    $mccId
+                                );
+                                CLI::write("Successfully updated budget for campaign: {$campaign['campaign_id']} to " . number_format($newBudget, 2), 'green');
+                            }
                         } catch (Exception $e) {
                             CLI::error("Error processing campaign {$campaign['campaign_id']}: " . $e->getMessage());
                         }

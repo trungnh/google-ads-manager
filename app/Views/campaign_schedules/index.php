@@ -29,6 +29,7 @@
                         <table class="table table-bordered table-striped">
                             <thead>
                                 <tr>
+                                    <th>Tên Schedule</th>
                                     <th>Hành động</th>
                                     <th>Thời gian</th>
                                     <th>Status</th>
@@ -39,7 +40,23 @@
                             <tbody>
                                 <?php foreach ($schedules as $schedule): ?>
                                     <tr>
-                                        <td><?= $schedule['action_type'] == 'enable' ? 'Bật' : 'Tắt' ?></td>
+                                        <td><?= esc($schedule['name'] ?: 'Chưa đặt tên') ?></td>
+                                        <td>
+                                            <?php 
+                                            if ($schedule['action_type'] == 'enable') echo 'Bật';
+                                            elseif ($schedule['action_type'] == 'disable') echo 'Tắt';
+                                            elseif ($schedule['action_type'] == 'increase_budget') {
+                                                echo 'Tăng ngân sách ';
+                                                if ($schedule['budget_type'] == 'percentage') echo $schedule['budget_value'] . '%';
+                                                else echo 'đến ' . number_format($schedule['budget_value']);
+                                            }
+                                            elseif ($schedule['action_type'] == 'decrease_budget') {
+                                                echo 'Giảm ngân sách ';
+                                                if ($schedule['budget_type'] == 'percentage') echo $schedule['budget_value'] . '%';
+                                                else echo 'đến ' . number_format($schedule['budget_value']);
+                                            }
+                                            ?>
+                                        </td>
                                         <td><?= date('H:i', strtotime($schedule['execution_time'])) ?></td>
                                         <td>
                                             <span class="badge bg-<?= $schedule['status'] === 'active' ? 'success' : 'warning' ?>">
