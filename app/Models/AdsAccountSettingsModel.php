@@ -44,6 +44,7 @@ class AdsAccountSettingsModel extends Model
         'use_pancake',
         'pancake_use_usd',
         'pancake_usd_rate',
+        'pancake_show_other_orders',
     ];
     protected $useTimestamps = true;
     protected $createdField = 'created_at';
@@ -81,6 +82,7 @@ class AdsAccountSettingsModel extends Model
         'use_pancake' => 'permit_empty|in_list[0,1]',
         'pancake_use_usd' => 'permit_empty|in_list[0,1]',
         'pancake_usd_rate' => 'permit_empty|integer',
+        'pancake_show_other_orders' => 'permit_empty|in_list[0,1]',
     ];
 
     public function getSettingsByAccountId($accountId)
@@ -138,7 +140,8 @@ class AdsAccountSettingsModel extends Model
                 'pancake_exclude_tags' => $data['pancake_exclude_tags'] ?? null,
                 'use_pancake' => ($data['use_pancake'] === 'true' || $data['use_pancake'] === true || $data['use_pancake'] === 1) ? 1 : 0,
                 'pancake_use_usd' => ($data['pancake_use_usd'] === 'true' || $data['pancake_use_usd'] === true || $data['pancake_use_usd'] === 1) ? 1 : 0,
-                'pancake_usd_rate' => $data['pancake_usd_rate'] ?? 27000
+                'pancake_usd_rate' => $data['pancake_usd_rate'] ?? 27000,
+                'pancake_show_other_orders' => ($data['pancake_show_other_orders'] === 'true' || $data['pancake_show_other_orders'] === true || $data['pancake_show_other_orders'] === 1) ? 1 : 0,
             ];
 
             // Kiểm tra xem đã có settings chưa

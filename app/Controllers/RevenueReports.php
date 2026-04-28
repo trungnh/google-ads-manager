@@ -367,6 +367,13 @@ class RevenueReports extends BaseController
             return $this->response->setJSON(['success' => false, 'message' => 'Không tìm thấy cấu hình Pancake API cho các tài khoản Ads liên kết.']);
         }
 
+        $showOtherOrders = !isset($pancakeSettings['pancake_show_other_orders']) || $pancakeSettings['pancake_show_other_orders'];
+        $campaignIds = [];
+        if (!$showOtherOrders) {
+            $accCampaigns = $this->campaignsDataModel->select('campaign_id')->whereIn('customer_id', $customerIds)->groupBy('campaign_id')->findAll();
+            $campaignIds = array_column($accCampaigns, 'campaign_id');
+        }
+
         // Lấy dữ liệu từ Pancake
         $startDateTime = $date . ' 00:00:00';
         $endDateTime = $date . ' 23:59:59';
@@ -412,6 +419,14 @@ class RevenueReports extends BaseController
             $orderStatus = isset($order['status']) ? (int) $order['status'] : null;
             if (in_array($orderStatus, $canceledStatuses)) {
                 continue;
+            }
+
+            // Lọc theo campaign nếu setting Hiển thị đơn hàng KHÁC tắt
+            if (!$showOtherOrders) {
+                $orderCampaignId = $order['p_utm_campaign'] ?? '';
+                if (empty($orderCampaignId) || !in_array($orderCampaignId, $campaignIds)) {
+                    continue;
+                }
             }
 
             if (!empty($excludeTags)) {

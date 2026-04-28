@@ -254,6 +254,17 @@
                                     <i>Tỷ giá quy đổi từ VND sang USD (VD: 27000 VND = 1 USD)</i>
                                 </small>
                             </div>
+
+                            <div class="mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="pancake_show_other_orders"
+                                        name="pancake_show_other_orders" <?= !isset($settings['pancake_show_other_orders']) || $settings['pancake_show_other_orders'] ? 'checked' : '' ?>>
+                                    <label class="form-check-label" for="pancake_show_other_orders">Hiển thị các đơn hàng KHÁC</label>
+                                </div>
+                                <small class="form-text text-muted">
+                                    <i>Khi tắt, hệ thống sẽ KHÔNG load ra và tính toán các đơn hàng không có campaign id hoặc campaign id không trùng với các campaign của tài khoản</i>
+                                </small>
+                            </div>
                         </div>
 
                         <div id="gsheet_settings" class="mb-4"
@@ -710,7 +721,8 @@
                 'pancake_api_key': $('#pancake_api_key').val(),
                 'pancake_product_id': $('#pancake_product_id').val(),
                 'pancake_use_usd': $('#pancake_use_usd').is(':checked') ? 'true' : 'false',
-                'pancake_usd_rate': $('#pancake_usd_rate').val() || '27000'
+                'pancake_usd_rate': $('#pancake_usd_rate').val() || '27000',
+                'pancake_show_other_orders': $('#pancake_show_other_orders').is(':checked') ? 'true' : 'false'
             };
 
             // Thêm trường pancake_exclude_tags nếu use_pancake được chọn

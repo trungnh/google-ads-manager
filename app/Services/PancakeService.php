@@ -126,6 +126,7 @@ class PancakeService
         // Kiểm tra cài đặt quy đổi USD
         $useUsd = isset($settings['pancake_use_usd']) && $settings['pancake_use_usd'];
         $usdRate = isset($settings['pancake_usd_rate']) && is_numeric($settings['pancake_usd_rate']) ? (float) $settings['pancake_usd_rate'] : 27000;
+        $showOtherOrders = !isset($settings['pancake_show_other_orders']) || $settings['pancake_show_other_orders'];
 
         // Thêm thời gian vào ngày để lấy dữ liệu cả ngày
         $startDateTime = $startDate . ' 00:00:00';
@@ -266,6 +267,9 @@ class PancakeService
 
             // Xử lý đơn hàng dựa vào campaignId
             if (empty($campaignId)) {
+                if (!$showOtherOrders) {
+                    continue;
+                }
                 // Đơn hàng offline (không có p_utm_campaign)
                 // Nếu số điện thoại chưa xuất hiện trong đơn hàng offline
                 if (!isset($offlineOrderData['unique_phones'][$phone])) {
@@ -452,6 +456,10 @@ class PancakeService
             if (in_array($campID, $processedCampaignIds)) {
                 continue;
             }
+            
+            if (!$showOtherOrders) {
+                continue;
+            }
 
             // Tính toán giá trị chuyển đổi, áp dụng quy đổi USD nếu được bật
             $totalValue = $data['total_value'];
@@ -483,7 +491,7 @@ class PancakeService
         }
 
         // Thêm chiến dịch offline vào danh sách
-        if (!empty($offlineCampaign)) {
+        if ($showOtherOrders && !empty($offlineCampaign)) {
             $processedCampaigns[] = $offlineCampaign;
         }
 

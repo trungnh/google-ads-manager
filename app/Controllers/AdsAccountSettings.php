@@ -83,7 +83,8 @@ class AdsAccountSettings extends BaseController
                     'pancake_product_id' => '',
                     'use_pancake' => 0,
                     'pancake_use_usd' => 0,
-                    'pancake_usd_rate' => 23000
+                    'pancake_usd_rate' => 23000,
+                    'pancake_show_other_orders' => 1
                 ];
                 log_message('info', 'Creating default settings for account: ' . $customerId);
                 $this->adsAccountSettingsModel->insert($settings);
@@ -224,11 +225,7 @@ class AdsAccountSettings extends BaseController
                 'use_pancake' => $this->request->getPost('use_pancake'),
                 'pancake_use_usd' => $this->request->getPost('pancake_use_usd'),
                 'pancake_usd_rate' => $this->request->getPost('pancake_usd_rate'),
-                'use_ggsheet_api' => $this->request->getPost('use_ggsheet_api'),
-                'ggsheet_id' => $this->request->getPost('ggsheet_id'),
-                'ggsheet_name' => $this->request->getPost('ggsheet_name'),
-                'ggsheet2_id' => $this->request->getPost('ggsheet2_id'),
-                'ggsheet2_name' => $this->request->getPost('ggsheet2_name'),
+                'pancake_show_other_orders' => $this->request->getPost('pancake_show_other_orders'),
                 'account_id' => $account['id'],
             ];
 
