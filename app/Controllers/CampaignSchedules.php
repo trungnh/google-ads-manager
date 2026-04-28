@@ -126,9 +126,13 @@ class CampaignSchedules extends BaseController
                     'action_type' => 'required|in_list[enable,disable,increase_budget,decrease_budget]',
                     'execution_time' => 'required',
                     'campaign_ids' => 'required',
-                    'budget_value' => 'required_if[action_type,increase_budget]|required_if[action_type,decrease_budget]',
-                    'budget_type' => 'required_if[action_type,increase_budget]|required_if[action_type,decrease_budget]'
                 ];
+
+                $actionType = $this->request->getPost('action_type');
+                if (in_array($actionType, ['increase_budget', 'decrease_budget'])) {
+                    $rules['budget_value'] = 'required|decimal';
+                    $rules['budget_type'] = 'required|in_list[fixed,percentage]';
+                }
 
                 if (!$this->validate($rules)) {
                     return redirect()->back()->withInput()->with('error', $this->validator->listErrors());
@@ -198,9 +202,13 @@ class CampaignSchedules extends BaseController
                     'execution_time' => 'required',
                     'status' => 'required|in_list[active,inactive]',
                     'campaign_ids' => 'required',
-                    'budget_value' => 'required_if[action_type,increase_budget]|required_if[action_type,decrease_budget]',
-                    'budget_type' => 'required_if[action_type,increase_budget]|required_if[action_type,decrease_budget]'
                 ];
+
+                $actionType = $this->request->getPost('action_type');
+                if (in_array($actionType, ['increase_budget', 'decrease_budget'])) {
+                    $rules['budget_value'] = 'required|decimal';
+                    $rules['budget_type'] = 'required|in_list[fixed,percentage]';
+                }
 
                 if (!$this->validate($rules)) {
                     return redirect()->back()->withInput()->with('error', $this->validator->listErrors());
