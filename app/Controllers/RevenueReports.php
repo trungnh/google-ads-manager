@@ -354,6 +354,8 @@ class RevenueReports extends BaseController
             return $this->response->setJSON(['success' => false, 'message' => 'Sản phẩm chưa được gán cho tài khoản Ads nào.']);
         }
 
+        $customerIds = array_column($mappings, 'customer_id');
+
         $pancakeSettings = null;
         foreach ($mappings as $mapping) {
             $settings = $this->adsAccountSettingsModel->getSettingsByCustomerId($mapping['customer_id']);
@@ -424,7 +426,9 @@ class RevenueReports extends BaseController
             // Lọc theo campaign nếu setting Hiển thị đơn hàng KHÁC tắt
             if (!$showOtherOrders) {
                 $orderCampaignId = $order['p_utm_campaign'] ?? '';
-                if (empty($orderCampaignId) || !in_array($orderCampaignId, $campaignIds)) {
+                // Nếu có campaign id thì mới check xem có trùng với campaign của account không
+                // Nếu không có campaign id (đơn offline/organic) thì vẫn tính vào báo cáo doanh thu
+                if (!empty($orderCampaignId) && !in_array($orderCampaignId, $campaignIds)) {
                     continue;
                 }
             }
