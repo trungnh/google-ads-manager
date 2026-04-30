@@ -198,7 +198,8 @@
                                     name="pancake_product_id"
                                     value="<?= isset($settings['pancake_product_id']) ? $settings['pancake_product_id'] : '' ?>">
                                 <small class="form-text text-muted">
-                                    <i>Mã sản phẩm để mapping đơn hàng với chiến dịch quảng cáo. Có thể nhập nhiều mã, phân cách bằng dấu ","</i>
+                                    <i>Mã sản phẩm để mapping đơn hàng với chiến dịch quảng cáo. Có thể nhập nhiều mã,
+                                        phân cách bằng dấu ","</i>
                                 </small>
                             </div>
 
@@ -258,11 +259,14 @@
                             <div class="mb-3">
                                 <div class="form-check form-switch">
                                     <input class="form-check-input" type="checkbox" id="pancake_show_other_orders"
-                                        name="pancake_show_other_orders" <?= !isset($settings['pancake_show_other_orders']) || $settings['pancake_show_other_orders'] ? 'checked' : '' ?>>
-                                    <label class="form-check-label" for="pancake_show_other_orders">Hiển thị các đơn hàng KHÁC</label>
+                                        name="pancake_show_other_orders"
+                                        <?= !isset($settings['pancake_show_other_orders']) || $settings['pancake_show_other_orders'] ? 'checked' : '' ?>>
+                                    <label class="form-check-label" for="pancake_show_other_orders">Hiển thị các đơn
+                                        hàng OFFLINE</label>
                                 </div>
                                 <small class="form-text text-muted">
-                                    <i>Khi tắt, hệ thống sẽ KHÔNG load ra và tính toán các đơn hàng không có campaign id hoặc campaign id không trùng với các campaign của tài khoản</i>
+                                    <i>Khi tắt, hệ thống sẽ KHÔNG load ra và tính toán các đơn hàng không có campaign id
+                                        của tài khoản</i>
                                 </small>
                             </div>
                         </div>
@@ -275,8 +279,9 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label for="ggsheet_id" class="form-label">Google Sheet ID <span class="text-danger">*</span></label>
-                                            <input type="text" class="form-control" id="ggsheet_id" name="ggsheet_id" 
+                                            <label for="ggsheet_id" class="form-label">Google Sheet ID <span
+                                                    class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="ggsheet_id" name="ggsheet_id"
                                                 value="<?= isset($settings['ggsheet_id']) ? $settings['ggsheet_id'] : '' ?>"
                                                 placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms">
                                             <div class="form-text">ID của Google Sheet (lấy từ URL)</div>
@@ -284,21 +289,23 @@
                                     </div>
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label for="ggsheet_name" class="form-label">Tên Sheet <span class="text-danger">*</span></label>
-                                            <input type="text" class="form-control" id="ggsheet_name" name="ggsheet_name" 
+                                            <label for="ggsheet_name" class="form-label">Tên Sheet <span
+                                                    class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="ggsheet_name"
+                                                name="ggsheet_name"
                                                 value="<?= isset($settings['ggsheet_name']) ? $settings['ggsheet_name'] : '' ?>"
                                                 placeholder="Sheet1">
                                             <div class="form-text">Tên của sheet trong Google Sheet</div>
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <!-- <h6 class="mb-3 mt-4">Google Sheet 2</h6> -->
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="mb-3">
                                             <label for="ggsheet2_id" class="form-label">Google Sheet 2 ID</label>
-                                            <input type="text" class="form-control" id="ggsheet2_id" name="ggsheet2_id" 
+                                            <input type="text" class="form-control" id="ggsheet2_id" name="ggsheet2_id"
                                                 value="<?= isset($settings['ggsheet2_id']) ? $settings['ggsheet2_id'] : '' ?>"
                                                 placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms">
                                             <div class="form-text">ID của Google Sheet 2 (lấy từ URL)</div>
@@ -307,7 +314,8 @@
                                     <div class="col-md-6">
                                         <div class="mb-3">
                                             <label for="ggsheet2_name" class="form-label">Tên Sheet 2</label>
-                                            <input type="text" class="form-control" id="ggsheet2_name" name="ggsheet2_name" 
+                                            <input type="text" class="form-control" id="ggsheet2_name"
+                                                name="ggsheet2_name"
                                                 value="<?= isset($settings['ggsheet2_name']) ? $settings['ggsheet2_name'] : '' ?>"
                                                 placeholder="Sheet1">
                                             <div class="form-text">Tên của sheet trong Google Sheet 2</div>

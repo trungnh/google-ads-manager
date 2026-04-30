@@ -139,19 +139,19 @@ class PancakeService
         $orders = [];
         $skus = array_map('trim', explode(',', $productId)); // Lọc các mã sản phẩm
         foreach ($skus as $s) {
-                // Lấy orders theo các mã sản phẩm
-                $pancakeProductId = $this->getPancakeProductId($settings['pancake_shop_id'], $settings['pancake_api_key'], $s);
-                $tmpOrders = $this->getOrders(
-                    $settings['pancake_shop_id'],
-                    $settings['pancake_api_key'],
-                    $pancakeProductId,
-                    $startDateTime,
-                    $endDateTime
-                );
-                $orders = array_merge($orders, $tmpOrders);
-            }
-        
-        
+            // Lấy orders theo các mã sản phẩm
+            $pancakeProductId = $this->getPancakeProductId($settings['pancake_shop_id'], $settings['pancake_api_key'], $s);
+            $tmpOrders = $this->getOrders(
+                $settings['pancake_shop_id'],
+                $settings['pancake_api_key'],
+                $pancakeProductId,
+                $startDateTime,
+                $endDateTime
+            );
+            $orders = array_merge($orders, $tmpOrders);
+        }
+
+
 
         if (empty($orders)) {
             log_message('info', 'Pancake POS: No orders found for the specified date range');
@@ -267,9 +267,9 @@ class PancakeService
 
             // Xử lý đơn hàng dựa vào campaignId
             if (empty($campaignId)) {
-                if (!$showOtherOrders) {
-                    continue;
-                }
+                //if (!$showOtherOrders) {
+                //continue;
+                //}
                 // Đơn hàng offline (không có p_utm_campaign)
                 // Nếu số điện thoại chưa xuất hiện trong đơn hàng offline
                 if (!isset($offlineOrderData['unique_phones'][$phone])) {
@@ -456,7 +456,7 @@ class PancakeService
             if (in_array($campID, $processedCampaignIds)) {
                 continue;
             }
-            
+
             if (!$showOtherOrders) {
                 continue;
             }
@@ -491,7 +491,7 @@ class PancakeService
         }
 
         // Thêm chiến dịch offline vào danh sách
-        if ($showOtherOrders && !empty($offlineCampaign)) {
+        if (!empty($offlineCampaign)) {
             $processedCampaigns[] = $offlineCampaign;
         }
 
