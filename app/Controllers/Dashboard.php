@@ -203,12 +203,16 @@ class Dashboard extends Controller
             for ($i = 6; $i >= 0; $i--) {
                 $d = date('Y-m-d', strtotime($latestDate . " -{$i} days"));
                 if (isset($dateMap[$d])) {
+                    $cCost = (float)$dateMap[$d]['cost'];
+                    $cConv = (float)$dateMap[$d]['crm_conv'];
+                    $cCpa = $cConv > 0 ? $cCost / $cConv : 0;
                     $chartData[] = [
                         'date' => date('d/m', strtotime($d)),
                         'google_conv' => (float)$dateMap[$d]['google_conv'],
-                        'crm_conv' => (float)$dateMap[$d]['crm_conv'],
-                        'cost' => (float)$dateMap[$d]['cost'],
-                        'revenue' => (float)$dateMap[$d]['revenue']
+                        'crm_conv' => $cConv,
+                        'cost' => $cCost,
+                        'revenue' => (float)$dateMap[$d]['revenue'],
+                        'crm_cpa' => (float)$cCpa
                     ];
                 } else {
                     $chartData[] = [
@@ -216,7 +220,8 @@ class Dashboard extends Controller
                         'google_conv' => 0,
                         'crm_conv' => 0,
                         'cost' => 0,
-                        'revenue' => 0
+                        'revenue' => 0,
+                        'crm_cpa' => 0
                     ];
                 }
             }

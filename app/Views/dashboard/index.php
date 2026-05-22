@@ -250,14 +250,14 @@
             </div>
         </div>
 
-        <!-- discrepancies card -->
+        <!-- discrepancies card => Đơn Hàng CRM -->
         <div class="col-md-3">
             <div class="premium-card p-3 h-100">
                 <div class="kpi-accent accent-discrepancy"></div>
                 <div class="ps-2">
-                    <span class="text-muted small fw-bold d-block text-uppercase">Chênh lệch chuyển đổi</span>
+                    <span class="text-muted small fw-bold d-block text-uppercase">Đơn Hàng CRM (Thực Tế)</span>
                     <h3 class="fw-bold my-2 text-dark" style="font-size: 1.6rem;">
-                        <?= number_format($googleConversions, 1, ',', '.') ?> <span class="text-muted fs-6">vs</span> <?= number_format($crmConversions, 0, ',', '.') ?>
+                        <?= number_format($crmConversions, 0, ',', '.') ?> <span class="text-muted fs-6" style="font-size: 0.9rem; font-weight: normal;">đơn</span>
                     </h3>
                     
                     <?php 
@@ -266,43 +266,44 @@
                             $gapPct = ($gap / $googleConversions) * 100;
                     ?>
                         <?php if ($gap > 0): ?>
-                            <span class="text-danger small fw-semibold"><i class="fas fa-arrow-trend-up me-1"></i> Google thu ảo +<?= number_format($gap, 1) ?> đơn (<?= number_format($gapPct, 1) ?>%)</span>
+                            <span class="text-danger small fw-semibold"><i class="fas fa-triangle-exclamation me-1"></i> Google báo ảo +<?= number_format($gap, 1) ?> đơn (<?= number_format($gapPct, 1) ?>%)</span>
                         <?php elseif ($gap < 0): ?>
-                            <span class="text-success small fw-semibold"><i class="fas fa-arrow-trend-down me-1"></i> Google hụt đơn -<?= number_format(abs($gap), 1) ?> đơn (<?= number_format(abs($gapPct), 1) ?>%)</span>
+                            <span class="text-success small fw-semibold"><i class="fas fa-circle-down me-1"></i> Google hụt đơn -<?= number_format(abs($gap), 1) ?> đơn (<?= number_format(abs($gapPct), 1) ?>%)</span>
                         <?php else: ?>
-                            <span class="text-secondary small fw-semibold"><i class="fas fa-check me-1"></i> Dữ liệu khớp 100%</span>
+                            <span class="text-secondary small fw-semibold"><i class="fas fa-check me-1"></i> Khớp 100% với Google</span>
                         <?php endif; ?>
                     <?php else: ?>
-                        <span class="text-muted small">Không có chuyển đổi nào được ghi nhận</span>
+                        <span class="text-muted small">Google báo cáo: 0 đơn</span>
                     <?php endif; ?>
                 </div>
             </div>
         </div>
 
-        <!-- CPA comparisons card -->
+        <!-- CPA comparisons card => CPA/ROAS (CRM thực tế) -->
         <div class="col-md-3">
             <div class="premium-card p-3 h-100">
                 <div class="kpi-accent accent-cpa"></div>
                 <div class="ps-2">
-                    <span class="text-muted small fw-bold d-block text-uppercase">CPA Google vs CRM Thực Tế</span>
+                    <span class="text-muted small fw-bold d-block text-uppercase">CPA / ROAS (CRM Thực Tế)</span>
                     <?php 
-                        $ggCpa = $googleConversions > 0 ? $totalSpend / $googleConversions : 0;
                         $realCpa = $crmConversions > 0 ? $totalSpend / $crmConversions : 0;
+                        $realRoas = $totalSpend > 0 ? $crmRevenue / $totalSpend : 0;
                     ?>
-                    <h3 class="fw-bold my-2 text-dark" style="font-size: 1.5rem;">
-                        <?= number_format($ggCpa, 0, ',', '.') ?>đ <span class="text-muted fs-6">/</span> <?= number_format($realCpa, 0, ',', '.') ?>đ
-                    </h3>
+                    <div class="d-flex justify-content-between align-items-center my-2 pe-1">
+                        <div>
+                            <span class="text-muted d-block" style="font-size: 0.72rem; font-weight: bold; text-transform: uppercase;">CPA</span>
+                            <span class="fw-bold text-dark" style="font-size: 1.25rem;"><?= number_format($realCpa, 0, ',', '.') ?>đ</span>
+                        </div>
+                        <div class="border-start ps-3">
+                            <span class="text-muted d-block" style="font-size: 0.72rem; font-weight: bold; text-transform: uppercase;">ROAS</span>
+                            <span class="fw-bold text-success" style="font-size: 1.25rem;"><?= number_format($realRoas, 2, ',', '.') ?>x</span>
+                        </div>
+                    </div>
                     
-                    <?php if ($ggCpa > 0 && $realCpa > 0): 
-                        $cpaDiff = $ggCpa - $realCpa;
-                    ?>
-                        <?php if ($cpaDiff > 0): ?>
-                            <span class="text-success small fw-semibold"><i class="fas fa-shield-halved me-1"></i> Rẻ hơn <?= number_format(abs($cpaDiff), 0, ',', '.') ?>đ so với báo cáo</span>
-                        <?php else: ?>
-                            <span class="text-danger small fw-semibold"><i class="fas fa-triangle-exclamation me-1"></i> Đắt hơn <?= number_format(abs($cpaDiff), 0, ',', '.') ?>đ so với báo cáo</span>
-                        <?php endif; ?>
+                    <?php if ($crmConversions > 0): ?>
+                        <span class="text-secondary small">Dựa trên đơn thực tế đối soát</span>
                     <?php else: ?>
-                        <span class="text-muted small">Chưa đủ dữ liệu tính CPA chi tiết</span>
+                        <span class="text-muted small">Chưa có đơn hàng để tính CPA</span>
                     <?php endif; ?>
                 </div>
             </div>
@@ -342,12 +343,17 @@
         <!-- Trend chart.js -->
         <div class="col-md-8">
             <div class="premium-card p-3 h-100">
-                <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 mb-3">
                     <div>
-                        <h5 class="fw-bold text-dark m-0" style="font-size: 1.05rem;">Xu Hướng Chênh Lệch 7 Ngày</h5>
-                        <span class="text-muted small">So sánh số lượng chuyển đổi được báo cáo bởi Google Ads vs CRM</span>
+                        <h5 class="fw-bold text-dark m-0" style="font-size: 1.05rem;">Xu Hướng Vận Hành 7 Ngày</h5>
+                        <span class="text-muted small" id="chartDesc">So sánh Doanh thu thực tế vs Chi tiêu Ads</span>
                     </div>
-                    <span class="badge rounded-pill bg-light text-dark border border-secondary-subtle">7 Ngày Quá</span>
+                    <!-- Premium Tabs Selector -->
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Chart metrics selector">
+                        <button type="button" class="btn btn-sm btn-outline-secondary px-2 active" id="tabCostRev" onclick="switchChartMetric('cost_rev')" style="font-size: 0.72rem; font-weight: bold; border-radius: 2px 0 0 2px;">📈 Tiền</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary px-2" id="tabOrders" onclick="switchChartMetric('orders')" style="font-size: 0.72rem; font-weight: bold; border-radius: 0;">📦 Đơn hàng</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary px-2" id="tabCpa" onclick="switchChartMetric('cpa')" style="font-size: 0.72rem; font-weight: bold; border-radius: 0 2px 2px 0;">🏷️ CPA</button>
+                    </div>
                 </div>
                 <div style="height: 310px; width: 100%;">
                     <canvas id="discrepancyChart"></canvas>
@@ -392,6 +398,21 @@
     </div>
 
     <!-- CAMPAIGN LEADERBOARDS ROW -->
+    <?php
+        $dateLabel = '';
+        if ($selectedDateRange === 'today') {
+            $dateLabel = 'ngày hôm nay: ' . (!empty($latestDate) ? date('d/m/Y', strtotime($latestDate)) : date('d/m/Y'));
+        } elseif ($selectedDateRange === 'yesterday') {
+            $prevDate = !empty($latestDate) ? date('d/m/Y', strtotime($latestDate . ' -1 day')) : date('d/m/Y', strtotime('-1 day'));
+            $dateLabel = 'ngày hôm qua: ' . $prevDate;
+        } elseif ($selectedDateRange === '7days') {
+            $dateLabel = '7 ngày qua';
+        } elseif ($selectedDateRange === '30days') {
+            $dateLabel = '30 ngày qua';
+        } else {
+            $dateLabel = 'ngày hiện tại';
+        }
+    ?>
     <div class="row g-4 mb-3">
         <!-- Top performing campaigns -->
         <div class="col-md-6">
@@ -400,7 +421,7 @@
                     <h5 class="fw-bold text-dark m-0" style="font-size: 1.05rem;">
                         <i class="fas fa-trophy text-warning me-2"></i>Top Chiến Dịch Hiệu Quả Nhất
                     </h5>
-                    <span class="text-muted small">Chiến dịch đem lại nhiều đơn hàng thực tế nhất</span>
+                    <span class="text-muted small">Chiến dịch đem lại nhiều đơn thực tế nhất (Dữ liệu <?= $dateLabel ?>)</span>
                 </div>
                 <div class="table-responsive custom-scrollbar" style="max-height: 350px;">
                     <table class="table table-leaderboard table-hover align-middle mb-0">
@@ -451,7 +472,7 @@
                     <h5 class="fw-bold text-dark m-0" style="font-size: 1.05rem;">
                         <i class="fas fa-triangle-exclamation text-danger me-2"></i>Top Chiến Dịch Lãng Phí (Cảnh báo)
                     </h5>
-                    <span class="text-muted small">Chi tiêu cao nhất nhưng 0 đơn hàng thực tế ghi nhận trên CRM</span>
+                    <span class="text-muted small">Tiêu tiền nhưng 0 đơn thực tế trên CRM (Dữ liệu <?= $dateLabel ?>)</span>
                 </div>
                 <div class="table-responsive custom-scrollbar" style="max-height: 350px;">
                     <table class="table table-leaderboard table-hover align-middle mb-0">
@@ -505,9 +526,26 @@ document.addEventListener("DOMContentLoaded", function() {
     
     // Extracted server aggregates
     var chartLabels = <?= json_encode(array_column($chartData, 'date')) ?>;
-    var googleConversions = <?= json_encode(array_column($chartData, 'google_conv')) ?>;
-    var crmConversions = <?= json_encode(array_column($chartData, 'crm_conv')) ?>;
+    var revenueData = <?= json_encode(array_column($chartData, 'revenue')) ?>;
     var costData = <?= json_encode(array_column($chartData, 'cost')) ?>;
+    var ordersData = <?= json_encode(array_column($chartData, 'crm_conv')) ?>;
+    var cpaData = <?= json_encode(array_column($chartData, 'crm_cpa')) ?>;
+
+    var currentMetric = 'cost_rev';
+
+    // Formatter helpers
+    function formatCurrency(val) {
+        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(val);
+    }
+
+    function formatTick(value) {
+        if (value >= 1000000) {
+            return (value / 1000000).toFixed(1) + 'M đ';
+        } else if (value >= 1000) {
+            return (value / 1000).toFixed(0) + 'K đ';
+        }
+        return value + ' đ';
+    }
 
     var discrepancyChart = new Chart(ctx, {
         type: 'line',
@@ -515,29 +553,29 @@ document.addEventListener("DOMContentLoaded", function() {
             labels: chartLabels,
             datasets: [
                 {
-                    label: 'Google Conversions (Báo Cáo)',
-                    data: googleConversions,
-                    borderColor: '#2563eb', // Blue
-                    backgroundColor: 'rgba(37, 99, 235, 0.04)',
-                    borderWidth: 2,
-                    borderDash: [5, 5], // Dashed line to show cookie approximation
-                    pointBackgroundColor: '#2563eb',
-                    pointHoverRadius: 6,
-                    tension: 0.35,
-                    fill: true,
-                    yAxisID: 'y'
-                },
-                {
-                    label: 'CRM Conversions (Thực Tế)',
-                    data: crmConversions,
-                    borderColor: '#10b981', // Teal
-                    backgroundColor: 'rgba(16, 185, 129, 0.05)',
-                    borderWidth: 3, // Emphasize solid truth
+                    label: 'Doanh thu CRM (Thực Tế)',
+                    data: revenueData,
+                    borderColor: '#10b981', // Emerald Teal
+                    backgroundColor: 'rgba(16, 185, 129, 0.04)',
+                    borderWidth: 3,
                     pointBackgroundColor: '#10b981',
                     pointHoverRadius: 6,
                     tension: 0.35,
                     fill: true,
-                    yAxisID: 'y'
+                    yAxisID: 'yLeft'
+                },
+                {
+                    label: 'Chi tiêu Google Ads',
+                    data: costData,
+                    borderColor: '#2563eb', // Cobalt Blue
+                    backgroundColor: 'rgba(37, 99, 235, 0.03)',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    pointBackgroundColor: '#2563eb',
+                    pointHoverRadius: 6,
+                    tension: 0.35,
+                    fill: true,
+                    yAxisID: 'yRight'
                 }
             ]
         },
@@ -571,7 +609,12 @@ document.addEventListener("DOMContentLoaded", function() {
                                 label += ': ';
                             }
                             if (context.parsed.y !== null) {
-                                label += Number(context.parsed.y).toFixed(1);
+                                var val = context.parsed.y;
+                                if (currentMetric === 'cost_rev' || currentMetric === 'cpa') {
+                                    label += formatCurrency(val);
+                                } else {
+                                    label += new Intl.NumberFormat('vi-VN').format(val) + ' đơn';
+                                }
                             }
                             return label;
                         }
@@ -588,7 +631,7 @@ document.addEventListener("DOMContentLoaded", function() {
                         font: { size: 10 }
                     }
                 },
-                y: {
+                yLeft: {
                     type: 'linear',
                     display: true,
                     position: 'left',
@@ -598,18 +641,159 @@ document.addEventListener("DOMContentLoaded", function() {
                     ticks: {
                         color: '#64748b',
                         font: { size: 10 },
-                        stepSize: 1
+                        callback: formatTick
                     },
                     title: {
                         display: true,
-                        text: 'Số lượng chuyển đổi',
+                        text: 'Doanh Thu CRM (VND)',
                         color: '#64748b',
-                        font: { size: 10 }
+                        font: { size: 10, weight: 'bold' }
+                    }
+                },
+                yRight: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    grid: {
+                        drawOnChartArea: false
+                    },
+                    ticks: {
+                        color: '#64748b',
+                        font: { size: 10 },
+                        callback: formatTick
+                    },
+                    title: {
+                        display: true,
+                        text: 'Chi Tiêu Ads (VND)',
+                        color: '#64748b',
+                        font: { size: 10, weight: 'bold' }
                     }
                 }
             }
         }
     });
+
+    window.switchChartMetric = function(metric) {
+        currentMetric = metric;
+
+        // Toggle .active class on button tabs
+        document.getElementById('tabCostRev').classList.remove('active');
+        document.getElementById('tabOrders').classList.remove('active');
+        document.getElementById('tabCpa').classList.remove('active');
+
+        var descText = "";
+        
+        if (metric === 'cost_rev') {
+            document.getElementById('tabCostRev').classList.add('active');
+            descText = "So sánh Doanh thu thực tế vs Chi tiêu Ads";
+
+            // Update datasets
+            discrepancyChart.data.datasets = [
+                {
+                    label: 'Doanh thu CRM (Thực Tế)',
+                    data: revenueData,
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.04)',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#10b981',
+                    pointHoverRadius: 6,
+                    tension: 0.35,
+                    fill: true,
+                    yAxisID: 'yLeft'
+                },
+                {
+                    label: 'Chi tiêu Google Ads',
+                    data: costData,
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.03)',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    pointBackgroundColor: '#2563eb',
+                    pointHoverRadius: 6,
+                    tension: 0.35,
+                    fill: true,
+                    yAxisID: 'yRight'
+                }
+            ];
+
+            // Show both axes
+            discrepancyChart.options.scales.yLeft.display = true;
+            discrepancyChart.options.scales.yLeft.title.text = 'Doanh Thu CRM (VND)';
+            discrepancyChart.options.scales.yLeft.ticks.callback = formatTick;
+
+            if (!discrepancyChart.options.scales.yRight) {
+                discrepancyChart.options.scales.yRight = {};
+            }
+            discrepancyChart.options.scales.yRight.display = true;
+            discrepancyChart.options.scales.yRight.position = 'right';
+            discrepancyChart.options.scales.yRight.ticks = { callback: formatTick, color: '#64748b', font: { size: 10 } };
+            discrepancyChart.options.scales.yRight.title = { display: true, text: 'Chi Tiêu Ads (VND)', color: '#64748b', font: { size: 10, weight: 'bold' } };
+            discrepancyChart.options.scales.yRight.grid = { drawOnChartArea: false };
+
+        } else if (metric === 'orders') {
+            document.getElementById('tabOrders').classList.add('active');
+            descText = "Xu hướng Đơn hàng CRM Thực Tế";
+
+            // Update datasets
+            discrepancyChart.data.datasets = [
+                {
+                    label: 'Đơn Hàng CRM',
+                    data: ordersData,
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.04)',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#10b981',
+                    pointHoverRadius: 6,
+                    tension: 0.35,
+                    fill: true,
+                    yAxisID: 'yLeft'
+                }
+            ];
+
+            // Hide right axis, configure left axis for integers
+            discrepancyChart.options.scales.yLeft.display = true;
+            discrepancyChart.options.scales.yLeft.title.text = 'Số Lượng Đơn Hàng';
+            discrepancyChart.options.scales.yLeft.ticks.callback = function(value) {
+                return Number.isInteger(value) ? value : '';
+            };
+
+            if (discrepancyChart.options.scales.yRight) {
+                discrepancyChart.options.scales.yRight.display = false;
+            }
+
+        } else if (metric === 'cpa') {
+            document.getElementById('tabCpa').classList.add('active');
+            descText = "Xu hướng CPA (CRM Thực Tế) 7 Ngày";
+
+            // Update datasets
+            discrepancyChart.data.datasets = [
+                {
+                    label: 'CPA Thực Tế (CRM)',
+                    data: cpaData,
+                    borderColor: '#fb6340', // Signal Orange
+                    backgroundColor: 'rgba(251, 99, 64, 0.04)',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#fb6340',
+                    pointHoverRadius: 6,
+                    tension: 0.35,
+                    fill: true,
+                    yAxisID: 'yLeft'
+                }
+            ];
+
+            // Hide right axis, configure left axis for currency
+            discrepancyChart.options.scales.yLeft.display = true;
+            discrepancyChart.options.scales.yLeft.title.text = 'CPA (VND / Đơn)';
+            discrepancyChart.options.scales.yLeft.ticks.callback = formatTick;
+
+            if (discrepancyChart.options.scales.yRight) {
+                discrepancyChart.options.scales.yRight.display = false;
+            }
+        }
+
+        document.getElementById('chartDesc').innerText = descText;
+        discrepancyChart.update();
+    };
 });
 </script>
 
