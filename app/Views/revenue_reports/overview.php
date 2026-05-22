@@ -189,8 +189,8 @@
                                         <td class="text-end"><?= number_format($day['ship_cost'], 0, ',', '.') ?></td>
                                         <td class="text-end"><?= number_format($day['return_cost'], 0, ',', '.') ?></td>
                                         <td class="text-end"><?= number_format($day['total_cost'], 0, ',', '.') ?></td>
-                                        <td class="text-end font-weight-bold fw-bold" style="color: #f5365c;"><?= number_format($day['revenue'], 0, ',', '.') ?></td>
-                                        <td class="text-end font-weight-bold fw-bold" style="color: #2dce89;">
+                                        <td class="text-end font-weight-bold fw-bold text-danger"><?= number_format($day['revenue'], 0, ',', '.') ?></td>
+                                        <td class="text-end font-weight-bold fw-bold <?php echo ($day['profit']>0) ? 'text-success' :  'text-danger';?>">
                                             <?= number_format($day['profit'], 0, ',', '.') ?>
                                             <?php if ($day['revenue'] > 0): ?>
                                                 <small class="text-xs text-muted fw-bold <?= $day['profit'] >= 0 ? 'text-success' : 'text-danger' ?>"">(<?= number_format(($day['profit'] / $day['revenue']) * 100, 1) ?>%)</small>

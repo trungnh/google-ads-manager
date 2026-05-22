@@ -267,9 +267,9 @@ class PancakeService
 
             // Xử lý đơn hàng dựa vào campaignId
             if (empty($campaignId)) {
-                //if (!$showOtherOrders) {
-                //continue;
-                //}
+                if (!$showOtherOrders) {
+                    continue;
+                }
                 // Đơn hàng offline (không có p_utm_campaign)
                 // Nếu số điện thoại chưa xuất hiện trong đơn hàng offline
                 if (!isset($offlineOrderData['unique_phones'][$phone])) {
@@ -452,6 +452,7 @@ class PancakeService
         }
 
         // Xử lý những đơn hàng có utm campaign ID nhưng không đến từ Google Ads
+        /*
         foreach ($campaignData as $campID => $data) {
             if (in_array($campID, $processedCampaignIds)) {
                 continue;
@@ -488,7 +489,7 @@ class PancakeService
                 $totalValue,
                 $successValue
             );
-        }
+        }*/
 
         // Thêm chiến dịch offline vào danh sách
         if (!empty($offlineCampaign)) {
