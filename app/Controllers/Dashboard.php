@@ -166,25 +166,28 @@ class Dashboard extends Controller
                     $importPrice = $prod['import_price'];
                     $sellingPrice = $prod['selling_price'];
                     $shippingFee = $prod['shipping_fee'];
-                    $returnRate = $prod['return_rate'] / 100;
+                    $returnRate = (float) $prod['return_rate'];
                     break;
                 }
             }
 
             // Tính Chi phí nhập hàng (Goods Cost)
-            if ($importPrice > 0 && $sellingPrice > 0) {
+            if ($importPrice > 0) {
                 $goodsCost = $orders * $importPrice;
             } else {
                 $goodsCost = $rev * 0.35; // Fallback COGS trung bình 35% doanh thu
             }
 
             // Tính Chi phí hoàn hàng thực tế (Southeast Asia logistics formula)
-            $returnCost = max(0, ($rev - $goodsCost) * $returnRate + ($orders * $returnRate * $shippingFee / 2));
+            $returnCost = (($rev - $goodsCost) * $returnRate) + ($orders * $returnRate * ($shippingFee / 2));
+            if ($returnCost < 0) {
+                $returnCost = 0;
+            }
             
             $adsCost = $camp['cost'];
-            $adsTaxRate = 0.05;      // Thuế Ads 5% chi tiêu
-            $paymentFeeRate = 0.02;  // Phí thanh toán / COD 2% doanh thu
-            $incomeTaxRate = 0.015;  // Thuế thu nhập doanh nghiệp 1.5% doanh thu
+            $adsTaxRate = (float) env('TAX_ADS', '0.10');
+            $paymentFeeRate = (float) env('FEE_PAYMENT', '0.012');
+            $incomeTaxRate = (float) env('TAX_INCOME', '0.015');
             $shipCost = $orders * $shippingFee;
 
             $totalCost = $goodsCost 
