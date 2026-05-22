@@ -149,7 +149,7 @@
             <h3 class="fw-bold mb-1 text-dark" style="font-size: 1.5rem;">Bảng Điều Khiển Hệ Thống</h3>
             <p class="text-muted small mb-0">
                 <i class="far fa-clock me-1"></i> Dữ liệu cập nhật mới nhất lúc: 
-                <strong><?= !empty($latestDate) ? date('d/m/Y', strtotime($latestDate)) : date('d/m/Y') ?> 23:59</strong>
+                <strong><?= !empty($latestDate) ? date('d/m/Y H:i', strtotime($latestDate)) : date('d/m/Y H:i') ?></strong>
             </p>
         </div>
         

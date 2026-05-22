@@ -52,16 +52,46 @@ class Dashboard extends Controller
             }
         }
 
-        // Tìm ngày đồng bộ dữ liệu mới nhất để hiển thị làm mặc định
+        // Cố định ngày lọc mặc định là ngày hiện tại của hệ thống (2026-05-22)
+        $latestDateOnly = date('Y-m-d');
+        
+        // Xác định khoảng ngày lọc
+        $startDate = null;
+        $endDate = null;
+        if ($dateRange === 'yesterday') {
+            $startDate = date('Y-m-d', strtotime($latestDateOnly . ' -1 day'));
+            $endDate = $startDate;
+        } elseif ($dateRange === '7days') {
+            $startDate = date('Y-m-d', strtotime($latestDateOnly . ' -6 days'));
+            $endDate = $latestDateOnly;
+        } elseif ($dateRange === '30days') {
+            $startDate = date('Y-m-d', strtotime($latestDateOnly . ' -29 days'));
+            $endDate = $latestDateOnly;
+        } else { // today
+            $startDate = $latestDateOnly;
+            $endDate = $latestDateOnly;
+        }
+
+        // Tìm thời gian đồng bộ mới nhất (last_updated_at) trong khoảng ngày lọc của các tài khoản được chọn
         $campaignsDataModel = new CampaignsDataModel();
         $latestDateRow = null;
         if (!empty($customerIds)) {
-            $latestDateRow = $campaignsDataModel->select('date')
-                ->whereIn('customer_id', $customerIds)
-                ->orderBy('date', 'DESC')
-                ->first();
+            $latestQuery = $campaignsDataModel->select('last_updated_at')
+                ->whereIn('customer_id', $customerIds);
+            
+            if ($customerIdFilter !== 'all' && in_array($customerIdFilter, $customerIds)) {
+                $latestQuery->where('customer_id', $customerIdFilter);
+            }
+
+            if ($startDate === $endDate) {
+                $latestQuery->where('date', $startDate);
+            } else {
+                $latestQuery->where('date >=', $startDate)->where('date <=', $endDate);
+            }
+
+            $latestDateRow = $latestQuery->orderBy('last_updated_at', 'DESC')->first();
         }
-        $latestDate = $latestDateRow ? $latestDateRow['date'] : date('Y-m-d');
+        $latestDate = $latestDateRow ? $latestDateRow['last_updated_at'] : null;
 
         // Định dạng thời gian truy vấn
         $db = \Config\Database::connect();
@@ -75,17 +105,10 @@ class Dashboard extends Controller
             $builder->where('1', '0'); // Không có tài khoản liên kết
         }
 
-        if ($dateRange === 'yesterday') {
-            $targetDate = date('Y-m-d', strtotime($latestDate . ' -1 day'));
-            $builder->where('date', $targetDate);
-        } elseif ($dateRange === '7days') {
-            $startDate = date('Y-m-d', strtotime($latestDate . ' -6 days'));
-            $builder->where('date >=', $startDate)->where('date <=', $latestDate);
-        } elseif ($dateRange === '30days') {
-            $startDate = date('Y-m-d', strtotime($latestDate . ' -29 days'));
-            $builder->where('date >=', $startDate)->where('date <=', $latestDate);
-        } else { // today
-            $builder->where('date', $latestDate);
+        if ($startDate === $endDate) {
+            $builder->where('date', $startDate);
+        } else {
+            $builder->where('date >=', $startDate)->where('date <=', $endDate);
         }
 
         $campaigns = $builder->get()->getResultArray();
@@ -188,8 +211,8 @@ class Dashboard extends Controller
             $chartQuery = $db->table('campaigns_data')
                 ->select('date, SUM(conversions) as google_conv, SUM(real_conversions) as crm_conv, SUM(cost) as cost, SUM(real_conversion_value) as revenue')
                 ->whereIn('customer_id', $customerIds)
-                ->where('date >=', date('Y-m-d', strtotime($latestDate . ' -6 days')))
-                ->where('date <=', $latestDate)
+                ->where('date >=', date('Y-m-d', strtotime($latestDateOnly . ' -6 days')))
+                ->where('date <=', $latestDateOnly)
                 ->groupBy('date')
                 ->orderBy('date', 'ASC')
                 ->get()
@@ -201,7 +224,7 @@ class Dashboard extends Controller
             }
 
             for ($i = 6; $i >= 0; $i--) {
-                $d = date('Y-m-d', strtotime($latestDate . " -{$i} days"));
+                $d = date('Y-m-d', strtotime($latestDateOnly . " -{$i} days"));
                 if (isset($dateMap[$d])) {
                     $cCost = (float)$dateMap[$d]['cost'];
                     $cConv = (float)$dateMap[$d]['crm_conv'];
@@ -285,4 +308,4 @@ class Dashboard extends Controller
         
         return view('dashboard/index', $data);
     }
-}
+}
