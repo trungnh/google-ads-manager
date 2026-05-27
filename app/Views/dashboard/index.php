@@ -441,7 +441,12 @@
                                             <div class="fw-bold text-dark text-truncate" style="max-width: 240px;" title="<?= esc($camp['name']) ?>">
                                                 <?= esc($camp['name']) ?>
                                             </div>
-                                            <span class="text-muted" style="font-size: 0.72rem;">ID: <?= esc($camp['campaign_id']) ?></span>
+                                            <span class="text-muted" style="font-size: 0.72rem;">
+												ID: <?= esc($camp['campaign_id']) ?> - 
+												<span class="badge <?php echo $camp['status'] == 'ENABLED' ? 'bg-success' : 'bg-warning'?> status-badge">
+													<?php echo $camp['status'] == 'ENABLED' ? 'Đang chạy' : 'Tạm dừng'?>
+												</span>
+											</span>
                                         </td>
                                         <td class="text-center text-secondary font-monospace fw-semibold"><?= number_format($camp['cost'], 0, ',', '.') ?>đ</td>
                                         <td class="text-center">
@@ -490,15 +495,80 @@
                                     <tr>
                                         <td class="ps-3">
                                             <div class="fw-bold text-dark text-truncate" style="max-width: 240px;" title="<?= esc($camp['name']) ?>">
-                                                <?= esc($camp['name']) ?>
+                                                <?= esc($camp['name']) ?> 
                                             </div>
-                                            <span class="text-muted" style="font-size: 0.72rem;">ID: <?= esc($camp['campaign_id']) ?></span>
+                                            <span class="text-muted" style="font-size: 0.72rem;">
+												ID: <?= esc($camp['campaign_id']) ?> - 
+												<span class="badge <?php echo $camp['status'] == 'ENABLED' ? 'bg-success' : 'bg-warning'?> status-badge">
+													<?php echo $camp['status'] == 'ENABLED' ? 'Đang chạy' : 'Tạm dừng'?>
+												</span>
+											</span>
                                         </td>
                                         <td class="text-center text-danger font-monospace fw-bold"><?= number_format($camp['cost'], 0, ',', '.') ?>đ</td>
                                         <td class="text-center text-secondary fw-semibold"><?= number_format($camp['conversions'], 1, ',', '.') ?></td>
                                         <td class="text-center">
-                                            <a href="<?= base_url('optimization-rules/' . $camp['customer_id']) ?>" class="btn btn-outline-danger btn-xs py-1 px-2 text-uppercase fw-semibold" style="font-size: 0.68rem; border-radius: 2px;">
-                                                Xem Rule Tắt
+                                            <a href="<?= base_url('campaigns/index/' . $camp['customer_id']) ?>" class="btn btn-outline-danger btn-xs py-1 px-2 text-uppercase fw-semibold" style="font-size: 0.68rem; border-radius: 2px;">
+                                                Xem chi tiết
+                                            </a>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr>
+                                    <td colspan="4" class="text-center py-5 text-success small">
+                                        <i class="fas fa-check-circle me-1"></i> Tuyệt vời! Không có chiến dịch nào lãng phí ngân sách hôm nay.
+                                    </td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-3">
+        <div class="col-md-6">
+            <div class="premium-card h-100">
+                <div class="card-header border-bottom p-3">
+                    <h5 class="fw-bold text-dark m-0" style="font-size: 1.05rem;">
+                        <i class="fas fa-triangle-exclamation text-danger me-2"></i>Top Chiến Dịch CPA cao (Cảnh báo)
+                    </h5>
+                    <span class="text-muted small">Tiêu tiền nhưng kém hiệu quả (Dữ liệu <?= $dateLabel ?>)</span>
+                </div>
+                <div class="table-responsive custom-scrollbar" style="max-height: 350px;">
+                    <table class="table table-leaderboard table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-3" style="width: 50%;">Chiến dịch</th>
+                                <th class="text-center" style="width: 20%;">Chi Tiêu</th>
+                                <th class="text-center" style="width: 15%;">CPA / CRM Đơn</th>
+                                <th class="text-center" style="width: 15%;">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (!empty($problemCampaigns)): ?>
+                                <?php foreach ($problemCampaigns as $camp): ?>
+                                    <tr>
+                                        <td class="ps-3">
+                                            <div class="fw-bold text-dark text-truncate" style="max-width: 240px;" title="<?= esc($camp['name']) ?>">
+                                                <?= esc($camp['name']) ?> 
+                                            </div>
+                                            <span class="text-muted" style="font-size: 0.72rem;">
+												ID: <?= esc($camp['campaign_id']) ?> - 
+												<span class="badge <?php echo $camp['status'] == 'ENABLED' ? 'bg-success' : 'bg-warning'?> status-badge">
+													<?php echo $camp['status'] == 'ENABLED' ? 'Đang chạy' : 'Tạm dừng'?>
+												</span>
+											</span>
+                                        </td>
+                                        <td class="text-center text-danger font-monospace fw-bold"><?= number_format($camp['cost'], 0, ',', '.') ?>đ</td>
+                                        <td class="text-center text-secondary fw-semibold">
+                                            <?= number_format($camp['real_cpa'], 0, ',', '.') ?>đ
+                                            (<?= number_format($camp['conversions'], 1, ',', '.') ?> đơn)
+                                        </td>
+                                        <td class="text-center">
+                                            <a href="<?= base_url('campaigns/index/' . $camp['customer_id']) ?>" class="btn btn-outline-danger btn-xs py-1 px-2 text-uppercase fw-semibold" style="font-size: 0.68rem; border-radius: 2px;">
+                                                Xem chi tiết
                                             </a>
                                         </td>
                                     </tr>

@@ -255,6 +255,7 @@ class Dashboard extends Controller
 
         // Bảng xếp hạng chiến dịch
         $topCampaigns = [];
+        $worstCampaigns = [];
         $problemCampaigns = [];
 
         if (!empty($campaigns)) {
@@ -265,11 +266,14 @@ class Dashboard extends Controller
                 if (!isset($campGroups[$cid])) {
                     $campGroups[$cid] = $camp;
                 } else {
+					$campGroups[$cid]['status'] = $camp['status'];
                     $campGroups[$cid]['cost'] += $camp['cost'];
                     $campGroups[$cid]['conversions'] += $camp['conversions'];
                     $campGroups[$cid]['real_conversions'] += $camp['real_conversions'];
                     $campGroups[$cid]['real_conversion_value'] += $camp['real_conversion_value'];
                 }
+
+                $campGroups[$cid]['sort_real_cpa'] = $campGroups[$cid]['real_cpa'] == 0 ? $campGroups[$cid]['cost'] : $campGroups[$cid]['sort_real_cpa'];
             }
 
             // Top Performing Campaigns (Ranked by CRM real conversions)
@@ -285,6 +289,12 @@ class Dashboard extends Controller
             uasort($zeroCrmCamps, function($a, $b) {
                 return $b['cost'] <=> $a['cost'];
             });
+
+            uasort($campGroups, function($a, $b) {
+                return $b['sort_real_cpa'] > $a['sort_real_cpa'];
+            });
+
+            $worstCampaigns = array_slice($campGroups, 0, 5);
             $problemCampaigns = array_slice($zeroCrmCamps, 0, 5);
         }
 
@@ -306,6 +316,7 @@ class Dashboard extends Controller
             'recentLogs' => $recentLogs,
             'chartData' => $chartData,
             'topCampaigns' => $topCampaigns,
+            'worstCampaigns' => $worstCampaigns,
             'problemCampaigns' => $problemCampaigns,
         ];
         
