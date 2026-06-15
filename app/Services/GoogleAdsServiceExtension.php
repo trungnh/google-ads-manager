@@ -1184,7 +1184,7 @@ class GoogleAdsServiceExtension extends GoogleAdsService
                 ad_group_criterion.youtube_channel.channel_id,
                 ad_group_criterion.youtube_video.video_id,
                 ad_group_criterion.webpage.criterion_name,
-                ad_group_criterion.app_category.mobile_app_category_constant,
+                ad_group_criterion.mobile_app_category.mobile_app_category_constant,
                 ad_group_criterion.mobile_application.app_id,
                 ad_group_criterion.audience.audience,
                 ad_group_criterion.custom_audience.custom_audience,
@@ -1218,7 +1218,7 @@ class GoogleAdsServiceExtension extends GoogleAdsService
                             $criterionId = $criterion['criterionId'] ?? '';
 
                             // Parse Kênh (Placements/Channels)
-                            if (in_array($type, ['PLACEMENT', 'YOUTUBE_CHANNEL', 'YOUTUBE_VIDEO', 'APP_CATEGORY', 'MOBILE_APPLICATION', 'WEBPAGE'])) {
+                            if (in_array($type, ['PLACEMENT', 'YOUTUBE_CHANNEL', 'YOUTUBE_VIDEO', 'MOBILE_APP_CATEGORY', 'MOBILE_APPLICATION', 'WEBPAGE'])) {
                                 $name = '';
                                 if ($type === 'PLACEMENT' && isset($criterion['placement']['url'])) {
                                     $name = $criterion['placement']['url'];
@@ -1228,8 +1228,8 @@ class GoogleAdsServiceExtension extends GoogleAdsService
                                     $name = 'YouTube Video: ' . $criterion['youtubeVideo']['videoId'];
                                 } elseif ($type === 'WEBPAGE' && isset($criterion['webpage']['criterionName'])) {
                                     $name = $criterion['webpage']['criterionName'];
-                                } elseif ($type === 'APP_CATEGORY' && isset($criterion['appCategory']['mobileAppCategoryConstant'])) {
-                                    $name = 'App Category: ' . $criterion['appCategory']['mobileAppCategoryConstant'];
+                                } elseif ($type === 'MOBILE_APP_CATEGORY' && isset($criterion['mobileAppCategory']['mobileAppCategoryConstant'])) {
+                                    $name = 'App Category: ' . $criterion['mobileAppCategory']['mobileAppCategoryConstant'];
                                 } elseif ($type === 'MOBILE_APPLICATION' && isset($criterion['mobileApplication']['appId'])) {
                                     $name = 'App: ' . $criterion['mobileApplication']['appId'];
                                 }
