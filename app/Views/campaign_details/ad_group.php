@@ -562,6 +562,61 @@ document.addEventListener('DOMContentLoaded', function() {
                 btn.prop('disabled', false).html(originalText);
                 if (data && data.details) {
                     const details = data.details;
+                    
+                    let membersHtml = '';
+                    if (details.members && details.members.length > 0) {
+                        const keywords = [];
+                        const urls = [];
+                        const apps = [];
+
+                        details.members.forEach(member => {
+                            const type = member.memberType || '';
+                            const val = member.value || '';
+                            if (type === 'KEYWORD') {
+                                keywords.push(val);
+                            } else if (type === 'URL') {
+                                urls.push(val);
+                            } else if (type === 'APP') {
+                                apps.push(val);
+                            }
+                        });
+
+                        if (keywords.length > 0) {
+                            membersHtml += `
+                                <div class="mt-3">
+                                    <h6 class="fw-bold text-secondary small"><i class="fas fa-keyboard me-1"></i>Từ khóa đã lưu (${keywords.length})</h6>
+                                    <div class="d-flex flex-wrap gap-1 mt-1" style="max-height: 150px; overflow-y: auto;">
+                                        ${keywords.map(kw => `<span class="badge bg-light text-dark border px-2 py-1 small" style="font-weight: normal; font-size: 0.75rem;">${escapeHtml(kw)}</span>`).join('')}
+                                    </div>
+                                </div>
+                            `;
+                        }
+
+                        if (urls.length > 0) {
+                            membersHtml += `
+                                <div class="mt-3">
+                                    <h6 class="fw-bold text-secondary small"><i class="fas fa-link me-1"></i>Trang web tương tự (${urls.length})</h6>
+                                    <ul class="list-group list-group-flush border-top border-bottom py-1 ps-3 mb-0" style="max-height: 120px; overflow-y: auto;">
+                                        ${urls.map(url => `<li class="py-1 small text-break" style="list-style-type: disc;"><a href="${escapeHtml(url)}" target="_blank" class="text-decoration-none text-info">${escapeHtml(url)}</a></li>`).join('')}
+                                    </ul>
+                                </div>
+                            `;
+                        }
+
+                        if (apps.length > 0) {
+                            membersHtml += `
+                                <div class="mt-3">
+                                    <h6 class="fw-bold text-secondary small"><i class="fas fa-mobile-alt me-1"></i>Ứng dụng liên quan (${apps.length})</h6>
+                                    <div class="d-flex flex-wrap gap-1 mt-1" style="max-height: 120px; overflow-y: auto;">
+                                        ${apps.map(app => `<span class="badge bg-light text-secondary border px-2 py-1 small" style="font-weight: normal; font-size: 0.75rem;"><i class="fab fa-android text-success me-1"></i>${escapeHtml(app)}</span>`).join('')}
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    } else {
+                        membersHtml = `<div class="mt-3 text-muted small italic"><i class="fas fa-info-circle me-1"></i>Không có từ khóa hay trang web nào được thiết lập.</div>`;
+                    }
+
                     let modalHtml = `
                         <table class="table table-bordered mb-0">
                             <tbody>
@@ -587,13 +642,14 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </tr>
                             </tbody>
                         </table>
+                        ${membersHtml}
                     `;
                     
                     let customModal = $('#customSegmentDetailsModal');
                     if (customModal.length === 0) {
                         $('body').append(`
                             <div class="modal fade" id="customSegmentDetailsModal" tabindex="-1" aria-labelledby="customSegmentDetailsModalLabel" aria-hidden="true" style="z-index: 1060;">
-                                <div class="modal-dialog">
+                                <div class="modal-dialog modal-dialog-scrollable">
                                     <div class="modal-content">
                                         <div class="modal-header bg-light">
                                             <h5 class="modal-title fs-6 fw-bold" id="customSegmentDetailsModalLabel"><i class="fas fa-bullseye text-info me-2"></i>Phân khúc tùy chỉnh</h5>

@@ -1313,7 +1313,8 @@ class GoogleAdsServiceExtension extends GoogleAdsService
                     custom_audience.name,
                     custom_audience.status,
                     custom_audience.type,
-                    custom_audience.description
+                    custom_audience.description,
+                    custom_audience.members
                 FROM custom_audience
                 WHERE custom_audience.resource_name = '{$resourceName}'";
         } elseif ($type === 'userLists') {
