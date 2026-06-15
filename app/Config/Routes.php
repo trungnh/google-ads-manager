@@ -123,6 +123,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
         $routes->get('campaign-details/ad-group/(:segment)/(:segment)/(:segment)', 'CampaignDetails::adGroup/$1/$2/$3');
         $routes->get('campaign-details/asset-group/(:segment)/(:segment)/(:segment)', 'CampaignDetails::assetGroup/$1/$2/$3');
         $routes->get('campaign-details/ad/(:segment)/(:segment)/(:segment)/(:segment)', 'CampaignDetails::ad/$1/$2/$3/$4');
+        $routes->get('campaign-details/ajax-audience-details', 'CampaignDetails::getAudienceResourceDetailsAjax');
     });
 
     // Products

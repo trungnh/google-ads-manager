@@ -1288,7 +1288,12 @@ class GoogleAdsServiceExtension extends GoogleAdsService
         $url = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedCustomerId . '/googleAds:searchStream';
         
         $parts = explode('/', $resourceName);
-        $type = $parts[2] ?? ''; // e.g. "audiences", "customAudiences", "userLists"
+        $type = '';
+        if (count($parts) === 2) {
+            $type = $parts[0]; // e.g. "detailedDemographics", "userInterests"
+        } elseif (count($parts) === 4) {
+            $type = $parts[2]; // e.g. "audiences", "customAudiences", "userLists"
+        }
 
         $query = '';
         if ($type === 'audiences') {
@@ -1323,6 +1328,21 @@ class GoogleAdsServiceExtension extends GoogleAdsService
                     user_list.type
                 FROM user_list
                 WHERE user_list.resource_name = '{$resourceName}'";
+        } elseif ($type === 'detailedDemographics') {
+            $query = "
+                SELECT
+                    detailed_demographic.id,
+                    detailed_demographic.name
+                FROM detailed_demographic
+                WHERE detailed_demographic.resource_name = '{$resourceName}'";
+        } elseif ($type === 'userInterests') {
+            $query = "
+                SELECT
+                    user_interest.id,
+                    user_interest.name,
+                    user_interest.taxonomy_type
+                FROM user_interest
+                WHERE user_interest.resource_name = '{$resourceName}'";
         }
 
         if (empty($query)) {
@@ -1368,6 +1388,26 @@ class GoogleAdsServiceExtension extends GoogleAdsService
                                 'description' => '',
                                 'type' => 'USER_LIST',
                                 'details' => $ul
+                            ];
+                        } elseif ($type === 'detailedDemographics' && isset($result['detailedDemographic'])) {
+                            $dd = $result['detailedDemographic'];
+                            return [
+                                'id' => $dd['id'],
+                                'name' => $dd['name'],
+                                'status' => '',
+                                'description' => 'Thông tin nhân khẩu học chi tiết',
+                                'type' => 'DETAILED_DEMOGRAPHIC',
+                                'details' => $dd
+                            ];
+                        } elseif ($type === 'userInterests' && isset($result['userInterest'])) {
+                            $ui = $result['userInterest'];
+                            return [
+                                'id' => $ui['id'],
+                                'name' => $ui['name'],
+                                'status' => '',
+                                'description' => 'Mối quan tâm (' . ($ui['taxonomyType'] ?? '') . ')',
+                                'type' => 'USER_INTEREST',
+                                'details' => $ui
                             ];
                         }
                     }

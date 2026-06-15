@@ -432,4 +432,39 @@ class CampaignDetails extends BaseController
             return redirect()->to('/campaign-details/ad-group/' . $customerId . '/' . $campaignId . '/' . $adGroupId);
         }
     }
+
+    /**
+     * AJAX Endpoint lấy thông tin chi tiết một đối tượng cụ thể từ Google Ads API bằng Resource Name
+     */
+    public function getAudienceResourceDetailsAjax()
+    {
+        $userId = session()->get('user_id');
+        if (!$userId) {
+            return $this->response->setJSON(['error' => 'Unauthenticated'])->setStatusCode(401);
+        }
+
+        $customerId = $this->request->getGet('customer_id');
+        $resourceName = $this->request->getGet('resource_name');
+
+        if (empty($customerId) || empty($resourceName)) {
+            return $this->response->setJSON(['error' => 'Missing parameters'])->setStatusCode(400);
+        }
+
+        try {
+            $tokenData = $this->googleTokenModel->getValidToken($userId);
+            $userSettings = $this->userSettingsModel->where('user_id', $userId)->first();
+            $mccId = $userSettings['mcc_id'] ?? null;
+
+            $details = $this->googleAdsService->getAudienceResourceDetails(
+                $customerId,
+                $resourceName,
+                $tokenData['access_token'],
+                $mccId
+            );
+
+            return $this->response->setJSON($details);
+        } catch (Exception $e) {
+            return $this->response->setJSON(['error' => $e->getMessage()])->setStatusCode(500);
+        }
+    }
 }

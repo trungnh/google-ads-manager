@@ -439,19 +439,72 @@ document.addEventListener('DOMContentLoaded', function() {
                         html += `<h6 class="fw-bold mt-3"><i class="fas fa-sliders-h me-1"></i> Phân khúc cấu thành (Dimensions)</h6>`;
                         html += `<ul class="list-group">`;
                         details.dimensions.forEach(dim => {
-                            let dimType = dim.ageRanges ? 'Độ tuổi' : (dim.genders ? 'Giới tính' : (dim.userLists ? 'Tệp khách hàng/Remarketing' : 'Khác'));
-                            html += `<li class="list-group-item bg-transparent">`;
-                            html += `<strong>${dimType}</strong>: `;
                             if (dim.ageRanges) {
+                                html += `<li class="list-group-item bg-transparent">`;
+                                html += `<strong>Độ tuổi</strong>: `;
                                 html += dim.ageRanges.map(a => escapeHtml(a.type)).join(', ');
+                                html += `</li>`;
                             } else if (dim.genders) {
+                                html += `<li class="list-group-item bg-transparent">`;
+                                html += `<strong>Giới tính</strong>: `;
                                 html += dim.genders.map(g => escapeHtml(g.type)).join(', ');
+                                html += `</li>`;
+                            } else if (dim.householdIncome) {
+                                html += `<li class="list-group-item bg-transparent">`;
+                                html += `<strong>Thu nhập hộ gia đình</strong>: `;
+                                html += dim.householdIncome.map(h => escapeHtml(h.type)).join(', ');
+                                html += `</li>`;
+                            } else if (dim.parentalStatus) {
+                                html += `<li class="list-group-item bg-transparent">`;
+                                html += `<strong>Trạng thái phụ huynh</strong>: `;
+                                html += dim.parentalStatus.map(p => escapeHtml(p.type)).join(', ');
+                                html += `</li>`;
                             } else if (dim.userLists) {
+                                html += `<li class="list-group-item bg-transparent">`;
+                                html += `<strong>Tệp khách hàng/Remarketing</strong>: `;
                                 html += dim.userLists.map(u => `<code class="small">${escapeHtml(u.userList)}</code>`).join(', ');
+                                html += `</li>`;
+                            } else if (dim.audienceSegments && dim.audienceSegments.segments) {
+                                dim.audienceSegments.segments.forEach(seg => {
+                                    let segType = '';
+                                    let resourceName = '';
+                                    let hasDetailButton = false;
+
+                                    if (seg.userList) {
+                                        segType = 'Tệp khách hàng (User List)';
+                                        resourceName = seg.userList.userList;
+                                    } else if (seg.customAudience) {
+                                        segType = 'Phân khúc tùy chỉnh (Custom Segment)';
+                                        resourceName = seg.customAudience.customAudience;
+                                        hasDetailButton = true;
+                                    } else if (seg.detailedDemographic) {
+                                        segType = 'Nhân khẩu học chi tiết (Detailed Demographic)';
+                                        resourceName = seg.detailedDemographic.detailedDemographic;
+                                    } else if (seg.affinityGroup) {
+                                        segType = 'Mối quan tâm (Affinity)';
+                                        resourceName = seg.affinityGroup.affinityGroup;
+                                    } else if (seg.inMarket) {
+                                        segType = 'Mối quan tâm (In Market)';
+                                        resourceName = seg.inMarket.inMarket;
+                                    }
+
+                                    if (segType) {
+                                        const shortName = getResourceId(resourceName);
+                                        html += `<li class="list-group-item bg-transparent d-flex justify-content-between align-items-center py-2 px-3 small">`;
+                                        html += `<div>`;
+                                        html += `<strong>${segType}</strong>: <span class="resolved-segment-name fw-bold" data-resource-name="${escapeHtml(resourceName)}">${escapeHtml(shortName)}</span>`;
+                                        html += `</div>`;
+                                        if (hasDetailButton) {
+                                            html += `<button type="button" class="btn btn-xs btn-outline-info py-0 px-2 btn-view-custom-segment font-monospace" data-resource-name="${escapeHtml(resourceName)}" style="font-size: 0.75rem; border-radius: 2px;">`;
+                                            html += `<i class="fas fa-eye me-1"></i>Chi tiết`;
+                                            html += `</button>`;
+                                        }
+                                        html += `</li>`;
+                                    }
+                                });
                             } else {
-                                html += JSON.stringify(dim);
+                                html += `<li class="list-group-item bg-transparent text-muted small">${JSON.stringify(dim)}</li>`;
                             }
-                            html += `</li>`;
                         });
                         html += `</ul>`;
                     }
@@ -460,11 +513,122 @@ document.addEventListener('DOMContentLoaded', function() {
             
             contentDiv.innerHTML = html;
             
+            // Resolve friendly names dynamically via AJAX
+            setTimeout(() => {
+                document.querySelectorAll('.resolved-segment-name').forEach(span => {
+                    const resName = span.dataset.resourceName;
+                    $.ajax({
+                        url: '/campaign-details/ajax-audience-details',
+                        type: 'GET',
+                        data: {
+                            customer_id: '<?= esc($account['client_customer_id']) ?>',
+                            resource_name: resName
+                        },
+                        success: function(data) {
+                            if (data && data.name) {
+                                span.textContent = data.name;
+                                if (data.description) {
+                                    span.title = data.description;
+                                }
+                            }
+                        }
+                    });
+                });
+            }, 100);
+
             // Show the modal
             const modal = new bootstrap.Modal(document.getElementById('audienceDetailsModal'));
             modal.show();
         });
     });
+
+    // Handle nested Custom Segment Details click
+    $(document).on('click', '.btn-view-custom-segment', function(e) {
+        e.preventDefault();
+        const resName = $(this).data('resource-name');
+        const btn = $(this);
+        const originalText = btn.html();
+        
+        btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Loading...');
+        
+        $.ajax({
+            url: '/campaign-details/ajax-audience-details',
+            type: 'GET',
+            data: {
+                customer_id: '<?= esc($account['client_customer_id']) ?>',
+                resource_name: resName
+            },
+            success: function(data) {
+                btn.prop('disabled', false).html(originalText);
+                if (data && data.details) {
+                    const details = data.details;
+                    let modalHtml = `
+                        <table class="table table-bordered mb-0">
+                            <tbody>
+                                <tr>
+                                    <th width="35%" class="bg-light">Tên phân khúc</th>
+                                    <td><strong>${escapeHtml(data.name)}</strong></td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-light">ID</th>
+                                    <td>${escapeHtml(data.id)}</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-light">Loại phân khúc</th>
+                                    <td><span class="badge bg-primary">${escapeHtml(details.type || 'N/A')}</span></td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-light">Trạng thái</th>
+                                    <td><span class="badge bg-secondary">${escapeHtml(details.status || 'N/A')}</span></td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-light">Mô tả</th>
+                                    <td>${escapeHtml(details.description || 'Không có mô tả')}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    `;
+                    
+                    let customModal = $('#customSegmentDetailsModal');
+                    if (customModal.length === 0) {
+                        $('body').append(`
+                            <div class="modal fade" id="customSegmentDetailsModal" tabindex="-1" aria-labelledby="customSegmentDetailsModalLabel" aria-hidden="true" style="z-index: 1060;">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-light">
+                                            <h5 class="modal-title fs-6 fw-bold" id="customSegmentDetailsModalLabel"><i class="fas fa-bullseye text-info me-2"></i>Phân khúc tùy chỉnh</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body" id="customSegmentModalBody"></div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `);
+                        customModal = $('#customSegmentDetailsModal');
+                    }
+                    
+                    $('#customSegmentModalBody').html(modalHtml);
+                    const modalObj = new bootstrap.Modal(document.getElementById('customSegmentDetailsModal'));
+                    modalObj.show();
+                } else {
+                    alert('Không thể lấy thông tin chi tiết của phân khúc tùy chỉnh.');
+                }
+            },
+            error: function() {
+                btn.prop('disabled', false).html(originalText);
+                alert('Có lỗi xảy ra khi lấy thông tin phân khúc.');
+            }
+        });
+    });
+
+    function getResourceId(resourceName) {
+        if (!resourceName) return 'N/A';
+        const parts = resourceName.split('/');
+        return parts[parts.length - 1];
+    }
 
     function escapeHtml(str) {
         if (!str) return 'N/A';
