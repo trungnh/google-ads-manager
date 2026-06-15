@@ -170,6 +170,104 @@
                             <?php */?>
                         </div>
                     </div>
+
+                    <!-- Thêm thông tin cài đặt chiến dịch: Vị trí, Thiết bị, Lịch quảng cáo -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card mb-4">
+                                <div class="card-header bg-light">
+                                    <h5 class="card-title my-0">Cấu hình nhắm mục tiêu chiến dịch</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <!-- Vị trí (Locations) -->
+                                        <div class="col-md-4">
+                                            <h6 class="fw-bold border-bottom pb-2 text-secondary"><i class="fas fa-map-marker-alt text-danger me-2"></i> Địa điểm / Vị trí</h6>
+                                            <?php if (empty($campaignTargeting['locations'])): ?>
+                                                <p class="text-muted small">Tất cả quốc gia và vùng lãnh thổ</p>
+                                            <?php else: ?>
+                                                <ul class="list-group list-group-flush">
+                                                    <?php foreach ($campaignTargeting['locations'] as $loc): ?>
+                                                        <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2 small bg-transparent">
+                                                            <span><?= esc($loc['canonical_name']) ?></span>
+                                                            <?php if ($loc['negative']): ?>
+                                                                <span class="badge bg-danger">Loại trừ</span>
+                                                            <?php else: ?>
+                                                                <span class="badge bg-success">Nhắm mục tiêu</span>
+                                                            <?php endif; ?>
+                                                        </li>
+                                                    <?php endforeach; ?>
+                                                </ul>
+                                            <?php endif; ?>
+                                        </div>
+
+                                        <!-- Thiết bị (Devices) -->
+                                        <div class="col-md-4">
+                                            <h6 class="fw-bold border-bottom pb-2 text-secondary"><i class="fas fa-laptop text-primary me-2"></i> Thiết bị</h6>
+                                            <?php if (empty($campaignTargeting['devices'])): ?>
+                                                <p class="text-muted small">Tất cả thiết bị</p>
+                                            <?php else: ?>
+                                                <ul class="list-group list-group-flush">
+                                                    <?php foreach ($campaignTargeting['devices'] as $dev): ?>
+                                                        <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2 small bg-transparent">
+                                                            <span>
+                                                                <?php
+                                                                $deviceNames = [
+                                                                    'MOBILE' => 'Điện thoại di động',
+                                                                    'TABLET' => 'Máy tính bảng',
+                                                                    'DESKTOP' => 'Máy tính để bàn',
+                                                                    'CONNECTED_TV' => 'Tivi kết nối mạng'
+                                                                ];
+                                                                echo esc($deviceNames[$dev['type']] ?? $dev['type']);
+                                                                ?>
+                                                            </span>
+                                                            <?php if ($dev['negative']): ?>
+                                                                <span class="badge bg-danger">Loại trừ</span>
+                                                            <?php else: ?>
+                                                                <span class="badge bg-success">Nhắm mục tiêu</span>
+                                                            <?php endif; ?>
+                                                        </li>
+                                                    <?php endforeach; ?>
+                                                </ul>
+                                            <?php endif; ?>
+                                        </div>
+
+                                        <!-- Lịch quảng cáo (Ad Schedule) -->
+                                        <div class="col-md-4">
+                                            <h6 class="fw-bold border-bottom pb-2 text-secondary"><i class="fas fa-calendar-alt text-success me-2"></i> Lịch quảng cáo</h6>
+                                            <?php if (empty($campaignTargeting['ad_schedules'])): ?>
+                                                <p class="text-muted small">Tất cả thời gian</p>
+                                            <?php else: ?>
+                                                <ul class="list-group list-group-flush">
+                                                    <?php foreach ($campaignTargeting['ad_schedules'] as $sched): ?>
+                                                        <li class="list-group-item px-0 py-2 small bg-transparent">
+                                                            <strong>
+                                                                <?php
+                                                                $days = [
+                                                                    'MONDAY' => 'Thứ Hai',
+                                                                    'TUESDAY' => 'Thứ Ba',
+                                                                    'WEDNESDAY' => 'Thứ Tư',
+                                                                    'THURSDAY' => 'Thứ Năm',
+                                                                    'FRIDAY' => 'Thứ Sáu',
+                                                                    'SATURDAY' => 'Thứ Bảy',
+                                                                    'SUNDAY' => 'Chủ Nhật'
+                                                                ];
+                                                                echo esc($days[$sched['day_of_week']] ?? $sched['day_of_week']);
+                                                                ?>
+                                                            </strong>: 
+                                                            <?= sprintf('%02d:%02d', $sched['start_hour'], $sched['start_minute'] === 'ZERO' ? 0 : ($sched['start_minute'] === 'FIFTEEN' ? 15 : ($sched['start_minute'] === 'THIRTY' ? 30 : 45))) ?> 
+                                                            - 
+                                                            <?= sprintf('%02d:%02d', $sched['end_hour'], $sched['end_minute'] === 'ZERO' ? 0 : ($sched['end_minute'] === 'FIFTEEN' ? 15 : ($sched['end_minute'] === 'THIRTY' ? 30 : 45))) ?>
+                                                        </li>
+                                                    <?php endforeach; ?>
+                                                </ul>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     
                     <div class="card mt-4">
                         <div class="card-header">

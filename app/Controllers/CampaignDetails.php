@@ -74,6 +74,14 @@ class CampaignDetails extends BaseController
                 $mccId
             );
 
+            // Lấy thông tin Vị trí, Thiết bị, Lịch quảng cáo
+            $campaignTargeting = $this->googleAdsService->getCampaignTargeting(
+                $customerId,
+                $campaignId,
+                $tokenData['access_token'],
+                $mccId
+            );
+
             // 6. Lấy danh sách nhóm quảng cáo hoặc asset groups tùy thuộc vào loại chiến dịch
             $isPerformanceMax = $campaignDetails['is_performance_max'] ?? false;
             
@@ -89,7 +97,8 @@ class CampaignDetails extends BaseController
                     'account' => $account,
                     'accounts' => $accounts,
                     'campaignDetails' => $campaignDetails,
-                    'assetGroups' => $assetGroups
+                    'assetGroups' => $assetGroups,
+                    'campaignTargeting' => $campaignTargeting
                 ]);
             } else {
                 $adGroups = $this->googleAdsService->getAdGroups(
@@ -103,7 +112,8 @@ class CampaignDetails extends BaseController
                     'account' => $account,
                     'accounts' => $accounts,
                     'campaignDetails' => $campaignDetails,
-                    'adGroups' => $adGroups
+                    'adGroups' => $adGroups,
+                    'campaignTargeting' => $campaignTargeting
                 ]);
             }
         } catch (Exception $e) {
@@ -188,12 +198,47 @@ class CampaignDetails extends BaseController
                 return redirect()->to('/campaign-details/campaign/' . $customerId . '/' . $campaignId);
             }
 
+            // Lấy thông tin Kênh và Đối tượng nhắm mục tiêu của nhóm quảng cáo
+            $adGroupTargeting = $this->googleAdsService->getAdGroupTargetingSettings(
+                $customerId,
+                $adGroupId,
+                $tokenData['access_token'],
+                $mccId
+            );
+
+            // Bổ sung thông tin chi tiết thân thiện cho Đối tượng
+            if (!empty($adGroupTargeting['audiences'])) {
+                foreach ($adGroupTargeting['audiences'] as &$audience) {
+                    if (!empty($audience['resource_name'])) {
+                        $details = $this->googleAdsService->getAudienceResourceDetails(
+                            $customerId,
+                            $audience['resource_name'],
+                            $tokenData['access_token'],
+                            $mccId
+                        );
+                        if ($details) {
+                            $audience['display_name'] = $details['name'];
+                            $audience['description'] = $details['description'];
+                            $audience['status'] = $details['status'];
+                            $audience['details'] = $details;
+                        } else {
+                            $audience['display_name'] = $audience['name'];
+                            $audience['description'] = '';
+                        }
+                    } else {
+                        $audience['display_name'] = $audience['name'];
+                        $audience['description'] = '';
+                    }
+                }
+            }
+
             return view('campaign_details/ad_group', [
                 'account' => $account,
                 'accounts' => $accounts,
                 'campaignDetails' => $campaignDetails,
                 'adGroupDetails' => $adGroupDetails,
-                'ads' => $ads
+                'ads' => $ads,
+                'adGroupTargeting' => $adGroupTargeting
             ]);
         } catch (Exception $e) {
             session()->setFlashdata('error', 'Lỗi khi lấy thông tin nhóm quảng cáo: ' . $e->getMessage());

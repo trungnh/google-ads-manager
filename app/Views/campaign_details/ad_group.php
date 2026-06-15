@@ -70,6 +70,16 @@
                                                 <th>Chiến dịch</th>
                                                 <td><?= esc($campaignDetails['name']) ?></td>
                                             </tr>
+                                            <tr>
+                                                <th>Nhắm mục tiêu được tối ưu hóa</th>
+                                                <td>
+                                                    <?php if (isset($adGroupDetails['optimized_targeting_enabled']) && $adGroupDetails['optimized_targeting_enabled']): ?>
+                                                        <span class="badge bg-success">Đang Bật</span>
+                                                    <?php else: ?>
+                                                        <span class="badge bg-secondary">Tắt</span>
+                                                    <?php endif; ?>
+                                                </td>
+                                            </tr>
                                         </tbody>
                                     </table>
                                 </div>
@@ -163,6 +173,76 @@
                             <?php */?>
                         </div>
                     </div>
+
+                    <!-- Cấu hình nhắm mục tiêu nhóm quảng cáo (Kênh, Đối tượng) -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card mb-4">
+                                <div class="card-header bg-light">
+                                    <h5 class="card-title my-0">Cấu hình nhắm mục tiêu nhóm quảng cáo</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <!-- Kênh nhắm mục tiêu (Placements/Channels) -->
+                                        <div class="col-md-6">
+                                            <h6 class="fw-bold border-bottom pb-2 text-secondary"><i class="fas fa-bullseye text-primary me-2"></i> Kênh nhắm mục tiêu (Vị trí đặt/Placements)</h6>
+                                            <?php if (empty($adGroupTargeting['placements'])): ?>
+                                                <p class="text-muted small">Tự động tối ưu hoặc nhắm mục tiêu diện rộng</p>
+                                            <?php else: ?>
+                                                <ul class="list-group list-group-flush">
+                                                    <?php foreach ($adGroupTargeting['placements'] as $pl): ?>
+                                                        <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2 small bg-transparent">
+                                                            <div>
+                                                                <span class="fw-bold me-1">[<?= esc($pl['type']) ?>]</span>
+                                                                <span><?= esc($pl['name']) ?></span>
+                                                            </div>
+                                                            <div>
+                                                                <?php if ($pl['negative']): ?>
+                                                                    <span class="badge bg-danger me-1">Loại trừ</span>
+                                                                <?php else: ?>
+                                                                    <span class="badge bg-success me-1">Nhắm mục tiêu</span>
+                                                                <?php endif; ?>
+                                                                <span class="badge bg-secondary"><?= esc($pl['status']) ?></span>
+                                                            </div>
+                                                        </li>
+                                                    <?php endforeach; ?>
+                                                </ul>
+                                            <?php endif; ?>
+                                        </div>
+
+                                        <!-- Đối tượng nhắm mục tiêu (Audiences) -->
+                                        <div class="col-md-6">
+                                            <h6 class="fw-bold border-bottom pb-2 text-secondary"><i class="fas fa-users text-success me-2"></i> Đối tượng nhắm mục tiêu (Audience segments)</h6>
+                                            <?php if (empty($adGroupTargeting['audiences'])): ?>
+                                                <p class="text-muted small">Không nhắm mục tiêu đối tượng cụ thể</p>
+                                            <?php else: ?>
+                                                <ul class="list-group list-group-flush">
+                                                    <?php foreach ($adGroupTargeting['audiences'] as $aud): ?>
+                                                        <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2 small bg-transparent">
+                                                            <div>
+                                                                <span class="fw-bold me-1">[<?= esc($aud['type']) ?>]</span>
+                                                                <span><?= esc($aud['display_name']) ?></span>
+                                                            </div>
+                                                            <div class="d-flex align-items-center">
+                                                                <?php if ($aud['negative']): ?>
+                                                                    <span class="badge bg-danger me-2">Loại trừ</span>
+                                                                <?php else: ?>
+                                                                    <span class="badge bg-success me-2">Nhắm mục tiêu</span>
+                                                                <?php endif; ?>
+                                                                <button type="button" class="btn btn-sm btn-outline-info btn-view-audience" data-audience='<?= json_encode($aud) ?>'>
+                                                                    <i class="fas fa-info-circle"></i> Chi tiết
+                                                                </button>
+                                                            </div>
+                                                        </li>
+                                                    <?php endforeach; ?>
+                                                </ul>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     
                     <div class="card mt-4">
                         <div class="card-header">
@@ -228,5 +308,180 @@
         </div>
     </div>
 </div>
+
+<!-- Modal xem chi tiết đối tượng -->
+<div class="modal fade" id="audienceDetailsModal" tabindex="-1" aria-labelledby="audienceDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="audienceDetailsModalLabel"><i class="fas fa-users text-primary me-2"></i> Chi tiết đối tượng nhắm mục tiêu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="audienceModalContent">
+                    <!-- Nội dung chi tiết đối tượng sẽ được render bằng JS -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const viewAudienceButtons = document.querySelectorAll('.btn-view-audience');
+    viewAudienceButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const audience = JSON.parse(this.dataset.audience);
+            const contentDiv = document.getElementById('audienceModalContent');
+            
+            let html = '';
+            
+            // Basic Info
+            html += `<table class="table table-bordered">
+                <tbody>
+                    <tr>
+                        <th width="35%" class="bg-light">Tên đối tượng</th>
+                        <td><strong>${escapeHtml(audience.display_name)}</strong></td>
+                    </tr>
+                    <tr>
+                        <th class="bg-light">Loại đối tượng</th>
+                        <td><span class="badge bg-primary">${escapeHtml(audience.type)}</span></td>
+                    </tr>
+                    <tr>
+                        <th class="bg-light">ID Tiêu chí (Criterion ID)</th>
+                        <td>${escapeHtml(audience.criterion_id)}</td>
+                    </tr>`;
+            
+            if (audience.resource_name) {
+                html += `<tr>
+                    <th class="bg-light">Resource Name</th>
+                    <td><code class="small text-break">${escapeHtml(audience.resource_name)}</code></td>
+                </tr>`;
+            }
+
+            if (audience.status) {
+                html += `<tr>
+                    <th class="bg-light">Trạng thái mục tiêu</th>
+                    <td><span class="badge bg-info">${escapeHtml(audience.status)}</span></td>
+                </tr>`;
+            }
+
+            if (audience.description) {
+                html += `<tr>
+                    <th class="bg-light">Mô tả</th>
+                    <td>${escapeHtml(audience.description)}</td>
+                </tr>`;
+            }
+
+            html += `</tbody></table>`;
+
+            // Type-specific detailed parameters
+            if (audience.details && audience.details.details) {
+                const details = audience.details.details;
+                html += `<h5 class="mt-4 mb-3 text-secondary border-bottom pb-2"><i class="fas fa-cog me-1"></i> Thông số cấu hình Google Ads</h5>`;
+                
+                if (audience.type === 'USER_LIST') {
+                    // User List specific details
+                    html += `<table class="table table-striped table-bordered">
+                        <tbody>
+                            <tr>
+                                <th width="40%" class="bg-light">Quy mô mạng tìm kiếm (Search Size)</th>
+                                <td>${formatNumber(details.sizeForSearch)}</td>
+                            </tr>
+                            <tr>
+                                <th class="bg-light">Quy mô mạng hiển thị (Display Size)</th>
+                                <td>${formatNumber(details.sizeForDisplay)}</td>
+                            </tr>
+                            <tr>
+                                <th class="bg-light">Thời gian lưu giữ (Life Span)</th>
+                                <td>${details.membershipLifeSpan ? details.membershipLifeSpan + ' ngày' : 'Không giới hạn'}</td>
+                            </tr>
+                            <tr>
+                                <th class="bg-light">Trạng thái thành viên</th>
+                                <td><span class="badge ${details.membershipStatus === 'OPEN' ? 'bg-success' : 'bg-danger'}">${details.membershipStatus || 'N/A'}</span></td>
+                            </tr>
+                            <tr>
+                                <th class="bg-light">Loại danh sách (User List Type)</th>
+                                <td>${escapeHtml(details.type || 'N/A')}</td>
+                            </tr>
+                        </tbody>
+                    </table>`;
+                } else if (audience.type === 'CUSTOM_AUDIENCE') {
+                    // Custom Audience specific details
+                    html += `<table class="table table-striped table-bordered">
+                        <tbody>
+                            <tr>
+                                <th width="40%" class="bg-light">Trạng thái hoạt động</th>
+                                <td><span class="badge bg-secondary">${escapeHtml(details.status || 'N/A')}</span></td>
+                            </tr>
+                            <tr>
+                                <th class="bg-light">Loại đối tượng tùy chỉnh</th>
+                                <td>${escapeHtml(details.type || 'N/A')}</td>
+                            </tr>
+                        </tbody>
+                    </table>`;
+                } else if (audience.type === 'AUDIENCE') {
+                    // Audience specific details
+                    html += `<table class="table table-striped table-bordered">
+                        <tbody>
+                            <tr>
+                                <th width="40%" class="bg-light">Trạng thái đối tượng</th>
+                                <td><span class="badge bg-secondary">${escapeHtml(details.status || 'N/A')}</span></td>
+                            </tr>
+                        </tbody>
+                    </table>`;
+
+                    if (details.dimensions && details.dimensions.length > 0) {
+                        html += `<h6 class="fw-bold mt-3"><i class="fas fa-sliders-h me-1"></i> Phân khúc cấu thành (Dimensions)</h6>`;
+                        html += `<ul class="list-group">`;
+                        details.dimensions.forEach(dim => {
+                            let dimType = dim.ageRanges ? 'Độ tuổi' : (dim.genders ? 'Giới tính' : (dim.userLists ? 'Tệp khách hàng/Remarketing' : 'Khác'));
+                            html += `<li class="list-group-item bg-transparent">`;
+                            html += `<strong>${dimType}</strong>: `;
+                            if (dim.ageRanges) {
+                                html += dim.ageRanges.map(a => escapeHtml(a.type)).join(', ');
+                            } else if (dim.genders) {
+                                html += dim.genders.map(g => escapeHtml(g.type)).join(', ');
+                            } else if (dim.userLists) {
+                                html += dim.userLists.map(u => `<code class="small">${escapeHtml(u.userList)}</code>`).join(', ');
+                            } else {
+                                html += JSON.stringify(dim);
+                            }
+                            html += `</li>`;
+                        });
+                        html += `</ul>`;
+                    }
+                }
+            }
+            
+            contentDiv.innerHTML = html;
+            
+            // Show the modal
+            const modal = new bootstrap.Modal(document.getElementById('audienceDetailsModal'));
+            modal.show();
+        });
+    });
+
+    function escapeHtml(str) {
+        if (!str) return 'N/A';
+        return str.toString()
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function formatNumber(val) {
+        let num = parseFloat(val);
+        if (isNaN(num)) return 'Không xác định';
+        return num.toLocaleString('en-US');
+    }
+});
+</script>
 
 <?= $this->include('templates/footer') ?>

@@ -183,6 +183,7 @@ class GoogleAdsServiceExtension extends GoogleAdsService
                 ad_group.cpm_bid_micros,
                 ad_group.target_cpa_micros,
                 ad_group.target_roas,
+                ad_group.optimized_targeting_enabled,
                 metrics.cost_micros,
                 metrics.conversions,
                 metrics.conversions_value,
@@ -224,6 +225,7 @@ class GoogleAdsServiceExtension extends GoogleAdsService
                                 'cpm_bid' => isset($adGroup['cpmBidMicros']) ? $this->microToStandard($adGroup['cpmBidMicros']) : 0,
                                 'target_cpa' => isset($adGroup['targetCpaMicros']) ? $this->microToStandard($adGroup['targetCpaMicros']) : 0,
                                 'target_roas' => $adGroup['targetRoas'] ?? 0,
+                                'optimized_targeting_enabled' => $adGroup['optimizedTargetingEnabled'] ?? false,
                                 'cost' => isset($metrics['costMicros']) ? $this->microToStandard($metrics['costMicros']) : 0,
                                 'conversions' => $metrics['conversions'] ?? 0,
                                 'conversion_value' => $metrics['conversionsValue'] ?? 0,
@@ -798,6 +800,11 @@ class GoogleAdsServiceExtension extends GoogleAdsService
                 campaign_criterion.device.type,
                 campaign_criterion.age_range.type,
                 campaign_criterion.gender.type,
+                campaign_criterion.ad_schedule.day_of_week,
+                campaign_criterion.ad_schedule.start_hour,
+                campaign_criterion.ad_schedule.start_minute,
+                campaign_criterion.ad_schedule.end_hour,
+                campaign_criterion.ad_schedule.end_minute,
                 campaign_criterion.campaign,
                 geo_target_constant.name,
                 geo_target_constant.country_code,
@@ -817,7 +824,8 @@ class GoogleAdsServiceExtension extends GoogleAdsService
                 'locations' => [],
                 'devices' => [],
                 'age_ranges' => [],
-                'genders' => []
+                'genders' => [],
+                'ad_schedules' => []
             ];
 
             if (is_array($response)) {
@@ -881,6 +889,20 @@ class GoogleAdsServiceExtension extends GoogleAdsService
                                         $targeting['genders'][] = [
                                             'criterion_id' => $criterion['criterionId'] ?? '',
                                             'type' => $criterion['gender']['type'] ?? '',
+                                            'negative' => $isNegative
+                                        ];
+                                    }
+                                    break;
+
+                                case 'AD_SCHEDULE':
+                                    if (isset($criterion['adSchedule'])) {
+                                        $targeting['ad_schedules'][] = [
+                                            'criterion_id' => $criterion['criterionId'] ?? '',
+                                            'day_of_week' => $criterion['adSchedule']['dayOfWeek'] ?? '',
+                                            'start_hour' => $criterion['adSchedule']['startHour'] ?? 0,
+                                            'start_minute' => $criterion['adSchedule']['startMinute'] ?? '',
+                                            'end_hour' => $criterion['adSchedule']['endHour'] ?? 0,
+                                            'end_minute' => $criterion['adSchedule']['endMinute'] ?? '',
                                             'negative' => $isNegative
                                         ];
                                     }
@@ -1026,5 +1048,230 @@ class GoogleAdsServiceExtension extends GoogleAdsService
             log_message('error', 'Error in GoogleAdsServiceExtension::getAdGroupTargeting: ' . $e->getMessage());
             throw $e;
         }
+    }
+
+    /**
+     * Lấy thông tin cài đặt mục tiêu nhóm quảng cáo (Kênh, Đối tượng) không bị giới hạn bởi thời gian/metrics
+     */
+    public function getAdGroupTargetingSettings($customerId, $adGroupId, $accessToken, $mccId = null)
+    {
+        $formattedCustomerId = $this->formatCustomerId($customerId);
+        
+        $url = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedCustomerId . '/googleAds:searchStream';
+        
+        $query = "
+            SELECT
+                ad_group_criterion.criterion_id,
+                ad_group_criterion.type,
+                ad_group_criterion.negative,
+                ad_group_criterion.status,
+                ad_group_criterion.placement.url,
+                ad_group_criterion.youtube_channel.channel_id,
+                ad_group_criterion.youtube_video.video_id,
+                ad_group_criterion.webpage.criterion_name,
+                ad_group_criterion.app_category.mobile_app_category_constant,
+                ad_group_criterion.mobile_application.app_id,
+                ad_group_criterion.audience.audience,
+                ad_group_criterion.custom_audience.custom_audience,
+                ad_group_criterion.user_list.user_list
+            FROM ad_group_criterion
+            WHERE ad_group_criterion.ad_group = 'customers/{$formattedCustomerId}/adGroups/{$adGroupId}'";
+        
+        $data = [
+            'query' => $query
+        ];
+
+        try {
+            $response = $this->makeCurlRequest($url, 'POST', $accessToken, json_encode($data), $mccId);
+            $targeting = [
+                'placements' => [], // Kênh
+                'audiences' => []   // Đối tượng
+            ];
+
+            if (is_array($response)) {
+                foreach ($response as $batch) {
+                    if (isset($batch['results'])) {
+                        foreach ($batch['results'] as $result) {
+                            if (!isset($result['adGroupCriterion'])) {
+                                continue;
+                            }
+
+                            $criterion = $result['adGroupCriterion'];
+                            $isNegative = $criterion['negative'] ?? false;
+                            $type = $criterion['type'] ?? '';
+                            $status = $criterion['status'] ?? '';
+                            $criterionId = $criterion['criterionId'] ?? '';
+
+                            // Parse Kênh (Placements/Channels)
+                            if (in_array($type, ['PLACEMENT', 'YOUTUBE_CHANNEL', 'YOUTUBE_VIDEO', 'APP_CATEGORY', 'MOBILE_APPLICATION', 'WEBPAGE'])) {
+                                $name = '';
+                                if ($type === 'PLACEMENT' && isset($criterion['placement']['url'])) {
+                                    $name = $criterion['placement']['url'];
+                                } elseif ($type === 'YOUTUBE_CHANNEL' && isset($criterion['youtubeChannel']['channelId'])) {
+                                    $name = 'YouTube Channel: ' . $criterion['youtubeChannel']['channelId'];
+                                } elseif ($type === 'YOUTUBE_VIDEO' && isset($criterion['youtubeVideo']['videoId'])) {
+                                    $name = 'YouTube Video: ' . $criterion['youtubeVideo']['videoId'];
+                                } elseif ($type === 'WEBPAGE' && isset($criterion['webpage']['criterionName'])) {
+                                    $name = $criterion['webpage']['criterionName'];
+                                } elseif ($type === 'APP_CATEGORY' && isset($criterion['appCategory']['mobileAppCategoryConstant'])) {
+                                    $name = 'App Category: ' . $criterion['appCategory']['mobileAppCategoryConstant'];
+                                } elseif ($type === 'MOBILE_APPLICATION' && isset($criterion['mobileApplication']['appId'])) {
+                                    $name = 'App: ' . $criterion['mobileApplication']['appId'];
+                                }
+
+                                $targeting['placements'][] = [
+                                    'criterion_id' => $criterionId,
+                                    'type' => $type,
+                                    'name' => $name,
+                                    'negative' => $isNegative,
+                                    'status' => $status
+                                ];
+                            }
+
+                            // Parse Đối tượng (Audiences)
+                            if (in_array($type, ['AUDIENCE', 'CUSTOM_AUDIENCE', 'USER_LIST'])) {
+                                $resourceName = '';
+                                $name = '';
+                                if ($type === 'AUDIENCE' && isset($criterion['audience']['audience'])) {
+                                    $resourceName = $criterion['audience']['audience'];
+                                    $name = 'Audience: ' . $this->getResourceIdFromPath($resourceName);
+                                } elseif ($type === 'CUSTOM_AUDIENCE' && isset($criterion['customAudience']['customAudience'])) {
+                                    $resourceName = $criterion['customAudience']['customAudience'];
+                                    $name = 'Custom Audience: ' . $this->getResourceIdFromPath($resourceName);
+                                } elseif ($type === 'USER_LIST' && isset($criterion['userList']['userList'])) {
+                                    $resourceName = $criterion['userList']['userList'];
+                                    $name = 'User List: ' . $this->getResourceIdFromPath($resourceName);
+                                }
+
+                                $targeting['audiences'][] = [
+                                    'criterion_id' => $criterionId,
+                                    'type' => $type,
+                                    'name' => $name,
+                                    'resource_name' => $resourceName,
+                                    'negative' => $isNegative,
+                                    'status' => $status
+                                ];
+                            }
+                        }
+                    }
+                }
+            }
+
+            return $targeting;
+        } catch (Exception $e) {
+            log_message('error', 'Error in GoogleAdsServiceExtension::getAdGroupTargetingSettings: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Lấy thông tin chi tiết một đối tượng cụ thể từ Google Ads API bằng Resource Name
+     */
+    public function getAudienceResourceDetails($customerId, $resourceName, $accessToken, $mccId = null)
+    {
+        $formattedCustomerId = $this->formatCustomerId($customerId);
+        $url = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedCustomerId . '/googleAds:searchStream';
+        
+        $parts = explode('/', $resourceName);
+        $type = $parts[2] ?? ''; // e.g. "audiences", "customAudiences", "userLists"
+
+        $query = '';
+        if ($type === 'audiences') {
+            $query = "
+                SELECT
+                    audience.id,
+                    audience.name,
+                    audience.status,
+                    audience.description,
+                    audience.dimensions
+                FROM audience
+                WHERE audience.resource_name = '{$resourceName}'";
+        } elseif ($type === 'customAudiences') {
+            $query = "
+                SELECT
+                    custom_audience.id,
+                    custom_audience.name,
+                    custom_audience.status,
+                    custom_audience.type,
+                    custom_audience.description
+                FROM custom_audience
+                WHERE custom_audience.resource_name = '{$resourceName}'";
+        } elseif ($type === 'userLists') {
+            $query = "
+                SELECT
+                    user_list.id,
+                    user_list.name,
+                    user_list.membership_status,
+                    user_list.membership_life_span,
+                    user_list.size_for_display,
+                    user_list.size_for_search,
+                    user_list.type
+                FROM user_list
+                WHERE user_list.resource_name = '{$resourceName}'";
+        }
+
+        if (empty($query)) {
+            return null;
+        }
+
+        $data = [
+            'query' => $query
+        ];
+
+        try {
+            $response = $this->makeCurlRequest($url, 'POST', $accessToken, json_encode($data), $mccId);
+            if (is_array($response)) {
+                foreach ($response as $batch) {
+                    if (isset($batch['results']) && !empty($batch['results'])) {
+                        $result = $batch['results'][0];
+                        if ($type === 'audiences' && isset($result['audience'])) {
+                            $aud = $result['audience'];
+                            return [
+                                'id' => $aud['id'],
+                                'name' => $aud['name'],
+                                'status' => $aud['status'] ?? '',
+                                'description' => $aud['description'] ?? '',
+                                'type' => 'AUDIENCE',
+                                'details' => $aud
+                            ];
+                        } elseif ($type === 'customAudiences' && isset($result['customAudience'])) {
+                            $aud = $result['customAudience'];
+                            return [
+                                'id' => $aud['id'],
+                                'name' => $aud['name'],
+                                'status' => $aud['status'] ?? '',
+                                'description' => $aud['description'] ?? '',
+                                'type' => 'CUSTOM_AUDIENCE',
+                                'details' => $aud
+                            ];
+                        } elseif ($type === 'userLists' && isset($result['userList'])) {
+                            $ul = $result['userList'];
+                            return [
+                                'id' => $ul['id'],
+                                'name' => $ul['name'],
+                                'status' => $ul['membershipStatus'] ?? '',
+                                'description' => '',
+                                'type' => 'USER_LIST',
+                                'details' => $ul
+                            ];
+                        }
+                    }
+                }
+            }
+            return null;
+        } catch (Exception $e) {
+            log_message('error', 'Error in getAudienceResourceDetails: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Helper tách ID từ Resource Name
+     */
+    private function getResourceIdFromPath($resourceName)
+    {
+        if (empty($resourceName)) return '';
+        $parts = explode('/', $resourceName);
+        return end($parts);
     }
 }

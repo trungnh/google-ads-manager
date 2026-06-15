@@ -436,6 +436,7 @@
                         <tbody>
                             <?php if (!empty($topCampaigns)): ?>
                                 <?php foreach ($topCampaigns as $camp): ?>
+									<?php if ($camp['cost'] == 0) continue; ?>
                                     <tr>
                                         <td class="ps-3">
                                             <div class="fw-bold text-dark text-truncate" style="max-width: 240px;" title="<?= esc($camp['name']) ?>">
@@ -492,6 +493,7 @@
                         <tbody>
                             <?php if (!empty($problemCampaigns)): ?>
                                 <?php foreach ($problemCampaigns as $camp): ?>
+									<?php if ($camp['cost'] == 0) continue; ?>
                                     <tr>
                                         <td class="ps-3">
                                             <div class="fw-bold text-dark text-truncate" style="max-width: 240px;" title="<?= esc($camp['name']) ?>">
@@ -547,8 +549,9 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <?php if (!empty($problemCampaigns)): ?>
-                                <?php foreach ($problemCampaigns as $camp): ?>
+                            <?php if (!empty($worstCampaigns)): ?>
+                                <?php foreach ($worstCampaigns as $camp): ?>
+									<?php if ($camp['cost'] == 0) continue; ?>
                                     <tr>
                                         <td class="ps-3">
                                             <div class="fw-bold text-dark text-truncate" style="max-width: 240px;" title="<?= esc($camp['name']) ?>">
@@ -564,7 +567,7 @@
                                         <td class="text-center text-danger font-monospace fw-bold"><?= number_format($camp['cost'], 0, ',', '.') ?>đ</td>
                                         <td class="text-center text-secondary fw-semibold">
                                             <?= number_format($camp['real_cpa'], 0, ',', '.') ?>đ
-                                            (<?= number_format($camp['conversions'], 1, ',', '.') ?> đơn)
+                                            (<?= number_format($camp['real_conversions'], 0, ',', '.') ?> đơn)
                                         </td>
                                         <td class="text-center">
                                             <a href="<?= base_url('campaigns/index/' . $camp['customer_id']) ?>" class="btn btn-outline-danger btn-xs py-1 px-2 text-uppercase fw-semibold" style="font-size: 0.68rem; border-radius: 2px;">

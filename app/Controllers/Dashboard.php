@@ -31,6 +31,10 @@ class Dashboard extends Controller
         $userAccounts = $adsAccountModel->where('user_id', $userId)->where('status', 'ACTIVE')->findAll();
         $customerIds = array_column($userAccounts, 'customer_id');
 
+        if (count($customerIds) == 0) {
+            redirect()->to('/syncads');
+        }
+
         // Khởi tạo các trạng thái tích hợp hệ thống
         $settingsModel = new AdsAccountSettingsModel();
         $hasPancake = false;
@@ -273,7 +277,7 @@ class Dashboard extends Controller
                     $campGroups[$cid]['real_conversion_value'] += $camp['real_conversion_value'];
                 }
 
-                $campGroups[$cid]['sort_real_cpa'] = $campGroups[$cid]['real_cpa'] == 0 ? $campGroups[$cid]['cost'] : $campGroups[$cid]['sort_real_cpa'];
+                $campGroups[$cid]['sort_real_cpa'] = $campGroups[$cid]['real_cpa'] == 0 ? $campGroups[$cid]['cost'] : $campGroups[$cid]['real_cpa'];
             }
 
             // Top Performing Campaigns (Ranked by CRM real conversions)
