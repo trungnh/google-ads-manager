@@ -805,11 +805,7 @@ class GoogleAdsServiceExtension extends GoogleAdsService
                 campaign_criterion.ad_schedule.start_minute,
                 campaign_criterion.ad_schedule.end_hour,
                 campaign_criterion.ad_schedule.end_minute,
-                campaign_criterion.campaign,
-                geo_target_constant.name,
-                geo_target_constant.country_code,
-                geo_target_constant.target_type,
-                geo_target_constant.canonical_name
+                campaign_criterion.campaign
             FROM campaign_criterion
             WHERE campaign_criterion.campaign = 'customers/{$formattedCustomerId}/campaigns/{$campaignId}'";
         
@@ -852,13 +848,14 @@ class GoogleAdsServiceExtension extends GoogleAdsService
                                     break;
                                     
                                 case 'LOCATION':
-                                    if (isset($criterion['location']) && isset($result['geoTargetConstant'])) {
+                                    if (isset($criterion['location'])) {
                                         $targeting['locations'][] = [
                                             'criterion_id' => $criterion['criterionId'] ?? '',
-                                            'name' => $result['geoTargetConstant']['name'] ?? '',
-                                            'country_code' => $result['geoTargetConstant']['countryCode'] ?? '',
-                                            'target_type' => $result['geoTargetConstant']['targetType'] ?? '',
-                                            'canonical_name' => $result['geoTargetConstant']['canonicalName'] ?? '',
+                                            'geo_target_constant' => $criterion['location']['geoTargetConstant'] ?? '',
+                                            'name' => '',
+                                            'country_code' => '',
+                                            'target_type' => '',
+                                            'canonical_name' => '',
                                             'negative' => $isNegative
                                         ];
                                     }
@@ -913,11 +910,129 @@ class GoogleAdsServiceExtension extends GoogleAdsService
                 }
             }
 
+            // Resolve Geo Target Constant details
+            $geoConstantResourceNames = [];
+            foreach ($targeting['locations'] as $loc) {
+                if (!empty($loc['geo_target_constant'])) {
+                    $geoConstantResourceNames[] = $loc['geo_target_constant'];
+                }
+            }
+            
+            if (!empty($geoConstantResourceNames)) {
+                $geoDetails = $this->getGeoTargetConstantDetails($customerId, array_unique($geoConstantResourceNames), $accessToken, $mccId);
+                foreach ($targeting['locations'] as &$loc) {
+                    $resName = $loc['geo_target_constant'];
+                    if (isset($geoDetails[$resName])) {
+                        $loc['name'] = $geoDetails[$resName]['name'];
+                        $loc['country_code'] = $geoDetails[$resName]['country_code'];
+                        $loc['target_type'] = $geoDetails[$resName]['target_type'];
+                        $loc['canonical_name'] = $geoDetails[$resName]['canonical_name'];
+                    } else {
+                        // Fallback: parse last segment of resource name
+                        $parts = explode('/', $resName);
+                        $id = end($parts);
+                        $loc['name'] = "Location ID " . $id;
+                        $loc['canonical_name'] = "Location ID " . $id;
+                    }
+                }
+                unset($loc);
+            }
+
             return $targeting;
         } catch (Exception $e) {
             log_message('error', 'Error in GoogleAdsServiceExtension::getCampaignTargeting: ' . $e->getMessage());
             throw $e;
         }
+    }
+
+    /**
+     * Lấy thông tin chi tiết của các Geo Target Constant
+     * 
+     * @param string $customerId ID của tài khoản quảng cáo
+     * @param array $resourceNames Danh sách các resource_name của geo_target_constant
+     * @param string $accessToken Access token
+     * @param string|null $mccId ID của tài khoản MCC (nếu có)
+     * @return array Mảng map từ resource_name sang chi tiết thông tin
+     */
+    public function getGeoTargetConstantDetails($customerId, array $resourceNames, $accessToken, $mccId = null)
+    {
+        if (empty($resourceNames)) {
+            return [];
+        }
+
+        $cache = \Config\Services::cache();
+        $detailsMap = [];
+        $uncachedResourceNames = [];
+
+        foreach ($resourceNames as $name) {
+            $cacheKey = 'geo_target_' . md5($name);
+            $cachedData = $cache->get($cacheKey);
+            if ($cachedData !== null) {
+                $detailsMap[$name] = $cachedData;
+            } else {
+                $uncachedResourceNames[] = $name;
+            }
+        }
+
+        if (empty($uncachedResourceNames)) {
+            return $detailsMap;
+        }
+
+        $formattedCustomerId = $this->formatCustomerId($customerId);
+        $url = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedCustomerId . '/googleAds:searchStream';
+
+        // Chuẩn bị danh sách cho toán tử IN
+        $resourceNamesList = implode(', ', array_map(function($name) {
+            return "'" . str_replace("'", "\\'", $name) . "'";
+        }, $uncachedResourceNames));
+
+        $query = "
+            SELECT
+                geo_target_constant.resource_name,
+                geo_target_constant.id,
+                geo_target_constant.name,
+                geo_target_constant.canonical_name,
+                geo_target_constant.country_code,
+                geo_target_constant.target_type
+            FROM geo_target_constant
+            WHERE geo_target_constant.resource_name IN ({$resourceNamesList})";
+
+        $data = [
+            'query' => $query
+        ];
+
+        try {
+            $response = $this->makeCurlRequest($url, 'POST', $accessToken, json_encode($data), $mccId);
+            if (is_array($response)) {
+                foreach ($response as $batch) {
+                    if (isset($batch['results'])) {
+                        foreach ($batch['results'] as $result) {
+                            if (isset($result['geoTargetConstant'])) {
+                                $geo = $result['geoTargetConstant'];
+                                $resName = $geo['resourceName'] ?? '';
+                                if ($resName) {
+                                    $geoData = [
+                                        'name' => $geo['name'] ?? '',
+                                        'country_code' => $geo['countryCode'] ?? '',
+                                        'target_type' => $geo['targetType'] ?? '',
+                                        'canonical_name' => $geo['canonicalName'] ?? ''
+                                    ];
+                                    $detailsMap[$resName] = $geoData;
+                                    
+                                    // Cache trong 30 ngày vì geo target constants ít khi thay đổi
+                                    $cacheKey = 'geo_target_' . md5($resName);
+                                    $cache->save($cacheKey, $geoData, 30 * 86400);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception $e) {
+            log_message('error', 'Error in GoogleAdsServiceExtension::getGeoTargetConstantDetails: ' . $e->getMessage());
+        }
+
+        return $detailsMap;
     }
 
     /**
