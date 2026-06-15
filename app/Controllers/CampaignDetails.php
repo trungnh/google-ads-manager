@@ -82,9 +82,17 @@ class CampaignDetails extends BaseController
                 $mccId
             );
 
-            // 6. Lấy danh sách nhóm quảng cáo hoặc asset groups tùy thuộc vào loại chiến dịch
+            // Lấy thông tin vi phạm chính sách của quảng cáo/asset trong chiến dịch
             $isPerformanceMax = $campaignDetails['is_performance_max'] ?? false;
-            
+            $policyViolations = $this->googleAdsService->getCampaignPolicyViolations(
+                $customerId,
+                $campaignId,
+                $tokenData['access_token'],
+                $isPerformanceMax,
+                $mccId
+            );
+
+            // 6. Lấy danh sách nhóm quảng cáo hoặc asset groups tùy thuộc vào loại chiến dịch
             if ($isPerformanceMax) {
                 $assetGroups = $this->googleAdsService->getAssetGroups(
                     $customerId,
@@ -98,7 +106,8 @@ class CampaignDetails extends BaseController
                     'accounts' => $accounts,
                     'campaignDetails' => $campaignDetails,
                     'assetGroups' => $assetGroups,
-                    'campaignTargeting' => $campaignTargeting
+                    'campaignTargeting' => $campaignTargeting,
+                    'policyViolations' => $policyViolations
                 ]);
             } else {
                 $adGroups = $this->googleAdsService->getAdGroups(
@@ -113,7 +122,8 @@ class CampaignDetails extends BaseController
                     'accounts' => $accounts,
                     'campaignDetails' => $campaignDetails,
                     'adGroups' => $adGroups,
-                    'campaignTargeting' => $campaignTargeting
+                    'campaignTargeting' => $campaignTargeting,
+                    'policyViolations' => $policyViolations
                 ]);
             }
         } catch (Exception $e) {

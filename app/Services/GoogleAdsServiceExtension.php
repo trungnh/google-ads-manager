@@ -30,6 +30,8 @@ class GoogleAdsServiceExtension extends GoogleAdsService
                 campaign.id,
                 campaign.name,
                 campaign.status,
+                campaign.primary_status,
+                campaign.primary_status_reasons,
                 campaign.advertising_channel_type,
                 campaign.advertising_channel_sub_type,
                 campaign.bidding_strategy_type,
@@ -118,6 +120,8 @@ class GoogleAdsServiceExtension extends GoogleAdsService
                                 'campaign_id' => $campaign['id'],
                                 'name' => $campaign['name'],
                                 'status' => $campaign['status'],
+                                'primary_status' => $campaign['primaryStatus'] ?? '',
+                                'primary_status_reasons' => $campaign['primaryStatusReasons'] ?? [],
                                 'advertising_channel_type' => $campaign['advertisingChannelType'] ?? '',
                                 'advertising_channel_sub_type' => $campaign['advertisingChannelSubType'] ?? '',
                                 'bidding_strategy_type' => $biddingStrategyType,
@@ -155,6 +159,129 @@ class GoogleAdsServiceExtension extends GoogleAdsService
             log_message('error', 'Error in GoogleAdsServiceExtension::getCampaignDetails: ' . $e->getMessage());
             throw $e;
         }
+    }
+
+    /**
+     * Lấy thông tin vi phạm chính sách chi tiết của các quảng cáo hoặc asset trong chiến dịch
+     * 
+     * @param string $customerId ID của tài khoản quảng cáo
+     * @param string $campaignId ID của chiến dịch
+     * @param string $accessToken Access token
+     * @param bool $isPerformanceMax Chiến dịch có phải là Performance Max hay không
+     * @param string|null $mccId ID của tài khoản MCC (nếu có)
+     * @return array Danh sách quảng cáo/asset bị vi phạm chính sách kèm chi tiết
+     */
+    public function getCampaignPolicyViolations($customerId, $campaignId, $accessToken, $isPerformanceMax = false, $mccId = null)
+    {
+        $formattedCustomerId = $this->formatCustomerId($customerId);
+        $url = $this->baseUrl . $this->apiVersion . '/customers/' . $formattedCustomerId . '/googleAds:searchStream';
+
+        $violations = [];
+
+        if ($isPerformanceMax) {
+            $query = "
+                SELECT
+                    asset_group_asset.asset,
+                    asset_group_asset.field_type,
+                    asset_group_asset.status,
+                    asset_group_asset.primary_status,
+                    asset_group_asset.primary_status_reasons,
+                    asset_group.id,
+                    asset_group.name,
+                    asset.id,
+                    asset.name,
+                    asset.type
+                FROM asset_group_asset
+                WHERE campaign.id = {$campaignId}
+                  AND asset_group_asset.status != 'REMOVED'
+                  AND asset_group_asset.primary_status IN ('DISAPPROVED', 'LIMITED')";
+        } else {
+            $query = "
+                SELECT
+                    ad_group_ad.ad.id,
+                    ad_group_ad.ad.name,
+                    ad_group_ad.ad.type,
+                    ad_group_ad.policy_summary.approval_status,
+                    ad_group_ad.policy_summary.policy_topic_entries,
+                    ad_group.id,
+                    ad_group.name
+                FROM ad_group_ad
+                WHERE campaign.id = {$campaignId}
+                  AND ad_group_ad.status != 'REMOVED'
+                  AND ad_group_ad.policy_summary.approval_status IN ('DISAPPROVED', 'APPROVED_LIMITED', 'AREA_OF_INTEREST_ONLY')";
+        }
+
+        $data = [
+            'query' => $query
+        ];
+
+        try {
+            $response = $this->makeCurlRequest($url, 'POST', $accessToken, json_encode($data), $mccId);
+            if (is_array($response)) {
+                foreach ($response as $batch) {
+                    if (isset($batch['results'])) {
+                        foreach ($batch['results'] as $result) {
+                            if (!$isPerformanceMax && isset($result['adGroupAd'])) {
+                                $adGroupAd = $result['adGroupAd'];
+                                $ad = $adGroupAd['ad'] ?? [];
+                                $policySummary = $adGroupAd['policySummary'] ?? [];
+                                $adGroupName = $result['adGroup']['name'] ?? '';
+                                $adGroupId = $result['adGroup']['id'] ?? '';
+
+                                $topics = [];
+                                if (isset($policySummary['policyTopicEntries'])) {
+                                    foreach ($policySummary['policyTopicEntries'] as $entry) {
+                                        $topics[] = [
+                                            'topic' => $entry['topic'] ?? '',
+                                            'type' => $entry['type'] ?? '',
+                                            'evidences' => $entry['evidences'] ?? []
+                                        ];
+                                    }
+                                }
+
+                                $violations[] = [
+                                    'id' => $ad['id'] ?? '',
+                                    'name' => $ad['name'] ?? 'Quảng cáo #' . ($ad['id'] ?? ''),
+                                    'type' => $ad['type'] ?? '',
+                                    'group_id' => $adGroupId,
+                                    'group_name' => $adGroupName,
+                                    'approval_status' => $policySummary['approvalStatus'] ?? '',
+                                    'policy_topics' => $topics
+                                ];
+                            } elseif ($isPerformanceMax && isset($result['assetGroupAsset'])) {
+                                $aga = $result['assetGroupAsset'];
+                                $asset = $result['asset'] ?? [];
+                                $assetGroupName = $result['assetGroup']['name'] ?? '';
+                                $assetGroupId = $result['assetGroup']['id'] ?? '';
+
+                                $reasons = [];
+                                if (isset($aga['primaryStatusReasons'])) {
+                                    foreach ($aga['primaryStatusReasons'] as $reason) {
+                                        $reasons[] = $reason;
+                                    }
+                                }
+
+                                $violations[] = [
+                                    'id' => $asset['id'] ?? '',
+                                    'name' => $asset['name'] ?? 'Asset #' . ($asset['id'] ?? ''),
+                                    'type' => $asset['type'] ?? '',
+                                    'group_id' => $assetGroupId,
+                                    'group_name' => $assetGroupName,
+                                    'approval_status' => $aga['primaryStatus'] ?? '',
+                                    'policy_topics' => array_map(function($r) {
+                                        return ['topic' => $r, 'type' => 'DISAPPROVED'];
+                                    }, $reasons)
+                                ];
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception $e) {
+            log_message('error', 'Error in GoogleAdsServiceExtension::getCampaignPolicyViolations: ' . $e->getMessage());
+        }
+
+        return $violations;
     }
 
     /**

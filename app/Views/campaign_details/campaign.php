@@ -62,6 +62,29 @@
                                                 </td>
                                             </tr>
                                             <tr>
+                                                <th>Trạng thái chính (Primary Status)</th>
+                                                <td>
+                                                    <?php 
+                                                    $primaryStatus = $campaignDetails['primary_status'] ?? '';
+                                                    $reasons = $campaignDetails['primary_status_reasons'] ?? [];
+                                                    $badgeClass = 'bg-secondary';
+                                                    if ($primaryStatus === 'ELIGIBLE') {
+                                                        $badgeClass = 'bg-success';
+                                                    } elseif (in_array($primaryStatus, ['PAUSED', 'PENDING'])) {
+                                                        $badgeClass = 'bg-warning';
+                                                    } elseif (in_array($primaryStatus, ['SUSPENDED', 'REJECTED', 'MISCONFIGURED', 'LIMITED'])) {
+                                                        $badgeClass = 'bg-danger';
+                                                    }
+                                                    ?>
+                                                    <span class="badge <?= $badgeClass ?>"><?= esc($primaryStatus ?: 'N/A') ?></span>
+                                                    <?php if (!empty($reasons)): ?>
+                                                        <div class="mt-1 small text-danger fw-bold">
+                                                            <i class="fas fa-exclamation-circle me-1"></i>Nguyên nhân: <?= esc(implode(', ', $reasons)) ?>
+                                                        </div>
+                                                    <?php endif; ?>
+                                                </td>
+                                            </tr>
+                                            <tr>
                                                 <th>Loại chiến dịch</th>
                                                 <td><?= esc($campaignDetails['advertising_channel_type']) ?></td>
                                             </tr>
@@ -269,6 +292,71 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-12">
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="card-title my-0"><i class="fas fa-exclamation-triangle text-warning me-2"></i>Trạng thái vi phạm chính sách & Phê duyệt</h5>
+                            </div>
+                            <div class="card-body">
+                                <?php if (empty($policyViolations)): ?>
+                                    <div class="alert alert-success my-0 py-2 small">
+                                        <i class="fas fa-check-circle me-1"></i>Tuyệt vời! Không phát hiện vi phạm chính sách nào ở cấp độ Quảng cáo / Asset của chiến dịch này.
+                                    </div>
+                                <?php else: ?>
+                                    <div class="table-responsive">
+                                        <table class="table table-striped table-bordered small mb-0">
+                                            <thead>
+                                                <tr class="bg-light">
+                                                    <th>Nhóm (Ad Group / Asset Group)</th>
+                                                    <th>Quảng cáo / Asset</th>
+                                                    <th>Loại</th>
+                                                    <th>Trạng thái phê duyệt</th>
+                                                    <th>Chi tiết chính sách vi phạm</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php foreach ($policyViolations as $violation): ?>
+                                                    <tr>
+                                                        <td><strong><?= esc($violation['group_name']) ?></strong></td>
+                                                        <td>
+                                                            <?= esc($violation['name']) ?>
+                                                            <div class="small text-muted">ID: <?= esc($violation['id']) ?></div>
+                                                        </td>
+                                                        <td><span class="badge bg-secondary"><?= esc($violation['type']) ?></span></td>
+                                                        <td>
+                                                            <?php 
+                                                            $status = $violation['approval_status'];
+                                                            $badge = 'bg-secondary';
+                                                            if ($status === 'APPROVED') $badge = 'bg-success';
+                                                            elseif ($status === 'DISAPPROVED') $badge = 'bg-danger';
+                                                            elseif (in_array($status, ['APPROVED_LIMITED', 'AREA_OF_INTEREST_ONLY', 'LIMITED'])) $badge = 'bg-warning text-dark';
+                                                            ?>
+                                                            <span class="badge <?= $badge ?>"><?= esc($status) ?></span>
+                                                        </td>
+                                                        <td>
+                                                            <?php if (empty($violation['policy_topics'])): ?>
+                                                                <span class="text-muted">Không có thông tin chi tiết</span>
+                                                            <?php else: ?>
+                                                                <ul class="list-unstyled mb-0">
+                                                                    <?php foreach ($violation['policy_topics'] as $topic): ?>
+                                                                        <li class="mb-1">
+                                                                            <span class="badge bg-danger small"><?= esc($topic['type']) ?></span>
+                                                                            <code class="text-dark fw-bold"><?= esc($topic['topic']) ?></code>
+                                                                        </li>
+                                                                    <?php endforeach; ?>
+                                                                </ul>
+                                                            <?php endif; ?>
+                                                        </td>
+                                                    </tr>
+                                                <?php endforeach; ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
