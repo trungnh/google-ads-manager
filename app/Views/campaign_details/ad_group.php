@@ -521,7 +521,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         url: '/campaign-details/ajax-audience-details',
                         type: 'GET',
                         data: {
-                            customer_id: '<?= esc($account['client_customer_id']) ?>',
+                            customer_id: '<?= esc($account['customer_id']) ?>',
                             resource_name: resName
                         },
                         success: function(data) {
@@ -555,7 +555,7 @@ document.addEventListener('DOMContentLoaded', function() {
             url: '/campaign-details/ajax-audience-details',
             type: 'GET',
             data: {
-                customer_id: '<?= esc($account['client_customer_id']) ?>',
+                customer_id: '<?= esc($account['customer_id']) ?>',
                 resource_name: resName
             },
             success: function(data) {
