@@ -285,13 +285,13 @@
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-lg-6">
-                    <span class="integration-badge">Tích hợp Google Ads API chính thức</span>
+                    <span class="integration-badge">Tích hợp Google Ads & Google Sheets API chính thức</span>
                     <h2 class="fw-bold text-dark mb-4">Minh bạch về kết nối và bảo vệ dữ liệu</h2>
-                    <p class="text-muted mb-3">NNHD Ads Manager kết nối trực tiếp với tài khoản Google Ads của bạn thông qua giao thức bảo mật Google OAuth 2.0. Chúng tôi cam kết tôn trọng quyền riêng tư của bạn và tuân thủ các chính sách nghiêm ngặt nhất của Google về bảo vệ dữ liệu:</p>
+                    <p class="text-muted mb-3">NNHD Ads Manager kết nối trực tiếp với tài khoản Google Ads và dịch vụ Google Sheets của bạn thông qua giao thức bảo mật Google OAuth 2.0. Chúng tôi cam kết tôn trọng quyền riêng tư của bạn và tuân thủ các chính sách nghiêm ngặt nhất của Google về bảo vệ dữ liệu:</p>
                     <ul class="text-muted ps-3 mb-4">
-                        <li class="mb-2"><strong>Mục đích kết nối:</strong> Ứng dụng chỉ sử dụng quyền truy cập `https://www.googleapis.com/auth/adwords` để hiển thị thống kê chiến dịch và cho phép bạn thực hiện thao tác bật/tắt hoặc sửa ngân sách chiến dịch trên hệ thống của chúng tôi.</li>
-                        <li class="mb-2"><strong>Không chia sẻ dữ liệu:</strong> Dữ liệu từ tài khoản Google Ads của bạn không bao giờ được chia sẻ cho bất kỳ bên thứ ba nào, không bán và không sử dụng cho các mục đích quảng cáo khác ngoài nhu cầu sử dụng của chính bạn.</li>
-                        <li class="mb-2"><strong>Không sử dụng để huấn luyện AI:</strong> Chúng tôi hoàn toàn không sử dụng dữ liệu Google Ads của bạn để huấn luyện, cải tiến bất kỳ mô hình AI/ML tổng quát hoặc ngôn ngữ nào.</li>
+                        <li class="mb-2"><strong>Mục đích kết nối:</strong> Ứng dụng chỉ sử dụng quyền truy cập `https://www.googleapis.com/auth/adwords` (để hiển thị thống kê chiến dịch và cho phép thực hiện thao tác bật/tắt hoặc sửa ngân sách) và `https://www.googleapis.com/auth/spreadsheets.readonly` (để đọc cấu hình chuyển đổi hoặc danh sách từ khóa mẫu từ tệp trang tính do bạn cung cấp).</li>
+                        <li class="mb-2"><strong>Không chia sẻ dữ liệu:</strong> Dữ liệu từ tài khoản quảng cáo và file trang tính của bạn không bao giờ được chia sẻ cho bất kỳ bên thứ ba nào, không bán và không sử dụng cho các mục đích quảng cáo khác ngoài nhu cầu sử dụng của chính bạn.</li>
+                        <li class="mb-2"><strong>Không sử dụng để huấn luyện AI:</strong> Chúng tôi hoàn toàn không sử dụng dữ liệu của bạn để huấn luyện, cải tiến bất kỳ mô hình AI/ML tổng quát hoặc ngôn ngữ nào.</li>
                         <li class="mb-2"><strong>An toàn bảo mật:</strong> Token truy cập được mã hóa và lưu trữ cực kỳ bảo mật. Bạn có thể thu hồi quyền truy cập này bất cứ lúc nào trong bảng điều khiển Tài khoản Google cá nhân.</li>
                     </ul>
                     <div class="d-flex gap-3">
@@ -305,6 +305,10 @@
                         <div class="p-3 bg-light rounded-3 mb-3 border-start border-primary border-4">
                             <code class="text-primary fw-semibold" style="word-break: break-all;">https://www.googleapis.com/auth/adwords</code>
                             <p class="small text-muted mt-2 mb-0">Cho phép quản lý các tài khoản quảng cáo và chiến dịch Google Ads của bạn một cách bảo mật.</p>
+                        </div>
+                        <div class="p-3 bg-light rounded-3 mb-3 border-start border-success border-4">
+                            <code class="text-success fw-semibold" style="word-break: break-all;">https://www.googleapis.com/auth/spreadsheets.readonly</code>
+                            <p class="small text-muted mt-2 mb-0">Cho phép ứng dụng đọc dữ liệu từ các file Google Sheets mẫu để đồng bộ các cấu hình quảng cáo và dữ liệu chuyển đổi.</p>
                         </div>
                         <p class="small text-muted mb-0">Việc phê duyệt token và cấp quyền được thực hiện trực tiếp trên máy chủ bảo mật của Google. NNHD Ads Manager không bao giờ lưu trữ mật khẩu Google của bạn.</p>
                     </div>
