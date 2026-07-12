@@ -100,7 +100,6 @@ class GoogleAuth extends Controller
             'access_type' => 'offline',
             'response_type' => 'code',
             'prompt' => 'consent',
-            'include_granted_scopes' => 'true',
             'state' => $state
         ];
         
