@@ -91,11 +91,19 @@ class AdsAccountSettings extends BaseController
                 $settings = $this->adsAccountSettingsModel->getSettingsByCustomerId($customerId);
             }
 
+            // Lấy token và Client ID để khởi tạo Google Picker
+            $googleTokenModel = new \App\Models\GoogleTokenModel();
+            $googleToken = $googleTokenModel->getValidToken($userId);
+            $googleAccessToken = $googleToken ? $googleToken['access_token'] : null;
+
             $data = [
                 'title' => 'Cài đặt tài khoản - ' . $account['customer_name'],
                 'account' => $account,
                 'accounts' => $accounts,
-                'settings' => $settings
+                'settings' => $settings,
+                'googleAccessToken' => $googleAccessToken,
+                'googleClientId' => getenv('GOOGLE_CLIENT_ID'),
+                'googleDeveloperKey' => getenv('GOOGLE_DEVELOPER_KEY') ?: getenv('GOOGLE_SHEET_API_KEY') ?: ''
             ];
 
             return view('ads_account_settings/index', $data);
