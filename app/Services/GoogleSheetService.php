@@ -145,7 +145,7 @@ class GoogleSheetService
     {
         try {
             // Lấy dữ liệu từ Google Sheet API
-            $data = $this->fetchSheetData($spreadsheetId, $sheetName);
+            $data = $this->fetchSheetData($spreadsheetId, $sheetName, $settings);
             if (empty($data)) {
                 throw new \Exception("Không thể đọc dữ liệu từ Google Sheet API");
             }
@@ -164,19 +164,53 @@ class GoogleSheetService
      * 
      * @param string $spreadsheetId ID của Google Sheet
      * @param string $sheetName Tên của Sheet
+     * @param array $settings Cài đặt tài khoản
      * @return array Dữ liệu từ Google Sheet
      */
-    private function fetchSheetData($spreadsheetId, $sheetName)
+    private function fetchSheetData($spreadsheetId, $sheetName, $settings = [])
     {
         try {
-            // Lấy API key từ file .env
-            $apiKey = getenv('GOOGLE_SHEET_API_KEY') ?: 'YOUR_API_KEY';
+            $accessToken = null;
+            $userId = $settings['user_id'] ?? null;
+            if ($userId) {
+                $googleTokenModel = new \App\Models\GoogleTokenModel();
+                $token = $googleTokenModel->getValidToken($userId);
+                if ($token) {
+                    $accessToken = $token['access_token'];
+                }
+            }
 
-            // Tạo URL API
-            $url = $this->apiEnpoint . $this->apiVersion . "/spreadsheets/{$spreadsheetId}/values/{$sheetName}?key={$apiKey}";
+            // Tạo URL và Header cho API
+            if ($accessToken) {
+                // Sử dụng OAuth Access Token
+                $url = $this->apiEnpoint . $this->apiVersion . "/spreadsheets/{$spreadsheetId}/values/{$sheetName}";
+                $headers = [
+                    "Authorization: Bearer {$accessToken}",
+                    "Accept: application/json"
+                ];
+            } else {
+                // Fallback về API key
+                $apiKey = getenv('GOOGLE_SHEET_API_KEY') ?: 'YOUR_API_KEY';
+                $url = $this->apiEnpoint . $this->apiVersion . "/spreadsheets/{$spreadsheetId}/values/{$sheetName}?key={$apiKey}";
+                $headers = [
+                    "Accept: application/json"
+                ];
+            }
 
-            // Gọi API
-            $response = file_get_contents($url);
+            // Gọi API bằng Curl
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($httpCode !== 200) {
+                throw new \Exception("Google Sheet API returned HTTP code: {$httpCode}. Response: " . $response);
+            }
+
             if ($response === false) {
                 throw new \Exception("Không thể kết nối đến Google Sheet API");
             }
