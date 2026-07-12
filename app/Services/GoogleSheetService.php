@@ -172,6 +172,15 @@ class GoogleSheetService
         try {
             $accessToken = null;
             $userId = $settings['user_id'] ?? null;
+            if (!$userId && isset($settings['account_id'])) {
+                // Lấy user_id từ bảng ads_accounts để tìm Google OAuth Token
+                $db = \Config\Database::connect();
+                $account = $db->table('ads_accounts')->where('id', $settings['account_id'])->get()->getRowArray();
+                if ($account) {
+                    $userId = $account['user_id'];
+                }
+            }
+
             if ($userId) {
                 $googleTokenModel = new \App\Models\GoogleTokenModel();
                 $token = $googleTokenModel->getValidToken($userId);
@@ -260,8 +269,23 @@ class GoogleSheetService
                 continue; // Bỏ qua các dòng không đủ cột
 
             // Lấy thời gian từ cột được cấu hình và chuyển đổi thành ngày
-            $conversionTime = strtotime($row[$dateColIndex]);
-            $conversionDate = date('Y-m-d', $conversionTime);
+            $dateStr = trim($row[$dateColIndex]);
+            $conversionTime = strtotime($dateStr);
+            if ($conversionTime === false) {
+                // Thử parse định dạng ngày phổ biến tại Việt Nam (DD/MM/YYYY hoặc DD-MM-YYYY)
+                $normalizedDate = str_replace('-', '/', $dateStr);
+                if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/', $normalizedDate, $matches)) {
+                    $day = intval($matches[1]);
+                    $month = intval($matches[2]);
+                    $year = intval($matches[3]);
+                    $hour = isset($matches[4]) ? intval($matches[4]) : 0;
+                    $minute = isset($matches[5]) ? intval($matches[5]) : 0;
+                    $second = isset($matches[6]) ? intval($matches[6]) : 0;
+                    
+                    $conversionTime = mktime($hour, $minute, $second, $month, $day, $year);
+                }
+            }
+            $conversionDate = $conversionTime !== false ? date('Y-m-d', $conversionTime) : null;
 
             // Chỉ xử lý dữ liệu trong khoảng thời gian được chọn
             if ($conversionDate >= $startDate && $conversionDate <= $endDate) {

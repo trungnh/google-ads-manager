@@ -280,9 +280,6 @@
                                 </svg>
                                 <span>Để hệ thống có quyền đọc file Google Sheet riêng tư của bạn, hãy đảm bảo bạn đã kết nối tài khoản Google và cấp quyền truy cập Drive: <a href="<?= base_url('google/oauth') ?>" class="alert-link text-decoration-underline">Kết nối & Cấp quyền tại đây</a>.</span>
                             </div>
-                            <div class="alert alert-warning py-2 px-3 mb-3" style="font-size: 0.9rem;">
-                                <strong>⚠️ Sửa lỗi 403 khi Chọn File:</strong> Hãy đảm bảo bạn đã <strong>Kích hoạt Google Picker API</strong> trong Google Cloud Console và đã cấu hình khoá <strong>GOOGLE_SHEET_API_KEY</strong> (Developer API Key) trong file .env.
-                            </div>
                             <div class="row">
                                 <!-- <h6 class="mb-3">Google Sheet 1</h6> -->
                                 <div class="row">
