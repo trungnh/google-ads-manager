@@ -280,22 +280,26 @@
                                 </svg>
                                 <span>Để hệ thống có quyền đọc file Google Sheet riêng tư của bạn, hãy đảm bảo bạn đã kết nối tài khoản Google và cấp quyền truy cập Drive: <a href="<?= base_url('google/oauth') ?>" class="alert-link text-decoration-underline">Kết nối & Cấp quyền tại đây</a>.</span>
                             </div>
+                            <div class="alert alert-warning py-2 px-3 mb-3" style="font-size: 0.9rem;">
+                                <strong>⚠️ Sửa lỗi 403 khi Chọn File:</strong> Hãy đảm bảo bạn đã <strong>Kích hoạt Google Picker API</strong> trong Google Cloud Console và đã cấu hình khoá <strong>GOOGLE_SHEET_API_KEY</strong> (Developer API Key) trong file .env.
+                            </div>
                             <div class="row">
                                 <!-- <h6 class="mb-3">Google Sheet 1</h6> -->
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label for="ggsheet_id" class="form-label">Google Sheet ID <span
+                                            <label for="ggsheet_filename" class="form-label">Tên File Google Sheet <span
                                                     class="text-danger">*</span></label>
                                             <div class="input-group">
-                                                <input type="text" class="form-control" id="ggsheet_id" name="ggsheet_id"
-                                                    value="<?= isset($settings['ggsheet_id']) ? $settings['ggsheet_id'] : '' ?>"
+                                                <input type="hidden" id="ggsheet_id" name="ggsheet_id" value="<?= isset($settings['ggsheet_id']) ? $settings['ggsheet_id'] : '' ?>">
+                                                <input type="text" class="form-control" id="ggsheet_filename"
+                                                    value=""
                                                     placeholder="Chọn file Google Sheet..." readonly>
-                                                <button class="btn btn-outline-primary btn-select-sheet" type="button" data-target-id="ggsheet_id" data-target-name="ggsheet_name">
+                                                <button class="btn btn-outline-primary btn-select-sheet" type="button" data-target-id="ggsheet_id" data-target-filename-id="ggsheet_filename" data-target-name="ggsheet_name">
                                                     Chọn File
                                                 </button>
                                             </div>
-                                            <div class="form-text">ID của Google Sheet (chọn bằng cách nhấn nút trên)</div>
+                                            <div class="form-text">Tên file Google Sheet đã chọn</div>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
@@ -318,16 +322,17 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label for="ggsheet2_id" class="form-label">Google Sheet 2 ID</label>
+                                            <label for="ggsheet2_filename" class="form-label">Tên File Google Sheet 2</label>
                                             <div class="input-group">
-                                                <input type="text" class="form-control" id="ggsheet2_id" name="ggsheet2_id"
-                                                    value="<?= isset($settings['ggsheet2_id']) ? $settings['ggsheet2_id'] : '' ?>"
+                                                <input type="hidden" id="ggsheet2_id" name="ggsheet2_id" value="<?= isset($settings['ggsheet2_id']) ? $settings['ggsheet2_id'] : '' ?>">
+                                                <input type="text" class="form-control" id="ggsheet2_filename"
+                                                    value=""
                                                     placeholder="Chọn file Google Sheet 2..." readonly>
-                                                <button class="btn btn-outline-primary btn-select-sheet" type="button" data-target-id="ggsheet2_id" data-target-name="ggsheet2_name">
+                                                <button class="btn btn-outline-primary btn-select-sheet" type="button" data-target-id="ggsheet2_id" data-target-filename-id="ggsheet2_filename" data-target-name="ggsheet2_name">
                                                     Chọn File
                                                 </button>
                                             </div>
-                                            <div class="form-text">ID của Google Sheet 2 (chọn bằng cách nhấn nút trên)</div>
+                                            <div class="form-text">Tên file Google Sheet 2 đã chọn</div>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
@@ -440,7 +445,7 @@
         pickerApiLoaded = true;
     }
 
-    function createPicker(targetId, targetName) {
+    function createPicker(targetId, targetFilenameId, targetName) {
         var view = new google.picker.View(google.picker.ViewId.SPREADSHEETS);
         var picker = new google.picker.PickerBuilder()
             .addView(view)
@@ -450,9 +455,11 @@
                 if (data[google.picker.Response.ACTION] == google.picker.Action.PICKED) {
                     var doc = data[google.picker.Response.DOCUMENTS][0];
                     var docId = doc[google.picker.Document.ID];
+                    var docName = doc[google.picker.Document.NAME];
                     
-                    // Ghi ID vào ô input
+                    // Ghi ID và Tên File vào ô tương ứng
                     $('#' + targetId).val(docId);
+                    $('#' + targetFilenameId).val(docName);
                     
                     // Gọi API lấy danh sách sheet tabs
                     $('#' + targetName).html('<option value="">Đang tải các sheet tabs...</option>');
@@ -487,6 +494,28 @@
         picker.setVisible(true);
     }
 
+    // Lấy tên file Google Sheet dựa trên ID khi tải trang
+    function fetchSpreadsheetTitle(docId, targetFilenameId) {
+        if (!googleAccessToken || !docId) return;
+        $.ajax({
+            url: 'https://sheets.googleapis.com/v4/spreadsheets/' + docId + '?fields=properties.title',
+            method: 'GET',
+            headers: {
+                'Authorization': 'Bearer ' + googleAccessToken
+            },
+            success: function(response) {
+                if (response && response.properties && response.properties.title) {
+                    $('#' + targetFilenameId).val(response.properties.title);
+                } else {
+                    $('#' + targetFilenameId).val(docId);
+                }
+            },
+            error: function() {
+                $('#' + targetFilenameId).val(docId);
+            }
+        });
+    }
+
     // Load thư viện GAPI khi window load
     (function() {
         var script = document.createElement('script');
@@ -497,9 +526,20 @@
     })();
 
     $(document).ready(function () {
+        // Resolve tên file Google Sheets khi tải trang
+        var ggsheetId = $('#ggsheet_id').val();
+        if (ggsheetId) {
+            fetchSpreadsheetTitle(ggsheetId, 'ggsheet_filename');
+        }
+        var ggsheet2Id = $('#ggsheet2_id').val();
+        if (ggsheet2Id) {
+            fetchSpreadsheetTitle(ggsheet2Id, 'ggsheet2_filename');
+        }
+
         // Gắn sự kiện click cho các nút chọn file
         $('.btn-select-sheet').on('click', function() {
             var targetId = $(this).data('target-id');
+            var targetFilenameId = $(this).data('target-filename-id');
             var targetName = $(this).data('target-name');
             
             if (!googleAccessToken) {
@@ -513,7 +553,7 @@
                 return;
             }
             
-            createPicker(targetId, targetName);
+            createPicker(targetId, targetFilenameId, targetName);
         });
         // Xử lý sự kiện khi checkbox use_pancake thay đổi
         <?php if (isset($settings['pancake_shop_id']) && $settings['pancake_api_key']): ?>
